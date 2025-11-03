@@ -8,26 +8,26 @@ export default function PdfTranslator() {
   const router = useRouter();
 
   // ✅ Redirect if not logged in
-  useEffect(() => {
-    if (!isLoading && !token) {
-      router.push("/login");
-    }
-  }, [isLoading, token, router]);
+  // useEffect(() => {
+  //   if (!isLoading && !token) {
+  //     router.push("/login");
+  //   }
+  // }, [isLoading, token, router]);
 
-  if (isLoading || !token) {
-    return (
-      <div
-        style={{
-          textAlign: "center",
-          marginTop: "5rem",
-          fontSize: "1.5rem",
-          fontWeight: "bold",
-        }}
-      >
-        Checking authentication...
-      </div>
-    );
-  }
+  // if (isLoading || !token) {
+  //   return (
+  //     <div
+  //       style={{
+  //         textAlign: "center",
+  //         marginTop: "5rem",
+  //         fontSize: "1.5rem",
+  //         fontWeight: "bold",
+  //       }}
+  //     >
+  //       Checking authentication...
+  //     </div>
+  //   );
+  // }
   const [file, setFile] = useState<File | null>(null);
   const [language, setLanguage] = useState("Spanish");
   const [translated, setTranslated] = useState("");

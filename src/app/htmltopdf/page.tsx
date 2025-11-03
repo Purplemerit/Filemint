@@ -10,26 +10,26 @@ export default function HtmlToPdfPage() {
   const router = useRouter();
 
   // ✅ Redirect if not logged in
-  useEffect(() => {
-    if (!isLoading && !token) {
-      router.push("/login");
-    }
-  }, [isLoading, token, router]);
+  // useEffect(() => {
+  //   if (!isLoading && !token) {
+  //     router.push("/login");
+  //   }
+  // }, [isLoading, token, router]);
 
-  if (isLoading || !token) {
-    return (
-      <div
-        style={{
-          textAlign: "center",
-          marginTop: "5rem",
-          fontSize: "1.5rem",
-          fontWeight: "bold",
-        }}
-      >
-        Checking authentication...
-      </div>
-    );
-  }
+  // if (isLoading || !token) {
+  //   return (
+  //     <div
+  //       style={{
+  //         textAlign: "center",
+  //         marginTop: "5rem",
+  //         fontSize: "1.5rem",
+  //         fontWeight: "bold",
+  //       }}
+  //     >
+  //       Checking authentication...
+  //     </div>
+  //   );
+  // }
   const [files, setFiles] = useState<File[]>([]);
   const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);

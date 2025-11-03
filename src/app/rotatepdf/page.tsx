@@ -11,26 +11,26 @@ export default function RotatePdfClient() {
   const router = useRouter();
 
   // ✅ Redirect if not logged in
-  useEffect(() => {
-    if (!isLoading && !token) {
-      router.push("/login");
-    }
-  }, [isLoading, token, router]);
+  // useEffect(() => {
+  //   if (!isLoading && !token) {
+  //     router.push("/login");
+  //   }
+  // }, [isLoading, token, router]);
 
-  if (isLoading || !token) {
-    return (
-      <div
-        style={{
-          textAlign: "center",
-          marginTop: "5rem",
-          fontSize: "1.5rem",
-          fontWeight: "bold",
-        }}
-      >
-        Checking authentication...
-      </div>
-    );
-  }
+  // if (isLoading || !token) {
+  //   return (
+  //     <div
+  //       style={{
+  //         textAlign: "center",
+  //         marginTop: "5rem",
+  //         fontSize: "1.5rem",
+  //         fontWeight: "bold",
+  //       }}
+  //     >
+  //       Checking authentication...
+  //     </div>
+  //   );
+  // }
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [rotatedBlobUrl, setRotatedBlobUrl] = useState<string | null>(null);
   const [rotation, setRotation] = useState<number>(90);

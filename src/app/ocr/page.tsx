@@ -13,26 +13,26 @@ export default function ImageTextExtractor() {
   const router = useRouter();
 
   // ✅ Redirect if not logged in
-  useEffect(() => {
-    if (!isLoading && !token) {
-      router.push("/login");
-    }
-  }, [isLoading, token, router]);
+  // useEffect(() => {
+  //   if (!isLoading && !token) {
+  //     router.push("/login");
+  //   }
+  // }, [isLoading, token, router]);
 
-  if (isLoading || !token) {
-    return (
-      <div
-        style={{
-          textAlign: "center",
-          marginTop: "5rem",
-          fontSize: "1.5rem",
-          fontWeight: "bold",
-        }}
-      >
-        Checking authentication...
-      </div>
-    );
-  }
+  // if (isLoading || !token) {
+  //   return (
+  //     <div
+  //       style={{
+  //         textAlign: "center",
+  //         marginTop: "5rem",
+  //         fontSize: "1.5rem",
+  //         fontWeight: "bold",
+  //       }}
+  //     >
+  //       Checking authentication...
+  //     </div>
+  //   );
+  // }
   const [image, setImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [extractedText, setExtractedText] = useState<string>("");

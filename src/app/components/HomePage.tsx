@@ -1,17 +1,82 @@
 'use client'
-// C:\Users\khush\OneDrive\Documents\Desktop\file\code1\FileMint\src\app\components\HomePage.tsx
+
 import Link from "next/link";
 import AdBanner from "./AdBanner";
 import BGSvgComponent from "./BG";
+import { useEffect, useState } from "react";
 
 
 export default function HomePage() {
-  
+  const [isMobile, setIsMobile] = useState(false);
+  const tools = [
+    {
+      img: "./feature3.svg",
+      color: "#F87C56",
+      title: "Quick Convert & Compress",
+      desc: "Our tool are designed for speed and simplicity, making file management easy.",
+      btnText: "Explore",
+      btnColor: "#F87C56",
+      link: "/convert"
+    },
+    {
+      img: "./feature2.svg",
+      color: "#00C46A",
+      title: "Easy PDF Conversion",
+      desc: "Experience seamless conversion that maintain the quality of your documents.",
+      btnText: "Start",
+      btnColor: "#00C46A",
+      link: "/convert-pdf"
+    },
+    {
+      img: "./feature1.svg",
+      color: "#F5B623",
+      title: "Effortless File Merge",
+      desc: "Combine your documents quickly while preserving their original formatting.",
+      btnText: "Merge",
+      btnColor: "#F5B623",
+      link: "/merge"
+    },
+  ];
+  const newtools =[
+{
+      img: "./imagefianl4.svg",
+      color: "#95d1f3ff",
+      title: "Experience quick and easy file conversion in just a few clicks.",
+      desc: "Follow these easy steps to convert your file seamlessly.",
+      btnText: "Explore",
+      btnColor: "#95d1f3ff",
+      link: "/convert"
+    },
+    {
+      img: "./imagefianl5.svg",
+      color: "#f8a0a0ff",
+      title: "Upload your file and select your desired output format.",
+      desc: "Our platform support various formats for your  convenience.",
+      btnText: "Start",
+      btnColor: "#f8a0a0ff",
+      link: "/convert-pdf"
+    },
+    {
+      img: "./imagefianl6.svg",
+      color: "rgba(223, 145, 245, 1)",
+      title: "Download your converted file instantly and enjoy!",
+      desc: "Our file is ready for download: just click the button below.",
+      btnText: "Merge",
+      btnColor: "rgba(223, 145, 245, 1)",
+      link: "/merge"
+    },
+  ];
+    useEffect(() => {
+    const checkWidth = () => setIsMobile(window.innerWidth <= 720);
+    checkWidth();
+    window.addEventListener("resize", checkWidth);
+    return () => window.removeEventListener("resize", checkWidth);
+  }, []);
   return (
     <>
       <AdBanner />
       {/* Hero Section */}
-     <main
+  <main
   style={{
     display: "flex",
     alignItems: "center",
@@ -19,20 +84,26 @@ export default function HomePage() {
     minHeight: "90vh",
     gap: 0,
     flexWrap: "wrap",
-    position: "relative", // needed for mobile background
+    position: "relative",
+    overflow: "hidden",
+    width: "100%",
+    maxWidth: "100vw",
   }}
 >
   {/* Text Section */}
   <div
+    className="text-section"
     style={{
       flex: "1",
       textAlign: "center",
       paddingRight: "0",
       marginLeft: "6vw",
+      position: "relative",
+      zIndex: 2,
     }}
   >
     <h1 style={{ fontSize: "4rem", marginBottom: "1rem" }}>
-      Effortlessly Convert
+      Effortlessly <span style={{ color: "#294FFF" }}>Convert</span>
       <br />
       Your Files in Seconds
     </h1>
@@ -44,30 +115,45 @@ export default function HomePage() {
     </p>
 
     <div className="hero-buttons">
-      <button className="primary-btn"  ><Link href="/all" style={{ color: "inherit", textDecoration: "none" }}>
-    Convert Now
-  </Link></button>
-      <button className="secondary-btn"><Link href="/about" style={{ color: "inherit", textDecoration: "none" }}>Learn More</Link></button>
+      <button className="primary-btn">
+        <Link href="/all" style={{ color: "inherit", textDecoration: "none" }}>
+          Convert Now
+        </Link>
+      </button>
+      <button className="secondary-btn">
+        <Link href="/about" style={{ color: "inherit", textDecoration: "none" }}>
+          Learn More
+        </Link>
+      </button>
     </div>
+
+    {/* Floating PNGs */}
+    <img src="/png1.png" alt="" className="floating floating-1" />
+    <img src="/png2.png" alt="" className="floating floating-2" />
+    <img src="/png3.png" alt="" className="floating floating-3" />
   </div>
 
-  {/* Image Section */}
-  <div
-    style={{ flex: "1", display: "flex", justifyContent: "flex-start" }}
-  ><BGSvgComponent style={{
-        width: "100%",
-        height: "auto",
-        borderRadius: "8px",
-        objectFit: "cover",
-      }}/>
-    {/* <img
-      src="/BG.png"
-      alt="Illustration"
-      
-    /> */}
+  {/* SVG Section (single component) */}
+  <div className="svg-section">
+    <BGSvgComponent />
   </div>
 
   <style jsx>{`
+    .svg-section {
+      flex: 1;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .svg-section :global(svg) {
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+    }
+
     .hero-buttons {
       display: flex;
       justify-content: center;
@@ -78,7 +164,7 @@ export default function HomePage() {
 
     .primary-btn {
       padding: 1.25rem 3rem;
-      background: linear-gradient(103deg, #0E1C29 -19.6%, #323D68 129.35%);
+      background: linear-gradient(103deg, #0e1c29 -19.6%, #323d68 129.35%);
       color: white;
       font-size: 1.1rem;
       font-weight: 600;
@@ -91,11 +177,6 @@ export default function HomePage() {
       transition: all 0.3s ease;
     }
 
-    .primary-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
-    }
-
     .secondary-btn {
       padding: 1.25rem 3rem;
       background: white;
@@ -105,176 +186,241 @@ export default function HomePage() {
       border: 2px solid #0070f3;
       border-radius: 12px;
       cursor: pointer;
-      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
       transition: all 0.3s ease;
     }
 
+    .primary-btn:hover,
     .secondary-btn:hover {
-      background-color: #0070f3;
-      color: white;
       transform: translateY(-2px);
-      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .floating {
+      position: absolute;
+      opacity: 0.9;
+      animation: float 6s ease-in-out infinite;
+      z-index: 1;
+    }
+
+    .floating-1 {
+      top: -40px;
+      left: 6%;
+      width: 750px;
+      height: 500px;
+      z-index: 5;
+    }
+
+    .floating-2 {
+      top: 75%;
+      right: 70px;
+      animation-delay: 1.5s;
+    }
+
+    .floating-3 {
+      bottom: -30px;
+      left: 10%;
+      top: 470px;
+      animation-delay: 3s;
     }
 
     @media (max-width: 768px) {
       main {
         flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 0;
+        width: 100%;
+        max-width: 100vw;
       }
 
-      main img {
+      .floating {
+        display: none;
+      }
+
+      .svg-section {
         position: absolute;
-        top: 0;
+        top: 10%;
         left: 0;
         width: 100%;
         height: 100%;
+        z-index: 0;
+        opacity: 0.25;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+      }
+
+      .svg-section :global(svg) {
+        width: 110%;
+        height: auto;
         object-fit: cover;
-        border-radius: 0;
-        z-index: -1;
-        opacity: 0.3; /* subtle background */
+      }
+
+      .text-section {
+        margin: 0 !important;
+        margin-left: 0 !important;
+        padding: 12vh 8vw !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        position: relative;
+        z-index: 2;
+        background: transparent;
+        text-align: center;
+        width: 100%;
+      }
+
+      .text-section h1 {
+        font-size: 2rem !important;
+        line-height: 1.25;
+        margin-bottom: 1rem;
+        padding: 0 1rem;
+      }
+
+      .text-section p {
+        font-size: 1rem !important;
+        line-height: 1.4;
+        padding: 0 1rem;
       }
 
       .hero-buttons {
-        flex-direction: column;
+        justify-content: center;
         gap: 1rem;
-        align-items: center;
+        padding: 0 1rem;
+        width: 100%;
       }
 
       .primary-btn,
       .secondary-btn {
-        width: 80%;
-        max-width: 300px;
-      }
-
-      div[style*="textAlign: center"] {
-        text-align: center;
-        padding: 2rem;
-        color: white; /* make text visible over image */
+        padding: 0.9rem 2rem;
+        font-size: 1rem;
       }
     }
   `}</style>
 </main>
 
-
-     {/* Popular Tools Section */}
-<section style={{ padding: "0" }}>
+ {/* Popular Tools Section */}
+<section style={{ padding: "0", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
   <h2
+    className="section-title"
     style={{
-      fontSize: "3rem",
+      fontSize: "2.8rem",
+      fontWeight: "700",
       marginBottom: "2rem",
       textAlign: "center",
+      color: "#222",
     }}
   >
     Popular Tools
   </h2>
 
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "repeat(3, 1fr)",
-      gap: "1.5rem",
-      maxWidth: "600px",
-      margin: "0 auto",
-      justifyItems: "center",
-    }}
-  >
+  <div className="tools-grid">
     {[
       {
-        title: "PDF to Word",
-        icon: "fa-regular fa-file-word",
-        color: "#E8D5FF",
-        route: "/pdftoword",
-      },
-      {
         title: "Merge PDF",
-        icon: "fas fa-upload",
+        img: "./image1.svg",
         color: "#D5F5D5",
         route: "/mergepdf",
+        desc: "Combine multiple PDF files into one organized document in seconds — fast, simple, and secure.",
       },
       {
-        title: "Edit PDF",
-        icon: "fa-regular fa-edit",
-        color: "#FFE5D5",
-        route: "/editpdf",
-      },
-      {
-        title: "eSign PDF",
-        icon: "fas fa-file-signature",
-        color: "#F0D5FF",
-        route: "/esignpdf",
-      },
-      {
-        title: "Compare PDF",
-        icon: "fas fa-columns",
-        color: "#D5E5FF",
-        route: "/comparepdf",
+        title: "PDF to Word",
+        img: "./image2.svg",
+        color: "#E8D5FF",
+        route: "/pdftoword",
+        desc: "Converts PDF documents into editable Microsoft Word format.",
       },
       {
         title: "Word to PDF",
-        icon: "fas fa-file-pdf",
+        img: "./image3.svg",
         color: "#E5F0FF",
         route: "/wordtopdf",
+        desc: "Transforms Microsoft Word documents into PDF format.",
+      },
+      {
+        title: "Edit PDF",
+        img: "./image4.svg",
+        color: "#FFE5D5",
+        route: "/editpdf",
+        desc: "Changes text, images, or structure within a PDF using editing tools.",
+      },
+      {
+        title: "eSign PDF",
+        img: "./image5.svg",
+        color: "#F0D5FF",
+        route: "/esignpdf",
+        desc: "Add secure and legally valid eSignatures to your PDF documents.",
+      },
+      {
+        title: "Compare PDF",
+        img: "./image6.svg",
+        color: "#D5E5FF",
+        route: "/comparepdf",
+        desc: "Compare two PDF documents side by side to find differences easily.",
       },
     ].map((tool, index) => (
       <Link href={tool.route} key={index} style={{ textDecoration: "none" }}>
         <div
+          className="tool-card"
           style={{
             backgroundColor: tool.color,
-            color: "#666",
             borderRadius: "16px",
             padding: "2rem 1.5rem",
-            aspectRatio: "1 / 1",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            textAlign: "center",
+            justifyContent: "flex-start",
+            alignItems: "flex-start",
+            textAlign: "left",
             cursor: "pointer",
             transition: "transform 0.2s ease",
-            maxWidth: "160px",
-            minHeight: "140px",
+            boxShadow: "0 4px 10px rgba(0, 0, 0, 0.05)",
+            width: "100%",
+            maxWidth: "280px",
+            minHeight: "200px",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-5px)")}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
         >
-          <div style={{ marginBottom: "1rem" }}>
-            <i
-              className={tool.icon}
-              style={{
-                fontSize: "2rem",
-                color: "#666",
-              }}
-            ></i>
-          </div>
+          <img
+            src={tool.img}
+            alt={tool.title}
+            style={{
+              width: "36px",
+              height: "36px",
+              marginBottom: "1rem",
+            }}
+          />
           <h3
             style={{
-              marginBottom: "0",
-              fontSize: "0.95rem",
-              fontWeight: "600",
-              lineHeight: "1.2",
+              fontSize: "1.1rem",
+              fontWeight: "700",
+              color: "#222",
+              marginBottom: "0.5rem",
             }}
           >
             {tool.title}
           </h3>
+          <p
+            style={{
+              fontSize: "0.9rem",
+              color: "#555",
+              lineHeight: "1.4",
+              margin: 0,
+            }}
+          >
+            {tool.desc}
+          </p>
         </div>
       </Link>
     ))}
   </div>
 
-  <div
-    style={{
-      textAlign: "right",
-      marginTop: "1.5rem",
-      maxWidth: "600px",
-      marginLeft: "auto",
-      marginRight: "auto",
-    }}
-  >
+  <div className="view-all-container">
     <Link
       href="/all"
       style={{
-        color: "black",
+        color: "#000",
         textDecoration: "none",
-        fontWeight: "bold",
+        fontWeight: "600",
         fontSize: "1.1rem",
       }}
     >
@@ -282,620 +428,1125 @@ export default function HomePage() {
     </Link>
   </div>
 
-  {/* ✅ Inline responsive styling */}
   <style jsx>{`
-    @media (max-width: 768px) {
-      div[style*="grid-template-columns"] {
-        grid-template-columns: repeat(2, 1fr) !important;
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      max-width: 1024px;
+      margin: 0 auto;
+      justify-items: center;
+      box-sizing: border-box;
+    }
+
+    .tool-card {
+      width: 100%;
+      max-width: 280px;
+      min-height: 200px;
+    }
+
+    .view-all-container {
+      text-align: right;
+      margin-top: 2rem;
+      max-width: 1024px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    @media (max-width: 1024px) and (min-width: 641px) {
+      .tools-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        max-width: 768px;
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+      
+      .view-all-container {
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+      
+      .section-title {
+        padding-left: 24px;
+        padding-right: 24px;
       }
     }
 
-    @media (max-width: 480px) {
-      div[style*="grid-template-columns"] {
-        grid-template-columns: 1fr !important;
+    @media (max-width: 640px) {
+      .section-title {
+        font-size: 2rem !important;
+        margin-bottom: 1.5rem !important;
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+
+      .tools-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+
+      .tool-card {
+        max-width: 100% !important;
+        min-height: 180px !important;
+        padding: 1.75rem 1.5rem !important;
+      }
+
+      .tool-card img {
+        width: 40px !important;
+        height: 40px !important;
+        margin-bottom: 1rem !important;
+      }
+
+      .tool-card h3 {
+        font-size: 1.15rem !important;
+        margin-bottom: 0.6rem !important;
+      }
+
+      .tool-card p {
+        font-size: 0.95rem !important;
+        line-height: 1.5 !important;
+      }
+
+      .view-all-container {
+        text-align: center !important;
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+
+      @media (pointer: coarse) {
+        .tool-card {
+          transition: none !important;
+        }
+        .tool-card:hover {
+          transform: none !important;
+        }
       }
     }
   `}</style>
 </section>
 
+   {/* Advance Tools */}
+<section
+  style={{
+    width: "100%",
+    maxWidth: "100vw",
+    background: "#fff",
+    padding: isMobile ? "60px 1rem" : "100px 40px",
+    boxSizing: "border-box",
+    overflowX: "hidden",
+  }}
+>
+  <div
+    style={{
+      maxWidth: "1300px",
+      margin: "0 auto",
+      textAlign: "center",
+    }}
+  >
+    <h2
+      style={{
+        fontSize: "2.8rem",
+        fontWeight: "700",
+        color: "#111",
+      }}
+    >
+      Advanced Tools
+    </h2>
+    <p
+      style={{
+        fontSize: "1.4rem",
+        color: "#444",
+        marginTop: "8px",
+      }}
+    >
+      Made Simple (and Free)
+    </p>
+    <p
+      style={{
+        fontSize: "1.1rem",
+        color: "#555",
+        maxWidth: "800px",
+        margin: "20px auto 60px",
+        lineHeight: "1.8",
+      }}
+    >
+      Experience pro-level file conversion with zero setup or fees. From OCR to
+      PDF tools, everything you need is fast, simple, no hidden fees — just
+      smart results.
+    </p>
+  </div>
 
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      gap: "100px",
+      alignItems: "center",
+    }}
+  >
+    {/* Feature 1 */}
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "50px",
+        width: "100%",
+        maxWidth: "1200px",
+      }}
+    >
+      <div style={{ flex: "1 1 500px", textAlign: "left" }}>
+        <h3 style={{ fontSize: "1.8rem", fontWeight: "600", color: "#111" }}>
+          No Watermark on Output
+        </h3>
+        <p
+          style={{
+            color: "#666",
+            lineHeight: "1.8",
+            marginTop: "15px",
+            fontSize: "1.05rem",
+          }}
+        >
+          Unlike many platforms that sneak in their branding or charge extra to
+          remove it, our free converter offers clean, watermark-free exports
+          every time. What you upload is exactly what you download — professional,
+          polished, and truly yours.
+        </p>
+      </div>
+      <div style={{ flex: "1 1 400px", textAlign: "center" }}>
+        <img
+          src="./toolimage1.svg"
+          alt="No Watermark"
+          style={{ width: "100%", maxWidth: "380px" }}
+        />
+      </div>
+    </div>
 
+    {/* Feature 2 */}
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap-reverse",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "50px",
+        width: "100%",
+        maxWidth: "1200px",
+      }}
+    >
+      <div style={{ flex: "1 1 400px", textAlign: "center" }}>
+        <img
+          src="./toolimage2.svg"
+          alt="Convert Anywhere"
+          style={{ width: "100%", maxWidth: "380px" }}
+        />
+      </div>
+      <div style={{ flex: "1 1 500px", textAlign: "left" }}>
+        <h3 style={{ fontSize: "1.8rem", fontWeight: "600", color: "#111" }}>
+          Convert from Anywhere
+        </h3>
+        <p
+          style={{
+            color: "#666",
+            lineHeight: "1.8",
+            marginTop: "15px",
+            fontSize: "1.05rem",
+          }}
+        >
+          Easily upload files from your device, Google Drive, Dropbox, or paste
+          a direct URL. No matter where your files live, our converter brings
+          them right into your workspace for seamless processing.
+        </p>
+      </div>
+    </div>
 
-      {/* Easy Convert Your Files Section */}
-      <section style={{ padding: "4rem 0" }}>
+    {/* Feature 3 */}
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "50px",
+        width: "100%",
+        maxWidth: "1200px",
+      }}
+    >
+      <div style={{ flex: "1 1 500px", textAlign: "left" }}>
+        <h3 style={{ fontSize: "1.8rem", fontWeight: "600", color: "#111" }}>
+          Customize After Conversion
+        </h3>
+        <p
+          style={{
+            color: "#666",
+            lineHeight: "1.8",
+            marginTop: "15px",
+            fontSize: "1.05rem",
+          }}
+        >
+          Need to merge, split, compress, or reorder after converting? No
+          problem. Our platform offers instant post-conversion flexibility so
+          you don't need to start over. No downloads required, all within one
+          place.
+        </p>
+      </div>
+      <div style={{ flex: "1 1 400px", textAlign: "center" }}>
+        <img
+          src="./toolimage3.svg"
+          alt="Customize After Conversion"
+          style={{ width: "100%", maxWidth: "380px" }}
+        />
+      </div>
+    </div>
+
+    {/* Feature 4 */}
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap-reverse",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "50px",
+        width: "100%",
+        maxWidth: "1200px",
+      }}
+    >
+      <div style={{ flex: "1 1 400px", textAlign: "center" }}>
+        <img
+          src="./toolimage4.svg"
+          alt="OCR Conversion"
+          style={{ width: "100%", maxWidth: "380px" }}
+        />
+      </div>
+      <div style={{ flex: "1 1 500px", textAlign: "left" }}>
+        <h3 style={{ fontSize: "1.8rem", fontWeight: "600", color: "#111" }}>
+          Image/PDF Text Conversion
+        </h3>
+        <p
+          style={{
+            color: "#666",
+            lineHeight: "1.8",
+            marginTop: "15px",
+            fontSize: "1.05rem",
+          }}
+        >
+          Extract text from scanned images or non-editable PDFs using our
+          advanced OCR technology — perfect for making your documents searchable
+          or ready to edit.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <style jsx>{`
+      @media (max-width: 1024px) {
+        section {
+          padding: 80px 25px !important;
+        }
+        h2 {
+          font-size: 2.2rem !important;
+        }
+        h3 {
+          font-size: 1.4rem !important;
+        }
+        p {
+          font-size: 1rem !important;
+        }
+      }
+      @media (max-width: 768px) {
+        section {
+          padding: 60px 15px !important;
+        }
+        h2 {
+          font-size: 1.8rem !important;
+        }
+        h3 {
+          font-size: 1.25rem !important;
+        }
+        p {
+          font-size: 0.95rem !important;
+        }
+        img {
+          max-width: 280px !important;
+        }
+      }
+    `}</style>
+</section>
+
+    <section
+      style={{
+        width: "100%",
+        maxWidth: "100vw",
+        background: "#ffffffff",
+        padding: isMobile ? "3rem 1rem" : "6rem 2rem",
+        boxSizing: "border-box",
+        overflowX: "hidden",
+      }}
+    >
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 2rem" }}>
+        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+          <h2
+            style={{
+              fontFamily: 'Georgia, "Times New Roman", serif',
+              fontSize: "3rem",
+              lineHeight: 1.05,
+              margin: "0 auto 0.6rem",
+              color: "#111",
+              fontWeight: 600,
+              maxWidth: "900px",
+            }}
+          >
+            Easy Convert Your Files
+            <br />
+            in Seconds
+          </h2>
+
+          <p
+            style={{
+              margin: "0 auto",
+              color: "#4b4b4b",
+              fontSize: "1rem",
+              maxWidth: "760px",
+              lineHeight: 1.6,
+            }}
+          >
+            Our user-friendly platform allows you to convert files effortlessly.
+            Just drag and drop your documents to get started.
+          </p>
+        </div>
+
         <div
-          style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 2rem" }}
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: "2.5rem",
+            flexWrap: "wrap",
+            flexDirection: isMobile ? "column" : "row",
+          }}
         >
           <div
             style={{
+              flex: "0 1 58%",
+              maxWidth: "720px",
+              minWidth: "320px",
               display: "flex",
-              alignItems: "center",
-              gap: "4rem",
-              flexWrap: "wrap",
+              gap: "2rem",
+              alignItems: "flex-start",
+              flexDirection: isMobile ? "column" : "row",
             }}
           >
-            {/* Left Content */}
-            <div style={{ flex: "1", minWidth: "400px" }}>
-              <h2
+            <div style={{ flex: "1 1 45%", minWidth: "220px" }}>
+              <div
                 style={{
-                  fontSize: "3rem",
-                  marginBottom: "1rem",
-                  fontWeight: "",
+                  width: "56px",
+                  height: "56px",
+                  borderRadius: "10px",
+                  border: "2px solid #ffd6e8",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "16px",
+                  background: "#fff",
                 }}
               >
-                Easy Convert Your Files
-                <br />
-                in Seconds
-              </h2>
+                <img
+                  src="./section3-2.svg"
+                  alt="Choose Files"
+                  style={{ width: "28px", height: "28px" }}
+                />
+              </div>
+
+              <h3
+                style={{
+                  fontSize: "1.15rem",
+                  margin: "0 0 8px",
+                  color: "#111",
+                  fontWeight: 600,
+                }}
+              >
+                Choose Files
+              </h3>
               <p
                 style={{
-                  fontSize: "1.1rem",
-                  color: "#666",
-                  marginBottom: "2rem",
+                  margin: 0,
+                  color: "#5a5a5a",
+                  lineHeight: 1.6,
+                  fontSize: "0.95rem",
                 }}
               >
-                Our user-friendly platform allows you to convert files
-                effortlessly. Just drag and drop your documents to get started.
+                Start Converting your file quickly
+                <br />
+                and securely with our intuitive interface.
               </p>
 
-              {/* Steps */}
-              <div style={{ marginBottom: "2rem" }}>
-                <div style={{ display: "flex" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "1rem",
-                      backgroundColor: "",
-                      padding: "1.5rem",
-                      borderRadius: "12px",
-                      marginBottom: "1rem",
-                    }}
-                  >
-                    <div style={{ fontSize: "2rem" }}>
-                      <i
-                        className="fas fa-folder"
-                        style={{ color: "#FF6B6B" }}
-                      ></i>
-                    </div>
-                    <div>
-                      <h3
-                        style={{
-                          fontSize: "1.3rem",
-                          fontWeight: "600",
-                          marginBottom: "0.5rem",
-                        }}
-                      >
-                        Choose Files
-                      </h3>
-                      <p style={{ color: "#666", fontSize: "1rem" }}>
-                        Start Customizing your file quickly and easily via an
-                        intuitive interface.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "1rem",
-                      backgroundColor: "",
-                      padding: "1.5rem",
-                      borderRadius: "12px",
-                    }}
-                  >
-                    <div style={{ fontSize: "2rem" }}>
-                      <i
-                        className="fas fa-upload"
-                        style={{ color: "#FF6B6B" }}
-                      ></i>
-                    </div>
-                    <div>
-                      <h3
-                        style={{
-                          fontSize: "1.3rem",
-                          fontWeight: "600",
-                          marginBottom: "0.5rem",
-                        }}
-                      >
-                        Get Started
-                      </h3>
-                      <p style={{ color: "#666", fontSize: "1rem" }}>
-                        Just upload and start converting your file in different
-                        formats.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+              <div style={{ marginTop: "18px" }}>
+                <a
+                  href="/blogs"
+                  style={{
+                    display: "inline-block",
+                    padding: "8px 14px",
+                    borderRadius: "8px",
+                    border: "1px solid #c9cdd1",
+                    textDecoration: "none",
+                    color: "#111",
+                    fontSize: "0.95rem",
+                    background: "#fff",
+                  }}
+                >
+                  Learn More ▸
+                </a>
               </div>
+            </div>
 
-              <Link
-                href="/blogs"
+            <div style={{ flex: "1 1 45%", minWidth: "220px" }}>
+              <div
                 style={{
-                  color: "#0070f3",
-                  textDecoration: "none",
-                  fontWeight: "600",
+                  width: "56px",
+                  height: "56px",
+                  borderRadius: "10px",
+                  border: "2px solid #d6f3f0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "16px",
+                  background: "#fff",
                 }}
               >
-                Learn More →
-              </Link>
-            </div>
+                <img
+                  src="./section3-1.svg"
+                  alt="Get Started"
+                  style={{ width: "26px", height: "26px" }}
+                />
+              </div>
 
-            {/* Right Image */}
-            <div style={{ flex: "1", textAlign: "center", minWidth: "400px" }}>
-              <img
-                src="/conversion-illustration.png"
-                alt="File conversion process"
-                style={{ width: "100%", maxWidth: "500px", height: "auto" }}
-              />
+              <h3
+                style={{
+                  fontSize: "1.15rem",
+                  margin: "0 0 8px",
+                  color: "#111",
+                  fontWeight: 600,
+                }}
+              >
+                Get Started
+              </h3>
+              <p
+                style={{
+                  margin: 0,
+                  color: "#5a5a5a",
+                  lineHeight: 1.6,
+                  fontSize: "0.95rem",
+                }}
+              >
+                Just upload and start converting your file
+                <br />
+                in different formats.
+              </p>
             </div>
           </div>
-        </div>
-      </section>
+        
+      <div
+        style={{
+          flex: "0 1 35%",
+          minWidth: "260px",
+          maxWidth: "420px",
+          display: "flex",
+         justifyContent: isMobile ? "center" : "flex-end",
+        marginTop: isMobile ? "20px" : "-100px",
+        }}
+      >
+        <img
+          src="/conversion-illustration.png"
+          alt="File conversion process"
+          style={{
+            width: "100%",
+            maxWidth: "420px",
+            height: "auto",
+            borderRadius: "6px",
+            display: "block",
+          }}
+        />
+      </div>
+    </div>
+  </div>
 
-      {/* App Store Downloads Section */}
-      <section style={{ padding: "3rem 0", backgroundColor: "white" }}>
-        <div
-          style={{ maxWidth: "1000px", margin: "0 auto", textAlign: "center" }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: "3rem",
-              flexWrap: "wrap",
-            }}
-          >
-            {/* Chrome Web */}
-            <div
-              style={{
-                display: "flex-bottom",
-                alignItems: "center",
-                gap: "1rem",
-              }}
-            >
-              <img
-                src="/chrome-web-badge.png"
-                alt="Get it on Google Play"
-                style={{ height: "60px" }}
-              />
-              <div style={{ display: "flex", margin: "1rem" }}>
-                <div style={{ display: "flex", color: "#ffd700" }}>
-                  <i className="fas fa-star"></i>
-                  <i className="fas fa-star"></i>
-                  <i className="fas fa-star"></i>
-                  <i className="fas fa-star"></i>
-                  <i className="fas fa-star"></i>
-                </div>
-                <span
-                  style={{
-                    marginLeft: "0.5rem",
-                    color: "#666",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  300,000+ users
-                </span>
-              </div>
-            </div>
+  <style jsx>{`
+      @media (max-width: 1024px) {
+      h2 { font-size: 2.4rem !important; }
+    }
 
-            {/* Firefox Add-on */}
-            <div
-              style={{
-                display: "flex-bottom",
-                alignItems: "center",
-                gap: "1rem",
-              }}
-            >
-              <img
-                src="/firefox-addon-badge.png"
-                alt="Firefox Add-on"
-                style={{ height: "60px" }}
-              />
-              <div style={{ display: "flex", margin: "1rem" }}>
-                <div style={{ display: "flex", color: "#ffd700" }}>
-                  <i className="fas fa-star"></i>
-                  <i className="fas fa-star"></i>
-                  <i className="fas fa-star"></i>
-                  <i className="fas fa-star"></i>
-                  <i className="fas fa-star"></i>
-                </div>
-                <span
-                  style={{
-                    marginLeft: "0.5rem",
-                    color: "#666",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  10,000+ users
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+    @media (max-width: 800px) {
+      section { padding: 3.5rem 14px !important; }
+    }
+
+    @media (max-width: 720px) {
+      div[style*="display: flex"][style*="align-items: flex-start"] {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+      }
+
+      div[style*="flex: 0 1 58%"] {
+        flex: 1 1 100% !important;
+        max-width: 100% !important;
+        margin-bottom: 1.5rem;
+        text-align: left !important;
+      }
+
+      div[style*="flex: 0 1 35%"] {
+        flex: 1 1 100% !important;
+        max-width: 420px;
+        margin: 0 auto !important;
+        display: flex !important;
+        justify-content: center !important;
+      }
+
+      img {
+        max-width: 380px !important;
+        width: 100% !important;
+        height: auto !important;
+      }
+    }
+    `}</style>
+</section>
+
 
       {/* Features Section */}
-      <section style={{ padding: "4rem 0", backgroundColor: "" }}>
-        <div
-          style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 2rem" }}
+         <section
+      style={{
+        padding: isMobile ? "3rem 1rem" : "5rem 0",
+        backgroundColor: "#ffffffff",
+        width: "100%",
+        maxWidth: "100vw",
+        overflowX: "hidden",
+      }}
+    >
+      <div style={{ maxWidth: "1100px", margin: "0 auto", textAlign: "center" }}>
+        <h2
+          style={{
+            fontSize: isMobile ? "1.9rem" : "2.8rem",
+            fontWeight: 600,
+            color: "#222",
+            marginBottom: isMobile ? "2rem" : "3rem",
+            lineHeight: 1.3,
+          }}
         >
-          <div style={{ textAlign: "left", marginBottom: "3rem" }}>
-            <h2
+          Effortlessly transform documents
+          <br /> with powerful tools.
+        </h2>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isMobile
+              ? "1fr"
+              : "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "2rem",
+          }}
+        >
+          {tools.map((tool, i) => (
+            <div
+              key={i}
               style={{
-                fontSize: "3rem",
-                fontWeight: "",
-                marginBottom: "0.5rem",
+                backgroundColor: "#fff",
+                borderRadius: "16px",
+                padding: isMobile ? "1.5rem 1rem" : "2rem",
+                textAlign: "center",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                transition: "transform 0.2s ease",
               }}
             >
-              Effortlessly transform documents
-              <br />
-              with powerful tools.
-            </h2>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
-              gap: "2rem",
-            }}
-          >
-            {[
-              {
-                icon: (
-                  <i className="fas fa-bolt" style={{ color: "#FF6B6B" }}></i>
-                ),
-                title: "Quick Convert & Compress",
-                description:
-                  "Our tool are designed for speed and reliability, ensuring your files are ready when you need them.",
-                bgColor: "",
-              },
-              {
-                icon: (
-                  <i
-                    className="fas fa-file-pdf"
-                    style={{ color: "#FF8E53" }}
-                  ></i>
-                ),
-                title: "Easy PDF Conversion",
-                description:
-                  "Experience robust conversion that maintains the highest quality and preserves your original formatting.",
-                bgColor: "",
-              },
-              {
-                icon: (
-                  <i
-                    className="fas fa-sync-alt"
-                    style={{ color: "#FFD93D" }}
-                  ></i>
-                ),
-                title: "Effortless File Merge",
-                description:
-                  "Combine your documents easily while preserving their original formatting and structure.",
-                bgColor: "",
-              },
-            ].map((feature, index) => (
               <div
-                key={index}
                 style={{
-                  backgroundColor: feature.bgColor,
-                  padding: "2rem",
-                  borderRadius: "16px",
-                  textAlign: "center",
+                  display: "inline-flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: `${tool.color}10`,
+                  borderRadius: "12px",
+                  width: isMobile ? "70px" : "80px",
+                  height: isMobile ? "70px" : "80px",
+                  marginBottom: "1.2rem",
+                  border: `1.5px solid ${tool.color}40`,
                 }}
               >
-                <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>
-                  {feature.icon}
-                </div>
-                <h3
+                <img
+                  src={tool.img}
+                  alt={tool.title}
                   style={{
-                    fontSize: "1.5rem",
-                    fontWeight: "",
-                    marginBottom: "1rem",
+                    width: isMobile ? "30px" : "36px",
+                    height: isMobile ? "30px" : "36px",
+                    objectFit: "contain",
                   }}
-                >
-                  {feature.title}
-                </h3>
-                <p
-                  style={{
-                    color: "#666",
-                    fontSize: "1rem",
-                    marginBottom: "1.5rem",
-                  }}
-                >
-                  {feature.description}
-                </p>
-                <button
-                  style={{
-                    color: "#0070f3",
-                    backgroundColor: "transparent",
-                    border: "none",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    fontSize: "1rem",
-                  }}
-                > <Link href="/all" style={{ color: "inherit", textDecoration: "none" }}>
-                  Explore →</Link>
-                </button>
+                />
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* 3 Steps Section */}
-      <section style={{ padding: "4rem 0", backgroundColor: "white" }}>
-        <div
-          style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 2rem" }}
-        >
-          <div style={{ textAlign: "left", marginBottom: "3rem" }}>
-            <h2 style={{ fontSize: "3rem", fontWeight: "" }}>
-              Convert your files in 3 quick, hassle-
-              <br />
-              free steps!
-            </h2>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
-              gap: "2rem",
-            }}
-          >
-            {[
-              {
-                icon: (
-                  <i className="fas fa-bolt" style={{ color: "#FF6B6B" }}></i>
-                ),
-                title:
-                  "Experience quick and easy file conversion in just a few clicks",
-                description:
-                  "Follow these easy steps to convert your file seamlessly.",
-                bgColor: "",
-              },
-              {
-                icon: (
-                  <i className="fas fa-upload" style={{ color: "#FF8E53" }}></i>
-                ),
-                title: "Upload your file and select your desired output format",
-                description:
-                  "Our platform supports various formats for your convenience.",
-                bgColor: "",
-              },
-              {
-                icon: (
-                  <i
-                    className="fas fa-download"
-                    style={{ color: "#FFD93D" }}
-                  ></i>
-                ),
-                title: "Download your converted file instantly and safely",
-                description:
-                  "Our file is ready for download. just click the 'finish' button.",
-                bgColor: "",
-              },
-            ].map((step, index) => (
-              <div
-                key={index}
+              <h3
                 style={{
-                  backgroundColor: step.bgColor,
-                  padding: "2rem",
-                  borderRadius: "16px",
-                  textAlign: "center",
+                  fontSize: isMobile ? "1.1rem" : "1.25rem",
+                  fontWeight: 600,
+                  marginBottom: "0.6rem",
+                  color: "#222",
                 }}
               >
-                <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>
-                  {step.icon}
-                </div>
-                <h3
-                  style={{
-                    fontSize: "1.3rem",
-                    fontWeight: "",
-                    marginBottom: "1rem",
-                  }}
-                >
-                  {step.title}
-                </h3>
-                <p
-                  style={{
-                    color: "#666",
-                    fontSize: "1rem",
-                    marginBottom: "1.5rem",
-                  }}
-                >
-                  {step.description}
-                </p>
-                <button
-                  style={{
-                    color: "#0070f3",
-                    backgroundColor: "transparent",
-                    border: "none",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    fontSize: "1rem",
-                  }}
-                >
-                  Convert →
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+                {tool.title}
+              </h3>
 
-      {/* Trusted By Section */}
-      <section style={{ padding: "3rem 0", backgroundColor: "" }}>
-        <div
-          style={{ maxWidth: "1000px", margin: "0 auto", textAlign: "center" }}
-        >
-          <h3
-            style={{ fontSize: "1.5rem", fontWeight: "", marginBottom: "2rem" }}
-          >
-            Trusted By:
-          </h3>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: "3rem",
-              flexWrap: "wrap",
-            }}
-          >
-            <img
-              src="/google-cloud-logo.png"
-              alt="Google Cloud"
-              style={{ height: "40px", opacity: "0.6" }}
-            />
-            <img
-              src="/onedrive-logo.png"
-              alt="OneDrive"
-              style={{ height: "40px", opacity: "0.6" }}
-            />
-            <img
-              src="/norton-logo.png"
-              alt="Norton"
-              style={{ height: "40px", opacity: "0.6" }}
-            />
-            <img
-              src="/dropbox-logo.png"
-              alt="Dropbox"
-              style={{ height: "40px", opacity: "0.6" }}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA Section */}
-      <section style={{ padding: "4rem 0", backgroundColor: "white" }}>
-        <div
-          style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 2rem" }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "4rem",
-              flexWrap: "wrap",
-            }}
-          >
-            {/* Left Content */}
-            <div style={{ flex: "1", minWidth: "400px" }}>
-              <h2
-                style={{
-                  fontSize: "3rem",
-                  marginBottom: "1rem",
-                  fontWeight: "",
-                }}
-              >
-                Convert Files in a Click
-                <br />
-                <span>Fast, Easy & Free</span>
-              </h2>
               <p
                 style={{
-                  fontSize: "1.1rem",
-                  color: "#666",
-                  marginBottom: "2rem",
+                  color: "#555",
+                  fontSize: isMobile ? "0.9rem" : "0.95rem",
+                  lineHeight: 1.6,
+                  marginBottom: "1.4rem",
                 }}
               >
-                Our user-friendly platform allows you to convert files
-                effortlessly. Just drag and drop your documents to get started.
+                {tool.desc}
               </p>
 
-              {/* Feature boxes */}
-              <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
-                <div
-                  style={{
-                    backgroundColor: "",
-                    padding: "1.5rem",
-                    borderRadius: "12px",
-                    flex: "1",
-                    minWidth: "200px",
-                  }}
-                >
-                  <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
-                    <i
-                      className="fas fa-file-alt"
-                      style={{ color: "#FF6B6B" }}
-                    ></i>
-                  </div>
-                  <h3
-                    style={{
-                      fontSize: "1.2rem",
-                      fontWeight: "600",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    Completely Free
-                  </h3>
-                  <p
-                    style={{
-                      color: "#666",
-                      fontSize: "0.9rem",
-                      marginBottom: "1rem",
-                    }}
-                  >
-                    Utilize unlimited file conversion with FileMint at no cost
-                    whatsoever.
-                  </p>
-                  <button
-                    style={{
-                      backgroundColor: "transparent",
-                      border: "none",
-                      fontWeight: "600",
-                      cursor: "pointer",
-                      fontSize: "0.9rem",
-                    }}
-                  >  <Link href="/about" style={{ color: "inherit", textDecoration: "none" }}>
-                    Learn More →</Link>
-                  </button>
-                </div>
+              <Link
+                href={tool.link}
+                style={{
+                  display: "inline-block",
+                  padding: "0.45rem 1.1rem",
+                  borderRadius: "8px",
+                  fontWeight: 500,
+                  textDecoration: "none",
+                  color: tool.btnColor,
+                  border: `1.8px solid ${tool.btnColor}`,
+                  fontSize: isMobile ? "0.9rem" : "1rem",
+                  transition: "all 0.3s",
+                }}
+              >
+                {tool.btnText} →
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+      <section
+      style={{
+        padding: isMobile ? "3rem 1rem" : "5rem 0",
+        backgroundColor: "#ffffffff",
+        width: "100%",
+        maxWidth: "100vw",
+        overflowX: "hidden",
+      }}
+    >
+      <div style={{ maxWidth: "1100px", margin: "0 auto", textAlign: "center" }}>
+        <h2
+          style={{
+            fontSize: isMobile ? "1.9rem" : "2.8rem",
+            fontWeight: 600,
+            color: "#222",
+            marginBottom: isMobile ? "2rem" : "3rem",
+            lineHeight: 1.3,
+          }}
+        >
+          Convert your files in 3 quick,
+          <br />  hassle-free steps!
+        </h2>
 
-                <div
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isMobile
+              ? "1fr"
+              : "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "2rem",
+          }}
+        >
+          {newtools.map((tool, i) => (
+            <div
+              key={i}
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "16px",
+                padding: isMobile ? "1.5rem 1rem" : "2rem",
+                textAlign: "center",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                transition: "transform 0.2s ease",
+              }}
+            >
+              <div
+                style={{
+                  display: "inline-flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: `${tool.color}10`,
+                  borderRadius: "12px",
+                  width: isMobile ? "70px" : "80px",
+                  height: isMobile ? "70px" : "80px",
+                  marginBottom: "1.2rem",
+                  border: `1.5px solid ${tool.color}40`,
+                }}
+              >
+                <img
+                  src={tool.img}
+                  alt={tool.title}
                   style={{
-                    backgroundColor: "",
-                    padding: "1.5rem",
-                    borderRadius: "12px",
-                    flex: "1",
-                    minWidth: "200px",
+                    width: isMobile ? "30px" : "36px",
+                    height: isMobile ? "30px" : "36px",
+                    objectFit: "contain",
+                  }}
+                />
+              </div>
+
+              <h3
+                style={{
+                  fontSize: isMobile ? "1.1rem" : "1.25rem",
+                  fontWeight: 600,
+                  marginBottom: "0.6rem",
+                  color: "#222",
+                }}
+              >
+                {tool.title}
+              </h3>
+
+              <p
+                style={{
+                  color: "#555",
+                  fontSize: isMobile ? "0.9rem" : "0.95rem",
+                  lineHeight: 1.6,
+                  marginBottom: "1.4rem",
+                }}
+              >
+                {tool.desc}
+              </p>
+
+              <Link
+                href={tool.link}
+                style={{
+                  display: "inline-block",
+                  padding: "0.45rem 1.1rem",
+                  borderRadius: "8px",
+                  fontWeight: 500,
+                  textDecoration: "none",
+                  color: tool.btnColor,
+                  border: `1.8px solid ${tool.btnColor}`,
+                  fontSize: isMobile ? "0.9rem" : "1rem",
+                  transition: "all 0.3s",
+                }}
+              >
+                {tool.btnText} →
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+
+      {/* Trusted By Section */}
+      <section
+      style={{
+        padding: isMobile ? "1.5rem 0" : "3rem 0",
+        backgroundColor: "",
+        width: "100%",
+        maxWidth: "100vw",
+        overflowX: "hidden",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: isMobile ? "90%" : "1000px",
+          margin: "0 auto",
+          textAlign: "center",
+        }}
+      >
+        <h3
+          style={{
+            fontSize: isMobile ? "1rem" : "1.5rem",
+            fontWeight: 600,
+            marginBottom: isMobile ? "1rem" : "2rem",
+          }}
+        >
+          Trusted By:
+        </h3>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: isMobile ? "1rem" : "3rem",
+            flexWrap: "wrap",
+          }}
+        >
+          <img
+            src="/google-cloud-logo.png"
+            alt="Google Cloud"
+            style={{
+              height: isMobile ? "20px" : "40px",
+              opacity: "0.6",
+            }}
+          />
+          <img
+            src="/onedrive-logo.png"
+            alt="OneDrive"
+            style={{
+              height: isMobile ? "20px" : "40px",
+              opacity: "0.6",
+            }}
+          />
+          <img
+            src="/norton-logo.png"
+            alt="Norton"
+            style={{
+              height: isMobile ? "20px" : "40px",
+              opacity: "0.6",
+            }}
+          />
+          <img
+            src="/dropbox-logo.png"
+            alt="Dropbox"
+            style={{
+              height: isMobile ? "20px" : "40px",
+              opacity: "0.6",
+            }}
+          />
+        </div>
+      </div>
+    </section>
+
+      {/* Final CTA Section */}
+      <section
+      style={{
+        width: "100%",
+        maxWidth: "100vw",
+        background: "#ffffffff",
+        padding: isMobile ? "3rem 1rem" : "6rem 2rem",
+        boxSizing: "border-box",
+        overflowX: "hidden",
+      }}
+    >
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 2rem" }}>
+        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+          <h2
+            style={{
+              fontFamily: 'Georgia, "Times New Roman", serif',
+              fontSize: "3rem",
+              lineHeight: 1.05,
+              margin: "0 auto 0.6rem",
+              color: "#111",
+              fontWeight: 600,
+              maxWidth: "900px",
+            }}
+          >
+            Convert Files in a Click
+            <br />
+            Fast, Easy & Free
+          </h2>
+
+          <p
+            style={{
+              margin: "0 auto",
+              color: "#4b4b4b",
+              fontSize: "1rem",
+              maxWidth: "760px",
+              lineHeight: 1.6,
+            }}
+          >
+            Our user-friendly platform allows you to convert files effortlessly. Just drag and drop your documents to get started.
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: "2.5rem",
+            flexWrap: "wrap",
+            flexDirection: isMobile ? "column" : "row",
+          }}
+        >
+          <div
+            style={{
+              flex: "0 1 58%",
+              maxWidth: "720px",
+              minWidth: "320px",
+              display: "flex",
+              gap: "2rem",
+              alignItems: "flex-start",
+              flexDirection: isMobile ? "column" : "row",
+            }}
+          >
+            <div style={{ flex: "1 1 45%", minWidth: "220px" }}>
+              <div
+                style={{
+                  width: "56px",
+                  height: "56px",
+                  borderRadius: "10px",
+                  border: "2px solid #f5ffd6ff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "16px",
+                  background: "#fff",
+                }}
+              >
+                <img
+                  src="./imagefianl3.svg"
+                  alt="Choose Files"
+                  style={{ width: "28px", height: "28px" }}
+                />
+              </div>
+
+              <h3
+                style={{
+                  fontSize: "1.15rem",
+                  margin: "0 0 8px",
+                  color: "#111",
+                  fontWeight: 600,
+                }}
+              >
+                Choose Files
+              </h3>
+              <p
+                style={{
+                  margin: 0,
+                  color: "#5a5a5a",
+                  lineHeight: 1.6,
+                  fontSize: "0.95rem",
+                }}
+              >
+                Start Converting your file quickly
+                <br />
+                and securely with our intuitive interface.
+              </p>
+
+              <div style={{ marginTop: "18px" }}>
+                <a
+                  href="/blogs"
+                  style={{
+                    display: "inline-block",
+                    padding: "8px 14px",
+                    borderRadius: "8px",
+                    border: "1px solid #c9cdd1",
+                    textDecoration: "none",
+                    color: "#111",
+                    fontSize: "0.95rem",
+                    background: "#fff",
                   }}
                 >
-                  <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
-                    <i className="fas fa-bolt" style={{ color: "#FF8E53" }}></i>
-                  </div>
-                  <h3
-                    style={{
-                      fontSize: "1.2rem",
-                      fontWeight: "600",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    Fast Processing
-                  </h3>
-                  <p style={{ color: "#666", fontSize: "0.9rem" }}>
-                    Our tools files converted in seconds - our blazing your
-                    valuable fast time.
-                  </p>
-                </div>
+                  Learn More ▸
+                </a>
               </div>
             </div>
 
-            {/* Right Image */}
-            <div style={{ flex: "1", textAlign: "center", minWidth: "400px" }}>
-              <img
-                src="/final-cta-illustration.png"
-                alt="File conversion illustration"
-                style={{ width: "100%", maxWidth: "500px", height: "auto" }}
-              />
+            <div style={{ flex: "1 1 45%", minWidth: "220px" }}>
+              <div
+                style={{
+                  width: "56px",
+                  height: "56px",
+                  borderRadius: "10px",
+                  border: "2px solid #b4e5feff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "16px",
+                  background: "#fff",
+                }}
+              >
+                <img
+                  src="./imagefianl2.svg"
+                  alt="Get Started"
+                  style={{ width: "26px", height: "26px" }}
+                />
+              </div>
+
+              <h3
+                style={{
+                  fontSize: "1.15rem",
+                  margin: "0 0 8px",
+                  color: "#111",
+                  fontWeight: 600,
+                }}
+              >
+                Get Started
+              </h3>
+              <p
+                style={{
+                  margin: 0,
+                  color: "#5a5a5a",
+                  lineHeight: 1.6,
+                  fontSize: "0.95rem",
+                }}
+              >
+                Just upload and start converting your file
+                <br />
+                in different formats.
+              </p>
             </div>
           </div>
-        </div>
-      </section>
+        
+      <div
+        style={{
+          flex: "0 1 35%",
+          minWidth: "260px",
+          maxWidth: "420px",
+          display: "flex",
+         justifyContent: isMobile ? "center" : "flex-end",
+        marginTop: isMobile ? "20px" : "-100px",
+        }}
+      >
+        <img
+          src="/imagefianl1.svg"
+          alt="File conversion process"
+          style={{
+            width: "100%",
+            maxWidth: "420px",
+            height: "auto",
+            borderRadius: "6px",
+            display: "block",
+          }}
+        />
+      </div>
+    </div>
+  </div>
+
+  <style jsx>{`
+      @media (max-width: 1024px) {
+      h2 { font-size: 2.4rem !important; }
+    }
+
+    @media (max-width: 800px) {
+      section { padding: 3.5rem 14px !important; }
+    }
+
+    @media (max-width: 720px) {
+      div[style*="display: flex"][style*="align-items: flex-start"] {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+      }
+
+      div[style*="flex: 0 1 58%"] {
+        flex: 1 1 100% !important;
+        max-width: 100% !important;
+        margin-bottom: 1.5rem;
+        text-align: left !important;
+      }
+
+      div[style*="flex: 0 1 35%"] {
+        flex: 1 1 100% !important;
+        max-width: 420px;
+        margin: 0 auto !important;
+        display: flex !important;
+        justify-content: center !important;
+      }
+
+      img {
+        max-width: 380px !important;
+        width: 100% !important;
+        height: auto !important;
+      }
+    }
+    `}</style>
+</section>
 
       {/* Footer */}
       <footer
@@ -903,22 +1554,36 @@ export default function HomePage() {
           backgroundColor: "white",
           padding: "2rem 0",
           borderTop: "1px solid #e5e7eb",
+          width: "100%",
+          maxWidth: "100vw",
+          overflowX: "hidden",
         }}
       >
         <div
-          style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 2rem" }}
+          style={{ 
+            maxWidth: "1200px", 
+            margin: "0 auto", 
+            padding: isMobile ? "0 1rem" : "0 2rem",
+            width: "100%",
+          }}
         >
           <div
             style={{
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              justifyContent: isMobile ? "flex-start" : "space-between",
+              alignItems: isMobile ? "flex-start" : "center",
+              flexDirection: isMobile ? "column" : "row",
               flexWrap: "wrap",
-              gap: "2rem",
+              gap: isMobile ? "1.5rem" : "2rem",
+              width: "100%",
             }}
           >
             {/* Logo */}
-            <div style={{ position: "absolute", left: "2rem" }}>
+            <div style={{ 
+              position: isMobile ? "relative" : "absolute", 
+              left: isMobile ? "0" : "2rem",
+              width: isMobile ? "100%" : "auto",
+            }}>
               <Link href="/">
                 <img
                   src="/logo.png"
@@ -928,30 +1593,39 @@ export default function HomePage() {
               </Link>
             </div>
 
-{/* Navigation */}
-         <nav style={{ display: "flex", gap: "2rem", fontSize: "0.9rem" }}>
-  <Link href="/about" style={{ color: "#666", textDecoration: "none" }}>
-    About
-  </Link>
-  <Link href="/blogs" style={{ color: "#666", textDecoration: "none" }}>
-    Blog Posts
-  </Link>
-  <Link href="/faq" style={{ color: "#666", textDecoration: "none" }}>
-    FAQ
-  </Link>
-  <Link href="/terms" style={{ color: "#666", textDecoration: "none" }}>
-    Terms & Conditions
-  </Link>
-  <Link href="/privacy-policy" style={{ color: "#666", textDecoration: "none" }}>
-    Privacy Policy
-  </Link>
-</nav>
-
-
-
+            {/* Navigation */}
+            <nav style={{ 
+              display: "flex", 
+              gap: isMobile ? "1rem" : "2rem", 
+              fontSize: "0.9rem",
+              flexDirection: isMobile ? "column" : "row",
+              width: isMobile ? "100%" : "auto",
+              marginLeft: isMobile ? "0" : "auto",
+              marginRight: isMobile ? "0" : "auto",
+            }}>
+              <Link href="/about" style={{ color: "#666", textDecoration: "none" }}>
+                About
+              </Link>
+              <Link href="/blogs" style={{ color: "#666", textDecoration: "none" }}>
+                Blog Posts
+              </Link>
+              <Link href="/faq" style={{ color: "#666", textDecoration: "none" }}>
+                FAQ
+              </Link>
+              <Link href="/terms" style={{ color: "#666", textDecoration: "none" }}>
+                Terms & Conditions
+              </Link>
+              <Link href="/privacy-policy" style={{ color: "#666", textDecoration: "none" }}>
+                Privacy Policy
+              </Link>
+            </nav>
 
             {/* Social Icons */}
-            <div style={{ display: "flex", gap: "1rem" }}>
+            <div style={{ 
+              display: "flex", 
+              gap: "1rem",
+              width: isMobile ? "100%" : "auto",
+            }}>
               <a href="#" style={{ color: "#666", fontSize: "1.2rem" }}>
                 <i className="fab fa-facebook"></i>
               </a>
@@ -968,6 +1642,22 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Global CSS fixes for horizontal scroll */}
+      {/* <style jsx global>{`
+        * {
+          box-sizing: border-box;
+        }
+        
+        html, body {
+          overflow-x: hidden;
+          width: 100%;
+          margin: 0;
+          padding: 0;
+        }
+      `}</style> */}
+
+    
     </>
   );
 }

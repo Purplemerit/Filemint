@@ -11,26 +11,26 @@ export default function MergePdfPage() {
   const router = useRouter();
 
   // ✅ Redirect if not logged in
-  useEffect(() => {
-    if (!isLoading && !token) {
-      router.push("/login");
-    }
-  }, [isLoading, token, router]);
+  // useEffect(() => {
+  //   if (!isLoading && !token) {
+  //     router.push("/login");
+  //   }
+  // }, [isLoading, token, router]);
 
-  if (isLoading || !token) {
-    return (
-      <div
-        style={{
-          textAlign: "center",
-          marginTop: "5rem",
-          fontSize: "1.5rem",
-          fontWeight: "bold",
-        }}
-      >
-        Checking authentication...
-      </div>
-    );
-  }
+  // if (isLoading || !token) {
+  //   return (
+  //     <div
+  //       style={{
+  //         textAlign: "center",
+  //         marginTop: "5rem",
+  //         fontSize: "1.5rem",
+  //         fontWeight: "bold",
+  //       }}
+  //     >
+  //       Checking authentication...
+  //     </div>
+  //   );
+  // }
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files).filter((file) =>

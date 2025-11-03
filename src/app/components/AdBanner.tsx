@@ -62,7 +62,7 @@ const AdBanner = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: '20px',
+        marginTop: '10px',
       }}
     />
   );
