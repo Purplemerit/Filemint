@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import connectMongo from "@/app/routes/mongo";
-import User from "@/app/models/user";
+import connectMongo from "../../../../app/routes/mongo";
+import User from "../../../../app/models/user";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 

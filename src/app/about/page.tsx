@@ -55,23 +55,61 @@ const AboutPage = () => {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gap: "1.5rem",
             marginTop: "3rem",
           }}
+          className="features-grid"
         >
+          <style>{`
+            @media (min-width: 768px) {
+              .features-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+              }
+              .feature-tall {
+                grid-row: span 2 !important;
+              }
+              .feature-wide {
+                grid-column: span 2 !important;
+              }
+            }
+            @media (max-width: 767px) {
+              .features-grid > div {
+                grid-column: 1 !important;
+                grid-row: auto !important;
+              }
+            }
+          `}</style>
+          {/* Row 1 - First 2 cards */}
           <div
             style={{
-              backgroundColor: "#FEC18C",
-              padding: "1.5rem",
+              backgroundColor: "#FFDCC8",
+              padding: "2rem",
               borderRadius: "1rem",
               textAlign: "left",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem",
             }}
           >
-            <h2 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+              
+                borderRadius: "12px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "24px",
+              }}
+            >
+             <img src={"./images/image1.svg"}/>
+            </div>
+            <h2 style={{ fontSize: "1.25rem", marginBottom: "0.25rem", fontWeight: "600" }}>
               Smart Conversion Tools
             </h2>
-            <p style={{ lineHeight: 1.5, color: "#333" }}>
+            <p style={{ lineHeight: 1.6, color: "#333", fontSize: "0.95rem" }}>
               Convert PDFs, images, Word docs, and more using powerful and
               secure algorithms — no formatting loss, no hassle.
             </p>
@@ -79,53 +117,125 @@ const AboutPage = () => {
 
           <div
             style={{
-              backgroundColor: "#A4F7D2",
-              padding: "1.5rem",
+              backgroundColor: "#C8F4E3",
+              padding: "2rem",
               borderRadius: "1rem",
               textAlign: "left",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem",
             }}
           >
-            <h2 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+               
+                borderRadius: "12px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "24px",
+              }}
+            >
+             <img src={"./images/image2.svg"}/>
+            </div>
+            <h2 style={{ fontSize: "1.25rem", marginBottom: "0.25rem", fontWeight: "600" }}>
               Privacy First
             </h2>
-            <p style={{ lineHeight: 1.5, color: "#333" }}>
+            <p style={{ lineHeight: 1.6, color: "#333", fontSize: "0.95rem" }}>
               We don't store your files. All uploads are encrypted and
               auto-deleted within hours. Your data stays yours — always.
             </p>
           </div>
 
+          {/* Built for Everyone - Spans 2 rows */}
           <div
+            className="feature-tall"
             style={{
-              backgroundColor: "#C6D8FE",
-              padding: "1.5rem",
+              backgroundColor: "#D9E9FF",
+              padding: "2rem",
               borderRadius: "1rem",
               textAlign: "left",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem",
             }}
           >
-            <h2 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                
+                borderRadius: "12px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "24px",
+              }}
+            >
+             <img src={"./images/image3.svg"}/>
+            </div>
+            <h2 style={{ fontSize: "1.25rem", marginBottom: "0.25rem", fontWeight: "600" }}>
               Built for Everyone
             </h2>
-            <p style={{ lineHeight: 1.5, color: "#333" }}>
-              From students to professionals, FileMint is designed for
-              streamlined workflows. Convert exams, merge invoices, or make
-              scanned images editable — all in one place.
+            <p style={{ lineHeight: 1.6, color: "#333", fontSize: "0.95rem", marginBottom: "auto" }}>
+              From students to professionals, FileMint is designed for real-world workflows.
+              Compress a report before emailing, merge invoices in a click, or convert scanned
+              images into editable documents.
             </p>
+            <div style={{ 
+              width: "100%",
+              height: "250px",
+              
+              borderRadius: "12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: "1rem",
+            }}>
+              <div style={{ 
+                fontSize: "80px",
+                opacity: 0.5,
+              }}>
+                <img src={"./images/main.svg"}/>
+              </div>
+            </div>
           </div>
 
+          {/* Row 2 - Cloud-Ready card spanning 2 columns */}
           <div
+            className="feature-wide"
             style={{
-              backgroundColor: "#F1CCF7",
-              padding: "1.5rem",
+              backgroundColor: "#E8D9FF",
+              padding: "2rem",
               borderRadius: "1rem",
               textAlign: "left",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem",
             }}
           >
-            <h2 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+               
+                borderRadius: "12px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "24px",
+              }}
+            >
+             <img src={"./images/image4.svg"}/>
+            </div>
+            <h2 style={{ fontSize: "1.25rem", marginBottom: "0.25rem", fontWeight: "600" }}>
               Cloud-Ready
             </h2>
-            <p style={{ lineHeight: 1.5, color: "#333" }}>
-              Seamlessly import and export from Google Drive, Dropbox, or
-              OneDrive — no more downloads or reuploads.
+            <p style={{ lineHeight: 1.6, color: "#333", fontSize: "0.95rem" }}>
+              Seamlessly import and export from Google Drive, Dropbox, or OneDrive. No more downloads and reuploads —
+              just convert directly from your cloud.
             </p>
           </div>
         </div>

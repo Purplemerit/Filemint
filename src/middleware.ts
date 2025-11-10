@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const publicPaths = ["/", "/login", "/signup", "/about", "/blogs"];
+  const publicPaths = ["/", "/login", "/signup", "/about", "/blogs", "/404"];
   const { pathname } = req.nextUrl;
 
   // If it's a public page, allow
@@ -10,13 +10,16 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Middleware can't access localStorage, so just skip if no cookie
-  // Instead, client-side (your AuthContext) handles redirect if no token
+  // Allow /admin to pass through (will be protected client-side)
+  if (pathname.startsWith('/admin')) {
+    return NextResponse.next();
+  }
+
+  // For other protected routes, just continue
+  // Your AuthContext handles the actual authentication
   const token = req.cookies.get("token")?.value;
 
   if (!token) {
-    // Just redirect to login if not token (cookie-based only)
-    // Since you’re not using cookies, this block basically does nothing now
     return NextResponse.next();
   }
 
