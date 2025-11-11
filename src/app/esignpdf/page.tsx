@@ -9,27 +9,6 @@ export default function ESignPdfPage() {
   const { token, isLoading } = useAuth();
   const router = useRouter();
 
-  // ✅ Redirect if not logged in
-  // useEffect(() => {
-  //   if (!isLoading && !token) {
-  //     router.push("/login");
-  //   }
-  // }, [isLoading, token, router]);
-
-  // if (isLoading || !token) {
-  //   return (
-  //     <div
-  //       style={{
-  //         textAlign: "center",
-  //         marginTop: "5rem",
-  //         fontSize: "1.5rem",
-  //         fontWeight: "bold",
-  //       }}
-  //     >
-  //       Checking authentication...
-  //     </div>
-  //   );
-  // }
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [isSigningMode, setIsSigningMode] = useState(false);
@@ -70,7 +49,7 @@ useEffect(() => {
   document.head.appendChild(script);
 
   return () => {
-    document.head.removeChild(script); // now this returns void
+    document.head.removeChild(script);
   };
 }, []);
 
@@ -102,7 +81,6 @@ useEffect(() => {
       setPdfDoc(pdf);
       setTotalPages(pdf.numPages);
 
-      // Render all pages
       const canvases: HTMLCanvasElement[] = [];
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
@@ -155,7 +133,7 @@ useEffect(() => {
 
     let accumulatedHeight = 0;
     for (let i = 0; i < canvasRefs.current.length; i++) {
-      const pageHeight = canvasRefs.current[i].height + 20; // 20px margin between pages
+      const pageHeight = canvasRefs.current[i].height + 20;
       if (y <= accumulatedHeight + pageHeight) {
         return i + 1;
       }
@@ -216,7 +194,6 @@ useEffect(() => {
     }
 
     try {
-      // Load PDF-lib
       const script = document.createElement("script");
       script.src =
         "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js";
@@ -229,30 +206,25 @@ useEffect(() => {
       // @ts-ignore
       const { PDFDocument, rgb } = window.PDFLib;
 
-      // Read the original PDF
       const arrayBuffer = await pdfFile!.arrayBuffer();
       const pdfDocLib = await PDFDocument.load(arrayBuffer);
       const pages = pdfDocLib.getPages();
 
-      // Add signatures to each page
       for (const signature of signatures) {
         const page = pages[signature.page - 1];
         const { height: pageHeight } = page.getSize();
 
-        // Convert coordinates (PDF.js uses different coordinate system than PDF-lib)
         const pdfX = signature.x;
         const pdfY = pageHeight - signature.y - signature.height;
 
         if (signature.type === "text") {
-          // Add text signature
           page.drawText(signature.content, {
             x: pdfX,
             y: pdfY,
             size: 20,
-            color: rgb(0, 0, 1), // Blue color
+            color: rgb(0, 0, 1),
           });
         } else {
-          // Add image signature
           try {
             const imageBytes = await fetch(signature.content).then((res) =>
               res.arrayBuffer()
@@ -273,10 +245,8 @@ useEffect(() => {
         }
       }
 
-      // Generate the signed PDF
       const pdfBytes = await pdfDocLib.save();
 
-      // Download the file
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -319,15 +289,57 @@ useEffect(() => {
   if (isSigningMode) {
     return (
       <div>
+        <style>{`
+          @media (max-width: 768px) {
+            .header-controls-sign {
+              flex-direction: column !important;
+              gap: 1rem !important;
+            }
+            .header-controls-sign > * {
+              width: 100% !important;
+            }
+            .main-container-sign {
+              flex-direction: column !important;
+            }
+            .signature-panel {
+              width: 100% !important;
+              position: static !important;
+              margin-bottom: 1.5rem;
+            }
+            .zoom-controls {
+              flex-direction: row !important;
+            }
+            .pdf-viewer-sign {
+              height: 500px !important;
+            }
+          }
+          @media (max-width: 480px) {
+            .signature-panel {
+              padding: 1rem !important;
+            }
+            .zoom-controls button {
+              font-size: 0.85rem !important;
+              padding: 0.4rem !important;
+            }
+            .pdf-viewer-sign {
+              height: 400px !important;
+              padding: 10px !important;
+            }
+          }
+        `}</style>
+        
         <div
-          style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 2rem" }}
+          style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1rem" }}
         >
           <div
+            className="header-controls-sign"
             style={{
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
               marginBottom: "2rem",
+              gap: "1rem",
+              flexWrap: "wrap",
             }}
           >
             <button
@@ -339,12 +351,13 @@ useEffect(() => {
                 padding: "0.6rem 1.2rem",
                 borderRadius: "5px",
                 cursor: "pointer",
-                fontSize: "1rem",
+                fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
+                minWidth: "100px",
               }}
             >
               ← Back
             </button>
-            <h1 style={{ fontSize: "1.5rem", margin: 0 }}>Sign Your PDF</h1>
+            <h1 style={{ fontSize: "clamp(1.2rem, 4vw, 1.5rem)", margin: 0 }}>Sign Your PDF</h1>
             <button
               onClick={downloadSignedPdf}
               style={{
@@ -354,16 +367,18 @@ useEffect(() => {
                 padding: "0.6rem 1.2rem",
                 borderRadius: "5px",
                 cursor: "pointer",
-                fontSize: "1rem",
+                fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
+                minWidth: "100px",
               }}
             >
-              Download Signed PDF
+              Download PDF
             </button>
           </div>
 
-          <div style={{ display: "flex", gap: "2rem" }}>
+          <div className="main-container-sign" style={{ display: "flex", gap: "2rem" }}>
             {/* Signature Tools Panel */}
             <div
+              className="signature-panel"
               style={{
                 width: "300px",
                 backgroundColor: "#f8f9fa",
@@ -374,13 +389,13 @@ useEffect(() => {
                 top: "2rem",
               }}
             >
-              <h3 style={{ marginTop: 0, marginBottom: "1.5rem" }}>
+              <h3 style={{ marginTop: 0, marginBottom: "1.5rem", fontSize: "clamp(1rem, 3vw, 1.17rem)" }}>
                 Signature Tools
               </h3>
 
               {/* Text Signature */}
               <div style={{ marginBottom: "2rem" }}>
-                <h4 style={{ marginBottom: "0.5rem" }}>Text Signature</h4>
+                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Text Signature</h4>
                 <input
                   type="text"
                   placeholder="Type your signature"
@@ -392,7 +407,7 @@ useEffect(() => {
                     border: "1px solid #ccc",
                     borderRadius: "5px",
                     marginBottom: "0.5rem",
-                    fontSize: "1rem",
+                    fontSize: "clamp(0.85rem, 2.5vw, 1rem)",
                     boxSizing: "border-box",
                   }}
                 />
@@ -408,7 +423,7 @@ useEffect(() => {
                       textAlign: "center",
                       cursor: "grab",
                       fontFamily: "cursive",
-                      fontSize: "1.2rem",
+                      fontSize: "clamp(1rem, 3vw, 1.2rem)",
                       color: "#007bff",
                     }}
                   >
@@ -418,8 +433,8 @@ useEffect(() => {
               </div>
 
               {/* Image Signature */}
-              <div>
-                <h4 style={{ marginBottom: "0.5rem" }}>Image Signature</h4>
+              <div style={{ marginBottom: "2rem" }}>
+                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Image Signature</h4>
                 <input
                   type="file"
                   accept="image/*"
@@ -437,6 +452,7 @@ useEffect(() => {
                     borderRadius: "5px",
                     cursor: "pointer",
                     marginBottom: "0.5rem",
+                    fontSize: "clamp(0.85rem, 2.5vw, 1rem)",
                   }}
                 >
                   Upload Signature Image
@@ -468,9 +484,9 @@ useEffect(() => {
               </div>
 
               {/* Zoom Controls */}
-              <div style={{ marginTop: "2rem" }}>
-                <h4 style={{ marginBottom: "0.5rem" }}>Zoom</h4>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
+              <div>
+                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Zoom</h4>
+                <div className="zoom-controls" style={{ display: "flex", gap: "0.5rem" }}>
                   <button
                     onClick={() => setScale(Math.max(0.5, scale - 0.25))}
                     style={{
@@ -481,6 +497,7 @@ useEffect(() => {
                       borderRadius: "3px",
                       cursor: "pointer",
                       flex: 1,
+                      fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                     }}
                   >
                     Zoom Out
@@ -495,6 +512,7 @@ useEffect(() => {
                       borderRadius: "3px",
                       cursor: "pointer",
                       flex: 1,
+                      fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                     }}
                   >
                     Zoom In
@@ -504,7 +522,7 @@ useEffect(() => {
                   style={{
                     textAlign: "center",
                     marginTop: "0.5rem",
-                    fontSize: "0.9rem",
+                    fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                   }}
                 >
                   {Math.round(scale * 100)}%
@@ -517,7 +535,7 @@ useEffect(() => {
                   padding: "1rem",
                   backgroundColor: "#e3f2fd",
                   borderRadius: "5px",
-                  fontSize: "0.9rem",
+                  fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                 }}
               >
                 <strong>How to use:</strong>
@@ -533,11 +551,12 @@ useEffect(() => {
             </div>
 
             {/* PDF Viewer */}
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div
                 ref={containerRef}
                 onDrop={handlePdfDrop}
                 onDragOver={(e) => e.preventDefault()}
+                className="pdf-viewer-sign"
                 style={{
                   position: "relative",
                   border: "2px solid #dee2e6",
@@ -564,6 +583,7 @@ useEffect(() => {
                         boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
                         backgroundColor: "white",
                         position: "relative",
+                        maxWidth: "100%",
                       }}
                     >
                       <canvas
@@ -577,7 +597,7 @@ useEffect(() => {
                             }
                           }
                         }}
-                        style={{ display: "block" }}
+                        style={{ display: "block", maxWidth: "100%", height: "auto" }}
                       />
                     </div>
                   </div>
@@ -609,7 +629,7 @@ useEffect(() => {
                         <span
                           style={{
                             fontFamily: "cursive",
-                            fontSize: "1.1rem",
+                            fontSize: "clamp(0.9rem, 2.5vw, 1.1rem)",
                             color: "#007bff",
                             textAlign: "center",
                           }}
@@ -667,7 +687,7 @@ useEffect(() => {
                       alignItems: "center",
                       justifyContent: "center",
                       zIndex: 5,
-                      fontSize: "1.2rem",
+                      fontSize: "clamp(1rem, 3vw, 1.2rem)",
                       color: "#007bff",
                       fontWeight: "bold",
                     }}
@@ -683,7 +703,7 @@ useEffect(() => {
                       alignItems: "center",
                       justifyContent: "center",
                       height: "100%",
-                      fontSize: "1.2rem",
+                      fontSize: "clamp(1rem, 3vw, 1.2rem)",
                       color: "#666",
                     }}
                   >
@@ -701,19 +721,37 @@ useEffect(() => {
   return (
     <div>
       <Navbar />
+      <style>{`
+        @media (max-width: 768px) {
+          .upload-container-sign {
+            padding: 2rem 1rem !important;
+          }
+          .file-info-sign {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 0.5rem;
+          }
+        }
+        @media (max-width: 480px) {
+          .upload-container-sign {
+            padding: 1.5rem 0.75rem !important;
+          }
+        }
+      `}</style>
       <div
-        style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 2rem" }}
+        style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 1rem" }}
       >
-        <h1 style={{ fontSize: "2rem", marginBottom: "2rem" }}>E Sign PDF</h1>
+        <h1 style={{ fontSize: "clamp(1.5rem, 5vw, 2rem)", marginBottom: "2rem" }}>E Sign PDF</h1>
 
         <div
+          className="upload-container-sign"
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           style={{
             border: "2px dashed #ADD8E6",
             backgroundColor: "#f0f8ff",
             borderRadius: "10px",
-            padding: "4rem",
+            padding: "4rem 2rem",
             textAlign: "center",
             marginBottom: "2rem",
             position: "relative",
@@ -721,9 +759,9 @@ useEffect(() => {
         >
           <i
             className="fas fa-file-signature"
-            style={{ fontSize: "3rem", color: "#888" }}
+            style={{ fontSize: "clamp(2rem, 8vw, 3rem)", color: "#888" }}
           ></i>
-          <p style={{ marginTop: "1rem", marginBottom: "1rem" }}>
+          <p style={{ marginTop: "1rem", marginBottom: "1rem", fontSize: "clamp(0.95rem, 3vw, 1.1rem)" }}>
             Drag and drop a PDF file to sign
           </p>
           <label
@@ -735,6 +773,7 @@ useEffect(() => {
               borderRadius: "5px",
               cursor: "pointer",
               display: "inline-block",
+              fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
             }}
           >
             Select PDF
@@ -751,6 +790,7 @@ useEffect(() => {
         {pdfFile && (
           <div style={{ marginBottom: "2rem" }}>
             <div
+              className="file-info-sign"
               style={{
                 backgroundColor: "#f9f9f9",
                 padding: "0.75rem 1rem",
@@ -758,9 +798,10 @@ useEffect(() => {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                gap: "1rem",
               }}
             >
-              <span>
+              <span style={{ fontSize: "clamp(0.9rem, 2.5vw, 1rem)", wordBreak: "break-word" }}>
                 <i
                   className="fas fa-file-pdf"
                   style={{ color: "#c00", marginRight: "0.5rem" }}
@@ -777,7 +818,8 @@ useEffect(() => {
                   border: "none",
                   color: "#c00",
                   cursor: "pointer",
-                  fontSize: "1rem",
+                  fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
+                  flexShrink: 0,
                 }}
               >
                 <i className="fas fa-trash-alt"></i>
@@ -794,7 +836,8 @@ useEffect(() => {
                 padding: "0.6rem 1.2rem",
                 borderRadius: "5px",
                 cursor: "pointer",
-                fontSize: "1rem",
+                fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
+                width: "100%",
               }}
             >
               <i
@@ -813,7 +856,7 @@ useEffect(() => {
             backgroundColor: "#f0f9ff",
             border: "1px solid #cce5ff",
             borderRadius: "10px",
-            fontSize: "0.95rem",
+            fontSize: "clamp(0.85rem, 2vw, 0.95rem)",
           }}
         >
           <strong>Secure. Easy. Digital Signing.</strong>

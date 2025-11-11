@@ -8,27 +8,6 @@ export default function DeletePdfPagesPage() {
   const { token, isLoading } = useAuth();
   const router = useRouter();
 
-  // ✅ Redirect if not logged in
-  // useEffect(() => {
-  //   if (!isLoading && !token) {
-  //     router.push("/login");
-  //   }
-  // }, [isLoading, token, router]);
-
-  // if (isLoading || !token) {
-  //   return (
-  //     <div
-  //       style={{
-  //         textAlign: "center",
-  //         marginTop: "5rem",
-  //         fontSize: "1.5rem",
-  //         fontWeight: "bold",
-  //       }}
-  //     >
-  //       Checking authentication...
-  //     </div>
-  //   );
-  // }
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [isEditingMode, setIsEditingMode] = useState(false);
@@ -56,7 +35,7 @@ export default function DeletePdfPagesPage() {
     document.head.appendChild(script);
 
     return () => {
-      document.head.removeChild(script); // now this returns void
+      document.head.removeChild(script);
     };
   }, []);
 
@@ -92,7 +71,7 @@ export default function DeletePdfPagesPage() {
       const images: string[] = [];
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 0.8 }); // Smaller scale for thumbnails
+        const viewport = page.getViewport({ scale: 0.8 });
 
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
@@ -171,7 +150,6 @@ export default function DeletePdfPagesPage() {
     try {
       setIsProcessing(true);
 
-      // Load PDF-lib
       const script = document.createElement("script");
       script.src =
         "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js";
@@ -184,29 +162,23 @@ export default function DeletePdfPagesPage() {
       // @ts-ignore
       const { PDFDocument } = window.PDFLib;
 
-      // Read the original PDF
       const arrayBuffer = await pdfFile!.arrayBuffer();
       const pdfDocLib = await PDFDocument.load(arrayBuffer);
 
-      // Create new PDF with remaining pages
       const newPdf = await PDFDocument.create();
 
-      // Get pages to keep (not selected for deletion)
       const pagesToKeep: number[] = [];
       for (let i = 1; i <= totalPages; i++) {
         if (!selectedPages.has(i)) {
-          pagesToKeep.push(i - 1); // Convert to 0-based index
+          pagesToKeep.push(i - 1);
         }
       }
 
-      // Copy pages that are not selected for deletion
       const copiedPages = await newPdf.copyPages(pdfDocLib, pagesToKeep);
       copiedPages.forEach((page:any) => newPdf.addPage(page));
 
-      // Generate the modified PDF
       const pdfBytes = await newPdf.save();
 
-      // Download the file
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -241,13 +213,48 @@ export default function DeletePdfPagesPage() {
 
   if (isEditingMode) {
     return (
-      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 2rem" }}>
+      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1rem" }}>
+        <style>{`
+          @media (max-width: 768px) {
+            .header-controls-delete {
+              flex-direction: column !important;
+              gap: 1rem !important;
+            }
+            .header-controls-delete > * {
+              width: 100% !important;
+            }
+            .main-container-delete {
+              flex-direction: column !important;
+            }
+            .control-panel-delete {
+              width: 100% !important;
+              position: static !important;
+              margin-bottom: 1.5rem;
+            }
+            .page-grid-delete {
+              grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+            }
+          }
+          @media (max-width: 480px) {
+            .page-grid-delete {
+              grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+              gap: 0.75rem !important;
+            }
+            .control-panel-delete {
+              padding: 1rem !important;
+            }
+          }
+        `}</style>
+        
         <div
+          className="header-controls-delete"
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             marginBottom: "2rem",
+            gap: "1rem",
+            flexWrap: "wrap",
           }}
         >
           <button
@@ -259,12 +266,13 @@ export default function DeletePdfPagesPage() {
               padding: "0.6rem 1.2rem",
               borderRadius: "5px",
               cursor: "pointer",
-              fontSize: "1rem",
+              fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
+              minWidth: "100px",
             }}
           >
             ← Back
           </button>
-          <h1 style={{ fontSize: "1.5rem", margin: 0 }}>Delete PDF Pages</h1>
+          <h1 style={{ fontSize: "clamp(1.2rem, 4vw, 1.5rem)", margin: 0 }}>Delete PDF Pages</h1>
           <button
             onClick={deletePagesAndDownload}
             disabled={selectedPages.size === 0 || isProcessing}
@@ -279,7 +287,8 @@ export default function DeletePdfPagesPage() {
                 selectedPages.size > 0 && !isProcessing
                   ? "pointer"
                   : "not-allowed",
-              fontSize: "1rem",
+              fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
+              minWidth: "100px",
             }}
           >
             {isProcessing
@@ -288,9 +297,10 @@ export default function DeletePdfPagesPage() {
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: "2rem" }}>
+        <div className="main-container-delete" style={{ display: "flex", gap: "2rem" }}>
           {/* Control Panel */}
           <div
+            className="control-panel-delete"
             style={{
               width: "300px",
               backgroundColor: "#f8f9fa",
@@ -301,13 +311,13 @@ export default function DeletePdfPagesPage() {
               top: "2rem",
             }}
           >
-            <h3 style={{ marginTop: 0, marginBottom: "1.5rem" }}>
+            <h3 style={{ marginTop: 0, marginBottom: "1.5rem", fontSize: "clamp(1rem, 3vw, 1.17rem)" }}>
               Page Selection
             </h3>
 
             {/* Selection Mode */}
             <div style={{ marginBottom: "1.5rem" }}>
-              <h4 style={{ marginBottom: "0.5rem" }}>Selection Mode</h4>
+              <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Selection Mode</h4>
               <div
                 style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}
               >
@@ -321,7 +331,7 @@ export default function DeletePdfPagesPage() {
                     padding: "0.4rem 0.8rem",
                     borderRadius: "3px",
                     cursor: "pointer",
-                    fontSize: "0.9rem",
+                    fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                     flex: 1,
                   }}
                 >
@@ -337,7 +347,7 @@ export default function DeletePdfPagesPage() {
                     padding: "0.4rem 0.8rem",
                     borderRadius: "3px",
                     cursor: "pointer",
-                    fontSize: "0.9rem",
+                    fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                     flex: 1,
                   }}
                 >
@@ -349,7 +359,7 @@ export default function DeletePdfPagesPage() {
             {/* Range Selection */}
             {selectMode === "range" && (
               <div style={{ marginBottom: "1.5rem" }}>
-                <h4 style={{ marginBottom: "0.5rem" }}>Select Page Range</h4>
+                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Select Page Range</h4>
                 <div
                   style={{
                     display: "flex",
@@ -372,10 +382,10 @@ export default function DeletePdfPagesPage() {
                       padding: "0.3rem",
                       border: "1px solid #ccc",
                       borderRadius: "3px",
-                      fontSize: "0.9rem",
+                      fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                     }}
                   />
-                  <span>to</span>
+                  <span style={{ fontSize: "clamp(0.8rem, 2vw, 0.9rem)" }}>to</span>
                   <input
                     type="number"
                     placeholder="To"
@@ -390,7 +400,7 @@ export default function DeletePdfPagesPage() {
                       padding: "0.3rem",
                       border: "1px solid #ccc",
                       borderRadius: "3px",
-                      fontSize: "0.9rem",
+                      fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                     }}
                   />
                 </div>
@@ -410,7 +420,7 @@ export default function DeletePdfPagesPage() {
                       rangeStart && rangeEnd && rangeStart <= rangeEnd
                         ? "pointer"
                         : "not-allowed",
-                    fontSize: "0.9rem",
+                    fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                     width: "100%",
                   }}
                 >
@@ -421,7 +431,7 @@ export default function DeletePdfPagesPage() {
 
             {/* Quick Actions */}
             <div style={{ marginBottom: "1.5rem" }}>
-              <h4 style={{ marginBottom: "0.5rem" }}>Quick Actions</h4>
+              <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Quick Actions</h4>
               <div
                 style={{
                   display: "flex",
@@ -438,7 +448,7 @@ export default function DeletePdfPagesPage() {
                     padding: "0.4rem 0.8rem",
                     borderRadius: "3px",
                     cursor: "pointer",
-                    fontSize: "0.9rem",
+                    fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                     flex: 1,
                   }}
                 >
@@ -453,7 +463,7 @@ export default function DeletePdfPagesPage() {
                     padding: "0.4rem 0.8rem",
                     borderRadius: "3px",
                     cursor: "pointer",
-                    fontSize: "0.9rem",
+                    fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                     flex: 1,
                   }}
                 >
@@ -471,13 +481,13 @@ export default function DeletePdfPagesPage() {
                 marginBottom: "1rem",
               }}
             >
-              <div style={{ fontSize: "0.9rem", marginBottom: "0.5rem" }}>
+              <div style={{ fontSize: "clamp(0.8rem, 2vw, 0.9rem)", marginBottom: "0.5rem" }}>
                 <strong>Total Pages:</strong> {totalPages}
               </div>
-              <div style={{ fontSize: "0.9rem", marginBottom: "0.5rem" }}>
+              <div style={{ fontSize: "clamp(0.8rem, 2vw, 0.9rem)", marginBottom: "0.5rem" }}>
                 <strong>Selected for Deletion:</strong> {selectedPages.size}
               </div>
-              <div style={{ fontSize: "0.9rem", color: "#28a745" }}>
+              <div style={{ fontSize: "clamp(0.8rem, 2vw, 0.9rem)", color: "#28a745" }}>
                 <strong>Remaining Pages:</strong>{" "}
                 {totalPages - selectedPages.size}
               </div>
@@ -489,7 +499,7 @@ export default function DeletePdfPagesPage() {
                 backgroundColor: "#fff3cd",
                 padding: "1rem",
                 borderRadius: "5px",
-                fontSize: "0.9rem",
+                fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                 border: "1px solid #ffeaa7",
               }}
             >
@@ -506,7 +516,7 @@ export default function DeletePdfPagesPage() {
           </div>
 
           {/* PDF Pages Grid */}
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             {isProcessing ? (
               <div
                 style={{
@@ -514,7 +524,7 @@ export default function DeletePdfPagesPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   height: "400px",
-                  fontSize: "1.2rem",
+                  fontSize: "clamp(1rem, 3vw, 1.2rem)",
                   color: "#666",
                 }}
               >
@@ -522,6 +532,7 @@ export default function DeletePdfPagesPage() {
               </div>
             ) : (
               <div
+                className="page-grid-delete"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
@@ -570,7 +581,7 @@ export default function DeletePdfPagesPage() {
                         style={{
                           textAlign: "center",
                           marginTop: "0.5rem",
-                          fontSize: "0.9rem",
+                          fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                           fontWeight: "bold",
                           color: isSelected ? "#dc3545" : "#495057",
                         }}
@@ -591,7 +602,7 @@ export default function DeletePdfPagesPage() {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: "0.8rem",
+                            fontSize: "clamp(0.7rem, 2vw, 0.8rem)",
                             fontWeight: "bold",
                           }}
                         >
@@ -612,27 +623,47 @@ export default function DeletePdfPagesPage() {
   return (
     <>
       <Navbar />
+      <style>{`
+        @media (max-width: 768px) {
+          .upload-container-delete-main {
+            padding: 2rem 1rem !important;
+          }
+          .file-info-delete {
+            flex-direction: column !important;
+            gap: 1rem;
+          }
+          .file-info-delete > div:first-child {
+            width: 100%;
+          }
+        }
+        @media (max-width: 480px) {
+          .upload-container-delete-main {
+            padding: 1.5rem 0.75rem !important;
+          }
+        }
+      `}</style>
       <div
-        style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 2rem" }}
+        style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 1rem" }}
       >
-        <h1 style={{ fontSize: "2rem", marginBottom: "2rem" }}>
+        <h1 style={{ fontSize: "clamp(1.5rem, 5vw, 2rem)", marginBottom: "2rem" }}>
           Delete PDF Pages
         </h1>
 
         <div
+          className="upload-container-delete-main"
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           style={{
             border: "2px dashed #dc3545",
             backgroundColor: "#fdf2f2",
             borderRadius: "10px",
-            padding: "4rem",
+            padding: "4rem 2rem",
             textAlign: "center",
             marginBottom: "2rem",
           }}
         >
           <div
-            style={{ fontSize: "3rem", color: "#dc3545", marginBottom: "1rem" }}
+            style={{ fontSize: "clamp(2rem, 8vw, 3rem)", color: "#dc3545", marginBottom: "1rem" }}
           >
             <i className="fa fa-pdf"></i>
             <i className="fa fa-scissors"></i>
@@ -641,7 +672,7 @@ export default function DeletePdfPagesPage() {
             style={{
               marginTop: "1rem",
               marginBottom: "1rem",
-              fontSize: "1.1rem",
+              fontSize: "clamp(0.95rem, 3vw, 1.1rem)",
             }}
           >
             Drag and drop a PDF file to remove pages
@@ -657,7 +688,7 @@ export default function DeletePdfPagesPage() {
               display: "inline-block",
               color: "#dc3545",
               fontWeight: "bold",
-              fontSize: "1rem",
+              fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
             }}
           >
             Select PDF File
@@ -674,6 +705,7 @@ export default function DeletePdfPagesPage() {
         {pdfFile && (
           <div style={{ marginBottom: "2rem" }}>
             <div
+              className="file-info-delete"
               style={{
                 backgroundColor: "#f9f9f9",
                 padding: "1rem",
@@ -682,23 +714,24 @@ export default function DeletePdfPagesPage() {
                 justifyContent: "space-between",
                 alignItems: "center",
                 border: "1px solid #e9ecef",
+                gap: "1rem",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}>
                 <div
                   style={{
-                    fontSize: "1.5rem",
+                    fontSize: "clamp(1.2rem, 4vw, 1.5rem)",
                     color: "#dc3545",
                     marginRight: "0.75rem",
                   }}
                 >
 
                 </div>
-                <div>
-                  <div style={{ fontWeight: "bold", fontSize: "1rem" }}>
+                <div style={{ overflow: "hidden" }}>
+                  <div style={{ fontWeight: "bold", fontSize: "clamp(0.9rem, 2.5vw, 1rem)", wordBreak: "break-word" }}>
                     {pdfFile.name}
                   </div>
-                  <div style={{ fontSize: "0.9rem", color: "#666" }}>
+                  <div style={{ fontSize: "clamp(0.8rem, 2vw, 0.9rem)", color: "#666" }}>
                     {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
                   </div>
                 </div>
@@ -713,8 +746,9 @@ export default function DeletePdfPagesPage() {
                   border: "none",
                   color: "#dc3545",
                   cursor: "pointer",
-                  fontSize: "1.2rem",
+                  fontSize: "clamp(1rem, 3vw, 1.2rem)",
                   padding: "0.5rem",
+                  flexShrink: 0,
                 }}
               >
                 <i className="fa fa-trash" aria-hidden="true"></i>
@@ -731,8 +765,9 @@ export default function DeletePdfPagesPage() {
                 padding: "0.75rem 1.5rem",
                 borderRadius: "5px",
                 cursor: "pointer",
-                fontSize: "1rem",
+                fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
                 fontWeight: "bold",
+                width: "100%",
               }}
             >
               Start Editing Pages
@@ -747,7 +782,7 @@ export default function DeletePdfPagesPage() {
             backgroundColor:  "rgb(253, 242, 242)",
             border: "1px solid red",
             borderRadius: "10px",
-            fontSize: "0.95rem",
+            fontSize: "clamp(0.85rem, 2vw, 0.95rem)",
           }}
         >
           <strong>⚠️ Important:</strong>

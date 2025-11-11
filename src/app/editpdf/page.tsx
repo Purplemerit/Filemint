@@ -1,4 +1,3 @@
-
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -9,27 +8,6 @@ export default function EditPdfPage() {
   const { token, isLoading } = useAuth();
   const router = useRouter();
 
-  // ✅ Redirect if not logged in
-  // useEffect(() => {
-  //   if (!isLoading && !token) {
-  //     router.push("/login");
-  //   }
-  // }, [isLoading, token, router]);
-
-  // if (isLoading || !token) {
-  //   return (
-  //     <div
-  //       style={{
-  //         textAlign: "center",
-  //         marginTop: "5rem",
-  //         fontSize: "1.5rem",
-  //         fontWeight: "bold",
-  //       }}
-  //     >
-  //       Checking authentication...
-  //     </div>
-  //   );
-  // }
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [isEditingMode, setIsEditingMode] = useState(false);
@@ -55,7 +33,7 @@ export default function EditPdfPage() {
   const [startPoint, setStartPoint] = useState<{x: number, y: number} | null>(null);
   const [currentAnnotation, setCurrentAnnotation] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isAnnotating, setIsAnnotating] = useState(false); // New state to control annotation mode
+  const [isAnnotating, setIsAnnotating] = useState(false);
   const pdfViewerRef = useRef<HTMLIFrameElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -111,7 +89,6 @@ export default function EditPdfPage() {
     const y = e.clientY - rect.top;
 
     if (selectedTool === "text") {
-      // Add text annotation
       const newAnnotation = {
         id: Date.now().toString(),
         type: "text" as const,
@@ -126,7 +103,6 @@ export default function EditPdfPage() {
       };
       setAnnotations([...annotations, newAnnotation]);
     } else if (selectedTool === "circle") {
-      // Add circle annotation
       const newAnnotation = {
         id: Date.now().toString(),
         type: "circle" as const,
@@ -208,7 +184,6 @@ export default function EditPdfPage() {
     }
 
     try {
-      // Load PDF-lib
       const script = document.createElement("script");
       script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js";
 
@@ -220,18 +195,15 @@ export default function EditPdfPage() {
       // @ts-ignore
       const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
 
-      // Read the original PDF
       const arrayBuffer = await pdfFile.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       const pages = pdfDoc.getPages();
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-      // Add annotations to pages
       for (const annotation of annotations) {
         const page = pages[annotation.page - 1];
         const { height: pageHeight } = page.getSize();
 
-        // Convert hex color to RGB
         const hexToRgb = (hex: string) => {
           const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
           return result ? {
@@ -244,7 +216,6 @@ export default function EditPdfPage() {
         const color = hexToRgb(annotation.color);
         const rgbColor = rgb(color.r, color.g, color.b);
 
-        // Convert coordinates (browser coordinates to PDF coordinates)
         const pdfX = annotation.x;
         const pdfY = pageHeight - annotation.y - annotation.height;
 
@@ -292,10 +263,8 @@ export default function EditPdfPage() {
         }
       }
 
-      // Generate the edited PDF
       const pdfBytes = await pdfDoc.save();
 
-      // Download the file
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -326,13 +295,66 @@ export default function EditPdfPage() {
 
   if (isEditingMode) {
     return (
-      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 2rem" }}>
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "2rem",
-        }}>
+      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1rem" }}>
+        <style>{`
+          @media (max-width: 768px) {
+            .header-controls-edit {
+              flex-direction: column !important;
+              gap: 1rem !important;
+            }
+            .header-controls-edit > * {
+              width: 100% !important;
+            }
+            .main-container-edit {
+              flex-direction: column !important;
+            }
+            .tools-panel {
+              width: 100% !important;
+              position: static !important;
+              margin-bottom: 1.5rem;
+            }
+            .tool-grid {
+              grid-template-columns: repeat(3, 1fr) !important;
+            }
+            .color-grid {
+              grid-template-columns: repeat(4, 1fr) !important;
+            }
+            .pdf-viewer-container {
+              height: 500px !important;
+            }
+          }
+          @media (max-width: 480px) {
+            .tools-panel {
+              padding: 1rem !important;
+            }
+            .tool-grid {
+              grid-template-columns: repeat(2, 1fr) !important;
+              gap: 0.4rem !important;
+            }
+            .tool-grid button {
+              font-size: 0.8rem !important;
+              padding: 0.4rem !important;
+            }
+            .pdf-viewer-container {
+              height: 400px !important;
+            }
+            .annotations-list {
+              max-height: 150px !important;
+            }
+          }
+        `}</style>
+        
+        <div
+          className="header-controls-edit"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "2rem",
+            gap: "1rem",
+            flexWrap: "wrap",
+          }}
+        >
           <button
             onClick={goBack}
             style={{
@@ -342,12 +364,13 @@ export default function EditPdfPage() {
               padding: "0.6rem 1.2rem",
               borderRadius: "5px",
               cursor: "pointer",
-              fontSize: "1rem",
+              fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
+              minWidth: "100px",
             }}
           >
             ← Back
           </button>
-          <h1 style={{ fontSize: "1.5rem", margin: 0 }}>Edit Your PDF</h1>
+          <h1 style={{ fontSize: "clamp(1.2rem, 4vw, 1.5rem)", margin: 0 }}>Edit Your PDF</h1>
           <button
             onClick={downloadEditedPdf}
             style={{
@@ -357,16 +380,17 @@ export default function EditPdfPage() {
               padding: "0.6rem 1.2rem",
               borderRadius: "5px",
               cursor: "pointer",
-              fontSize: "1rem",
+              fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
+              minWidth: "100px",
             }}
           >
-            Download Edited PDF
+            Download PDF
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: "2rem" }}>
+        <div className="main-container-edit" style={{ display: "flex", gap: "2rem" }}>
           {/* Editing Tools Panel */}
-          <div style={{
+          <div className="tools-panel" style={{
             width: "300px",
             backgroundColor: "#f8f9fa",
             padding: "1.5rem",
@@ -375,7 +399,7 @@ export default function EditPdfPage() {
             position: "sticky",
             top: "2rem",
           }}>
-            <h3 style={{ marginTop: 0, marginBottom: "1.5rem" }}>Editing Tools</h3>
+            <h3 style={{ marginTop: 0, marginBottom: "1.5rem", fontSize: "clamp(1rem, 3vw, 1.17rem)" }}>Editing Tools</h3>
 
             {/* Annotation Mode Toggle */}
             <div style={{ marginBottom: "2rem" }}>
@@ -388,7 +412,7 @@ export default function EditPdfPage() {
                   padding: "0.75rem 1rem",
                   borderRadius: "5px",
                   cursor: "pointer",
-                  fontSize: "1rem",
+                  fontSize: "clamp(0.85rem, 2.5vw, 1rem)",
                   width: "100%",
                   fontWeight: "bold",
                 }}
@@ -396,7 +420,7 @@ export default function EditPdfPage() {
                 {isAnnotating ? "🔒 Exit Annotation Mode" : "✏️ Enter Annotation Mode"}
               </button>
               <p style={{ 
-                fontSize: "0.8rem", 
+                fontSize: "clamp(0.7rem, 2vw, 0.8rem)", 
                 color: "#666", 
                 marginTop: "0.5rem",
                 textAlign: "center"
@@ -408,11 +432,11 @@ export default function EditPdfPage() {
               </p>
             </div>
 
-            {/* Tool Selection - Only show when annotating */}
+            {/* Tool Selection */}
             {isAnnotating && (
               <div style={{ marginBottom: "2rem" }}>
-                <h4 style={{ marginBottom: "0.5rem" }}>Select Tool</h4>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Select Tool</h4>
+                <div className="tool-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                   {tools.map((tool) => (
                     <button
                       key={tool.value}
@@ -424,7 +448,7 @@ export default function EditPdfPage() {
                         padding: "0.5rem",
                         borderRadius: "5px",
                         cursor: "pointer",
-                        fontSize: "0.9rem",
+                        fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -439,10 +463,10 @@ export default function EditPdfPage() {
               </div>
             )}
 
-            {/* Text Input (for text tool) - Only show when annotating */}
+            {/* Text Input */}
             {isAnnotating && selectedTool === "text" && (
               <div style={{ marginBottom: "2rem" }}>
-                <h4 style={{ marginBottom: "0.5rem" }}>Text Content</h4>
+                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Text Content</h4>
                 <input
                   type="text"
                   placeholder="Enter text to add"
@@ -454,12 +478,12 @@ export default function EditPdfPage() {
                     border: "1px solid #ccc",
                     borderRadius: "5px",
                     marginBottom: "0.5rem",
-                    fontSize: "1rem",
+                    fontSize: "clamp(0.85rem, 2.5vw, 1rem)",
                     boxSizing: "border-box",
                   }}
                 />
                 <div style={{ marginBottom: "0.5rem" }}>
-                  <label style={{ fontSize: "0.9rem", marginBottom: "0.3rem", display: "block" }}>
+                  <label style={{ fontSize: "clamp(0.8rem, 2vw, 0.9rem)", marginBottom: "0.3rem", display: "block" }}>
                     Font Size: {fontSize}px
                   </label>
                   <input
@@ -474,11 +498,11 @@ export default function EditPdfPage() {
               </div>
             )}
 
-            {/* Color Selection - Only show when annotating */}
+            {/* Color Selection */}
             {isAnnotating && (
               <div style={{ marginBottom: "2rem" }}>
-                <h4 style={{ marginBottom: "0.5rem" }}>Color</h4>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem" }}>
+                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Color</h4>
+                <div className="color-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem" }}>
                   {colors.map((color) => (
                     <button
                       key={color.value}
@@ -487,9 +511,10 @@ export default function EditPdfPage() {
                         backgroundColor: color.value,
                         border: selectedColor === color.value ? "3px solid #000" : "1px solid #ccc",
                         borderRadius: "5px",
-                        width: "30px",
-                        height: "30px",
+                        width: "100%",
+                        aspectRatio: "1",
                         cursor: "pointer",
+                        minHeight: "30px",
                       }}
                       title={color.name}
                     />
@@ -513,8 +538,8 @@ export default function EditPdfPage() {
 
             {/* Annotations List */}
             <div style={{ marginBottom: "2rem" }}>
-              <h4 style={{ marginBottom: "0.5rem" }}>Annotations ({annotations.length})</h4>
-              <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+              <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Annotations ({annotations.length})</h4>
+              <div className="annotations-list" style={{ maxHeight: "200px", overflowY: "auto" }}>
                 {annotations.map((annotation, index) => (
                   <div
                     key={annotation.id}
@@ -524,19 +549,19 @@ export default function EditPdfPage() {
                       borderRadius: "3px",
                       padding: "0.5rem",
                       marginBottom: "0.5rem",
-                      fontSize: "0.8rem",
+                      fontSize: "clamp(0.75rem, 2vw, 0.8rem)",
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
                     }}
                   >
-                    <div>
+                    <div style={{ overflow: "hidden" }}>
                       <div style={{ fontWeight: "bold" }}>
                         {tools.find(t => t.value === annotation.type)?.icon} {annotation.type}
                       </div>
                       {annotation.content && (
-                        <div style={{ fontSize: "0.7rem", color: "#666" }}>
-                          &quot{annotation.content.substring(0, 20)}...&quot
+                        <div style={{ fontSize: "clamp(0.65rem, 1.8vw, 0.7rem)", color: "#666", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          &quot;{annotation.content.substring(0, 20)}...&quot;
                         </div>
                       )}
                     </div>
@@ -549,7 +574,8 @@ export default function EditPdfPage() {
                         borderRadius: "3px",
                         padding: "2px 6px",
                         cursor: "pointer",
-                        fontSize: "0.7rem",
+                        fontSize: "clamp(0.65rem, 1.8vw, 0.7rem)",
+                        flexShrink: 0,
                       }}
                     >
                       ×
@@ -564,7 +590,7 @@ export default function EditPdfPage() {
               backgroundColor: "#e3f2fd",
               padding: "1rem",
               borderRadius: "5px",
-              fontSize: "0.9rem",
+              fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
             }}>
               <strong>How to use:</strong>
               <br />
@@ -579,8 +605,8 @@ export default function EditPdfPage() {
           </div>
 
           {/* PDF Viewer with Overlay */}
-          <div style={{ flex: 1 }}>
-            <div style={{ position: "relative", height: "800px", border: "2px solid #dee2e6", borderRadius: "10px", overflow: "hidden" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="pdf-viewer-container" style={{ position: "relative", height: "800px", border: "2px solid #dee2e6", borderRadius: "10px", overflow: "hidden" }}>
               {/* PDF Viewer */}
               <iframe
                 ref={pdfViewerRef}
@@ -593,7 +619,7 @@ export default function EditPdfPage() {
                 title="PDF Viewer"
               />
               
-              {/* Annotation Overlay - Only active when annotating */}
+              {/* Annotation Overlay */}
               <div
                 ref={overlayRef}
                 onClick={handleOverlayClick}
@@ -729,25 +755,54 @@ export default function EditPdfPage() {
   return (
     <>
     <Navbar/>
+    <style>{`
+      @media (max-width: 768px) {
+        .upload-container-edit {
+          padding: 2rem 1rem !important;
+        }
+        .file-info-card-edit {
+          flex-direction: column !important;
+          gap: 1rem;
+        }
+        .file-info-card-edit > div:first-child {
+          width: 100%;
+        }
+        .logo-container {
+          gap: 0.5rem !important;
+        }
+        .logo-container img {
+          height: 25px !important;
+        }
+      }
+      @media (max-width: 480px) {
+        .upload-container-edit {
+          padding: 1.5rem 0.75rem !important;
+        }
+        .logo-container {
+          flex-direction: column !important;
+        }
+      }
+    `}</style>
    
-    <div style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 2rem" }}>
-      <h1 style={{ fontSize: "2rem", marginBottom: "2rem" }}>Edit PDF</h1>
+    <div style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 1rem" }}>
+      <h1 style={{ fontSize: "clamp(1.5rem, 5vw, 2rem)", marginBottom: "2rem" }}>Edit PDF</h1>
 
       <div
+        className="upload-container-edit"
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
         style={{
           border: "2px dashed #007bff",
           backgroundColor: "#f0f8ff",
           borderRadius: "10px",
-          padding: "4rem",
+          padding: "4rem 2rem",
           textAlign: "center",
           marginBottom: "2rem",
         }}
       >
-        <div style={{ fontSize: "3rem", color: "#007bff", marginBottom: "1rem" }}>
+        <div style={{ fontSize: "clamp(2rem, 8vw, 3rem)", color: "#007bff", marginBottom: "1rem" }}>
         </div>
-        <p style={{ marginTop: "1rem", marginBottom: "1rem", fontSize: "1.1rem" }}>
+        <p style={{ marginTop: "1rem", marginBottom: "1rem", fontSize: "clamp(0.95rem, 3vw, 1.1rem)" }}>
           Drag and drop a PDF file to edit
         </p>
         <label
@@ -761,7 +816,7 @@ export default function EditPdfPage() {
             display: "inline-block",
             color: "#007bff",
             fontWeight: "bold",
-            fontSize: "1rem",
+            fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
           }}
         >
           Select PDF File
@@ -777,7 +832,7 @@ export default function EditPdfPage() {
 
       {pdfFile && (
         <div style={{ marginBottom: "2rem" }}>
-          <div style={{
+          <div className="file-info-card-edit" style={{
             backgroundColor: "#f9f9f9",
             padding: "1rem",
             borderRadius: "8px",
@@ -785,16 +840,17 @@ export default function EditPdfPage() {
             justifyContent: "space-between",
             alignItems: "center",
             border: "1px solid #e9ecef",
+            gap: "1rem",
           }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <div style={{ fontSize: "1.5rem", color: "#007bff", marginRight: "0.75rem" }}>
+            <div style={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: "clamp(1.2rem, 4vw, 1.5rem)", color: "#007bff", marginRight: "0.75rem" }}>
                 📄
               </div>
-              <div>
-                <div style={{ fontWeight: "bold", fontSize: "1rem" }}>
+              <div style={{ overflow: "hidden" }}>
+                <div style={{ fontWeight: "bold", fontSize: "clamp(0.9rem, 2.5vw, 1rem)", wordBreak: "break-word" }}>
                   {pdfFile.name}
                 </div>
-                <div style={{ fontSize: "0.9rem", color: "#666" }}>
+                <div style={{ fontSize: "clamp(0.8rem, 2vw, 0.9rem)", color: "#666" }}>
                   {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
                 </div>
               </div>
@@ -809,8 +865,9 @@ export default function EditPdfPage() {
                 border: "none",
                 color: "#dc3545",
                 cursor: "pointer",
-                fontSize: "1.2rem",
+                fontSize: "clamp(1rem, 3vw, 1.2rem)",
                 padding: "0.5rem",
+                flexShrink: 0,
               }}
             >
               🗑️
@@ -827,8 +884,9 @@ export default function EditPdfPage() {
               padding: "0.75rem 1.5rem",
               borderRadius: "5px",
               cursor: "pointer",
-              fontSize: "1rem",
+              fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
               fontWeight: "bold",
+              width: "100%",
             }}
           >
             ✏️ Start Editing
@@ -844,7 +902,7 @@ export default function EditPdfPage() {
             backgroundColor: "#f0f9ff",
             border: "1px solid #cce5ff",
             borderRadius: "10px",
-            fontSize: "0.95rem",
+            fontSize: "clamp(0.85rem, 2vw, 0.95rem)",
           }}
         >
           <strong>Protected. Encrypted. Automatically Deleted.</strong>
@@ -855,6 +913,7 @@ export default function EditPdfPage() {
             hours. Your data stays yours—always.
           </p>
           <div
+            className="logo-container"
             style={{
               marginTop: "1rem",
               display: "flex",

@@ -1,60 +1,31 @@
 "use client";
-// import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "../context/AuthContext";
 import { useState, useRef, useEffect } from "react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import Navbar from "../components/Navbar";
 
 export default function PdfReorderPage() {
-  const { token, isLoading } = useAuth();
-  const router = useRouter();
-
-  // ✅ Redirect if not logged in
-  // useEffect(() => {
-  //   if (!isLoading && !token) {
-  //     router.push("/login");
-  //   }
-  // }, [isLoading, token, router]);
-
-  // if (isLoading || !token) {
-  //   return (
-  //     <div
-  //       style={{
-  //         textAlign: "center",
-  //         marginTop: "5rem",
-  //         fontSize: "1.5rem",
-  //         fontWeight: "bold",
-  //       }}
-  //     >
-  //       Checking authentication...
-  //     </div>
-  //   );
-  // }
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [pdfUrl, setPdfUrl] = useState<string>("");
+  const [pdfFile, setPdfFile] = useState(null);
+  const [pdfUrl, setPdfUrl] = useState("");
   const [isEditingMode, setIsEditingMode] = useState(false);
-  const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
+  const [selectedPages, setSelectedPages] = useState(new Set());
   const [totalPages, setTotalPages] = useState(1);
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const [pdfDoc, setPdfDoc] = useState(null);
   const [scale, setScale] = useState(1.2);
-  const [pageImages, setPageImages] = useState<string[]>([]);
+  const [pageImages, setPageImages] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectMode, setSelectMode] = useState<"individual" | "range">("individual");
-  const [rangeStart, setRangeStart] = useState<number | null>(null);
-  const [rangeEnd, setRangeEnd] = useState<number | null>(null);
-  const [pageOrder, setPageOrder] = useState<number[]>([]);
-  const [downloadOption, setDownloadOption] = useState<"selected" | "non-selected" | "reorder">("selected");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectMode, setSelectMode] = useState("individual");
+  const [rangeStart, setRangeStart] = useState(null);
+  const [rangeEnd, setRangeEnd] = useState(null);
+  const [pageOrder, setPageOrder] = useState([]);
+  const [downloadOption, setDownloadOption] = useState("selected");
+  const fileInputRef = useRef(null);
 
   // Load PDF.js
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-    script.onload =()=> {
-      // @ts-ignore
+    script.onload = () => {
       window.pdfjsLib.GlobalWorkerOptions.workerSrc =
         "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
     };
@@ -65,7 +36,7 @@ export default function PdfReorderPage() {
     };
   }, []);
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file && file.type === "application/pdf") {
@@ -75,7 +46,7 @@ export default function PdfReorderPage() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file && file.type === "application/pdf") {
       setPdfFile(file);
@@ -84,17 +55,16 @@ export default function PdfReorderPage() {
     }
   };
 
-  const loadPdf = async (url: string) => {
+  const loadPdf = async (url) => {
     try {
       setIsProcessing(true);
-      // @ts-ignore
       const loadingTask = window.pdfjsLib.getDocument(url);
       const pdf = await loadingTask.promise;
       setPdfDoc(pdf);
       setTotalPages(pdf.numPages);
       setPageOrder(Array.from({ length: pdf.numPages }, (_, i) => i + 1));
 
-      const images: string[] = [];
+      const images = [];
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const viewport = page.getViewport({ scale: 0.8 });
@@ -127,7 +97,7 @@ export default function PdfReorderPage() {
     }
   };
 
-  const togglePageSelection = (pageNum: number) => {
+  const togglePageSelection = (pageNum) => {
     const newSelected = new Set(selectedPages);
     if (newSelected.has(pageNum)) {
       newSelected.delete(pageNum);
@@ -143,14 +113,14 @@ export default function PdfReorderPage() {
       for (let i = rangeStart; i <= rangeEnd; i++) {
         newSelected.add(i);
       }
-  setSelectedPages(newSelected);
+      setSelectedPages(newSelected);
       setRangeStart(null);
       setRangeEnd(null);
     }
   };
 
   const selectAllPages = () => {
-    const allPages = new Set<number>();
+    const allPages = new Set();
     for (let i = 1; i <= totalPages; i++) {
       allPages.add(i);
     }
@@ -168,7 +138,7 @@ export default function PdfReorderPage() {
     })
   );
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event) => {
     const { active, over } = event;
     if (active.id !== over.id) {
       setPageOrder((items) => {
@@ -179,7 +149,7 @@ export default function PdfReorderPage() {
     }
   };
 
-  const SortablePage = ({ pageNum, imageUrl, index }: { pageNum: number; imageUrl: string; index: number }) => {
+  const SortablePage = ({ pageNum, imageUrl, index }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: pageNum.toString() });
     const isSelected = selectedPages.has(pageNum);
 
@@ -189,7 +159,7 @@ export default function PdfReorderPage() {
       padding: "0.5rem",
       backgroundColor: isSelected ? "#f8d7da" : "white",
       cursor: selectMode === "individual" ? "pointer" : "move",
-      position: "relative" as const,
+      position: "relative",
       boxShadow: isSelected ? "0 4px 12px rgba(220, 53, 69, 0.3)" : "0 2px 4px rgba(0,0,0,0.1)",
       transform: CSS.Transform.toString(transform),
       transition,
@@ -234,7 +204,7 @@ export default function PdfReorderPage() {
               backgroundColor: "#dc3545",
               color: "white",
               borderRadius: "50%",
-              width: "24oboserver24px",
+              width: "24px",
               height: "24px",
               display: "flex",
               alignItems: "center",
@@ -265,13 +235,12 @@ export default function PdfReorderPage() {
         document.head.appendChild(script);
       });
 
-      // @ts-ignore
       const { PDFDocument } = window.PDFLib;
-      const arrayBuffer = await pdfFile!.arrayBuffer();
+      const arrayBuffer = await pdfFile.arrayBuffer();
       const originalPdf = await PDFDocument.load(arrayBuffer);
       const newPdf = await PDFDocument.create();
 
-      let pagesToCopy: number[];
+      let pagesToCopy;
       if (downloadOption === "reorder") {
         pagesToCopy = pageOrder.map((pageNum) => pageNum - 1);
       } else {
@@ -283,14 +252,14 @@ export default function PdfReorderPage() {
       }
 
       const copiedPages = await newPdf.copyPages(originalPdf, pagesToCopy);
-      copiedPages.forEach((page: any) => newPdf.addPage(page));
+      copiedPages.forEach((page) => newPdf.addPage(page));
 
       const pdfBytes = await newPdf.save();
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${downloadOption}_${pdfFile!.name}`;
+      a.download = `${downloadOption}_${pdfFile.name}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -325,16 +294,62 @@ export default function PdfReorderPage() {
 
   if (isEditingMode) {
     return (
-      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 2rem" }}>
+      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1rem" }}>
+        <style>
+          {`
+            @media (max-width: 768px) {
+              .header-container {
+                flex-direction: column !important;
+                gap: 1rem !important;
+                align-items: stretch !important;
+              }
+              .header-title {
+                font-size: 1.2rem !important;
+                text-align: center;
+              }
+              .header-button {
+                width: 100% !important;
+              }
+              .download-options {
+                flex-direction: column !important;
+              }
+              .main-content {
+                flex-direction: column !important;
+              }
+              .control-panel {
+                width: 100% !important;
+                position: static !important;
+                margin-bottom: 1rem !important;
+              }
+              .page-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+              }
+            }
+            @media (max-width: 480px) {
+              .page-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+              }
+              .control-panel h3 {
+                font-size: 1rem !important;
+              }
+              .control-panel h4 {
+                font-size: 0.9rem !important;
+              }
+            }
+          `}
+        </style>
         <div
+          className="header-container"
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             marginBottom: "2rem",
+            marginTop: "1rem",
           }}
         >
           <button
+            className="header-button"
             onClick={goBack}
             style={{
               backgroundColor: "#6c757d",
@@ -348,8 +363,9 @@ export default function PdfReorderPage() {
           >
             ← Back
           </button>
-          <h1 style={{ fontSize: "1.5rem", margin: 0 }}>Reorder PDF Page</h1>
+          <h1 className="header-title" style={{ fontSize: "1.5rem", margin: 0 }}>Reorder PDF Page</h1>
           <button
+            className="header-button"
             onClick={downloadPdf}
             disabled={isProcessing || (downloadOption !== "reorder" && selectedPages.size === 0)}
             style={{
@@ -378,7 +394,7 @@ export default function PdfReorderPage() {
 
         <div style={{ marginBottom: "1.5rem" }}>
           <h4 style={{ marginBottom: "0.5rem" }}>Download Option</h4>
-          <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+          <div className="download-options" style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
             <button
               onClick={() => setDownloadOption("selected")}
               style={{
@@ -427,9 +443,10 @@ export default function PdfReorderPage() {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "2rem" }}>
+        <div className="main-content" style={{ display: "flex", gap: "2rem" }}>
           {/* Control Panel */}
           <div
+            className="control-panel"
             style={{
               width: "300px",
               backgroundColor: "#f8f9fa",
@@ -640,6 +657,7 @@ export default function PdfReorderPage() {
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={pageOrder.map(String)}>
                   <div
+                    className="page-grid"
                     style={{
                       display: "grid",
                       gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
@@ -667,11 +685,37 @@ export default function PdfReorderPage() {
 
   return (
     <>
-      <Navbar />
-      <div style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 2rem" }}>
-        <h1 style={{ fontSize: "2rem", marginBottom: "2rem" }}>Reorder PDF</h1>
+      <style>
+        {`
+          @media (max-width: 768px) {
+            .upload-container {
+              padding: 2rem 1rem !important;
+            }
+            .upload-icon {
+              font-size: 2rem !important;
+            }
+            .upload-text {
+              font-size: 1rem !important;
+            }
+            .main-title {
+              font-size: 1.5rem !important;
+            }
+          }
+          @media (max-width: 480px) {
+            .upload-container {
+              padding: 1.5rem 0.5rem !important;
+            }
+            .main-title {
+              font-size: 1.3rem !important;
+            }
+          }
+        `}
+      </style>
+      <div style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 1rem" }}>
+        <h1 className="main-title" style={{ fontSize: "2rem", marginBottom: "2rem" }}>Reorder PDF</h1>
 
         <div
+          className="upload-container"
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           style={{
@@ -683,11 +727,10 @@ export default function PdfReorderPage() {
             marginBottom: "2rem",
           }}
         >
-          <div style={{ fontSize: "3rem", color: "#dc3545", marginBottom: "1rem" }}>
-            <i className="fa fa-file-pdf"></i>
-            <i className="fa fa-arrows-alt"></i>
+          <div className="upload-icon" style={{ fontSize: "3rem", color: "#dc3545", marginBottom: "1rem" }}>
+            📄
           </div>
-          <p style={{ marginTop: "1rem", marginBottom: "1rem", fontSize: "1.1rem" }}>
+          <p className="upload-text" style={{ marginTop: "1rem", marginBottom: "1rem", fontSize: "1.1rem" }}>
             Drag and drop a PDF file to edit or reorder pages
           </p>
           <label
@@ -726,14 +769,16 @@ export default function PdfReorderPage() {
                 justifyContent: "space-between",
                 alignItems: "center",
                 border: "1px solid #e9ecef",
+                flexWrap: "wrap",
+                gap: "0.5rem",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", flex: "1 1 auto" }}>
                 <div style={{ fontSize: "1.5rem", color: "#dc3545", marginRight: "0.75rem" }}>
-                  <i className="fa fa-file-pdf"></i>
+                  📄
                 </div>
                 <div>
-                  <div style={{ fontWeight: "bold", fontSize: "1rem" }}>{pdfFile.name}</div>
+                  <div style={{ fontWeight: "bold", fontSize: "1rem", wordBreak: "break-word" }}>{pdfFile.name}</div>
                   <div style={{ fontSize: "0.9rem", color: "#666" }}>
                     {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
                   </div>
@@ -753,7 +798,7 @@ export default function PdfReorderPage() {
                   padding: "0.5rem",
                 }}
               >
-                <i className="fa fa-trash" aria-hidden="true"></i>
+                🗑️
               </button>
             </div>
 
@@ -769,6 +814,7 @@ export default function PdfReorderPage() {
                 cursor: "pointer",
                 fontSize: "1rem",
                 fontWeight: "bold",
+                width: "100%",
               }}
             >
               Start Editing Pages

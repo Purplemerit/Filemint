@@ -8,27 +8,6 @@ export default function DeletePdfPagesPage() {
   const { token, isLoading } = useAuth();
   const router = useRouter();
 
-  // ✅ Redirect if not logged in
-  // useEffect(() => {
-  //   if (!isLoading && !token) {
-  //     router.push("/login");
-  //   }
-  // }, [isLoading, token, router]);
-
-  // if (isLoading || !token) {
-  //   return (
-  //     <div
-  //       style={{
-  //         textAlign: "center",
-  //         marginTop: "5rem",
-  //         fontSize: "1.5rem",
-  //         fontWeight: "bold",
-  //       }}
-  //     >
-  //       Checking authentication...
-  //     </div>
-  //   );
-  // }
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [isEditingMode, setIsEditingMode] = useState(false);
@@ -292,13 +271,51 @@ const splitPdfAndDownload = async () => {
 
   if (isEditingMode) {
     return (
-      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 2rem" }}>
+      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1rem" }}>
+        <style>{`
+          @media (max-width: 768px) {
+            .header-controls {
+              flex-direction: column !important;
+              gap: 1rem !important;
+            }
+            .header-controls > * {
+              width: 100% !important;
+            }
+            .main-container {
+              flex-direction: column !important;
+            }
+            .control-panel {
+              width: 100% !important;
+              position: static !important;
+              margin-bottom: 1.5rem;
+            }
+            .download-options {
+              flex-direction: column !important;
+            }
+            .page-grid {
+              grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+            }
+          }
+          @media (max-width: 480px) {
+            .page-grid {
+              grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+              gap: 0.75rem !important;
+            }
+            .control-panel {
+              padding: 1rem !important;
+            }
+          }
+        `}</style>
+        
         <div
+          className="header-controls"
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             marginBottom: "2rem",
+            gap: "1rem",
+            flexWrap: "wrap",
           }}
         >
           <button
@@ -311,11 +328,12 @@ const splitPdfAndDownload = async () => {
               borderRadius: "5px",
               cursor: "pointer",
               fontSize: "1rem",
+              minWidth: "120px",
             }}
           >
             ← Back
           </button>
-          <h1 style={{ fontSize: "1.5rem", margin: 0 }}>Delete PDF Pages</h1>
+          <h1 style={{ fontSize: "clamp(1.2rem, 4vw, 1.5rem)", margin: 0 }}>Delete PDF Pages</h1>
           <button
             onClick={splitPdfAndDownload}
             disabled={selectedPages.size === 0 || isProcessing}
@@ -331,57 +349,60 @@ const splitPdfAndDownload = async () => {
                   ? "pointer"
                   : "not-allowed",
               fontSize: "1rem",
+              minWidth: "120px",
             }}
           >
             {isProcessing
               ? "Processing..."
               : `Delete ${selectedPages.size} Pages`}
           </button>
-          <div style={{ marginBottom: "1.5rem" }}>
-            <h4 style={{ marginBottom: "0.5rem" }}>Download Option</h4>
-            <div
-                style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}
+        </div>
+
+        <div style={{ marginBottom: "1.5rem" }}>
+          <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 3vw, 1rem)" }}>Download Option</h4>
+          <div
+            className="download-options"
+            style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}
+          >
+            <button
+              onClick={() => setDownloadOption("selected")}
+              style={{
+                backgroundColor:
+                  downloadOption === "selected" ? "#007bff" : "white",
+                color: downloadOption === "selected" ? "white" : "#007bff",
+                border: "1px solid #007bff",
+                padding: "0.4rem 0.8rem",
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "0.9rem",
+                flex: 1,
+              }}
             >
-                <button
-                onClick={() => setDownloadOption("selected")}
-                style={{
-                    backgroundColor:
-                    downloadOption === "selected" ? "#007bff" : "white",
-                    color: downloadOption === "selected" ? "white" : "#007bff",
-                    border: "1px solid #007bff",
-                    padding: "0.4rem 0.8rem",
-                    borderRadius: "3px",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    flex: 1,
-                }}
-                >
-                Selected Pages
-                </button>
-                <button
-                onClick={() => setDownloadOption("non-selected")}
-                style={{
-                    backgroundColor:
-                    downloadOption === "non-selected" ? "#007bff" : "white",
-                    color: downloadOption === "non-selected" ? "white" : "#007bff",
-                    border: "1px solid #007bff",
-                    padding: "0.4rem 0.8rem",
-                    borderRadius: "3px",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    flex: 1,
-                }}
-                >
-                Non-selected Pages
-                </button>
-            </div>
-            </div>
+              Selected Pages
+            </button>
+            <button
+              onClick={() => setDownloadOption("non-selected")}
+              style={{
+                backgroundColor:
+                  downloadOption === "non-selected" ? "#007bff" : "white",
+                color: downloadOption === "non-selected" ? "white" : "#007bff",
+                border: "1px solid #007bff",
+                padding: "0.4rem 0.8rem",
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "0.9rem",
+                flex: 1,
+              }}
+            >
+              Non-selected Pages
+            </button>
+          </div>
+        </div>
 
-                    </div>
-
-        <div style={{ display: "flex", gap: "2rem" }}>
+        <div className="main-container" style={{ display: "flex", gap: "2rem" }}>
           {/* Control Panel */}
           <div
+            className="control-panel"
             style={{
               width: "300px",
               backgroundColor: "#f8f9fa",
@@ -392,13 +413,13 @@ const splitPdfAndDownload = async () => {
               top: "2rem",
             }}
           >
-            <h3 style={{ marginTop: 0, marginBottom: "1.5rem" }}>
+            <h3 style={{ marginTop: 0, marginBottom: "1.5rem", fontSize: "clamp(1rem, 3vw, 1.17rem)" }}>
               Page Selection
             </h3>
 
             {/* Selection Mode */}
             <div style={{ marginBottom: "1.5rem" }}>
-              <h4 style={{ marginBottom: "0.5rem" }}>Selection Mode</h4>
+              <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Selection Mode</h4>
               <div
                 style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}
               >
@@ -440,7 +461,7 @@ const splitPdfAndDownload = async () => {
             {/* Range Selection */}
             {selectMode === "range" && (
               <div style={{ marginBottom: "1.5rem" }}>
-                <h4 style={{ marginBottom: "0.5rem" }}>Select Page Range</h4>
+                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Select Page Range</h4>
                 <div
                   style={{
                     display: "flex",
@@ -512,7 +533,7 @@ const splitPdfAndDownload = async () => {
 
             {/* Quick Actions */}
             <div style={{ marginBottom: "1.5rem" }}>
-              <h4 style={{ marginBottom: "0.5rem" }}>Quick Actions</h4>
+              <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Quick Actions</h4>
               <div
                 style={{
                   display: "flex",
@@ -597,7 +618,7 @@ const splitPdfAndDownload = async () => {
           </div>
 
           {/* PDF Pages Grid */}
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             {isProcessing ? (
               <div
                 style={{
@@ -605,7 +626,7 @@ const splitPdfAndDownload = async () => {
                   alignItems: "center",
                   justifyContent: "center",
                   height: "400px",
-                  fontSize: "1.2rem",
+                  fontSize: "clamp(1rem, 3vw, 1.2rem)",
                   color: "#666",
                 }}
               >
@@ -613,6 +634,7 @@ const splitPdfAndDownload = async () => {
               </div>
             ) : (
               <div
+                className="page-grid"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
@@ -703,27 +725,47 @@ const splitPdfAndDownload = async () => {
   return (
     <>
       <Navbar />
+      <style>{`
+        @media (max-width: 768px) {
+          .upload-container {
+            padding: 2rem 1rem !important;
+          }
+          .file-info-card {
+            flex-direction: column !important;
+            gap: 1rem;
+          }
+          .file-info-card > div:first-child {
+            width: 100%;
+          }
+        }
+        @media (max-width: 480px) {
+          .upload-container {
+            padding: 1.5rem 0.75rem !important;
+          }
+        }
+      `}</style>
       <div
-        style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 2rem" }}
+        style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 1rem" }}
       >
-        <h1 style={{ fontSize: "2rem", marginBottom: "2rem" }}>
+        <h1 style={{ fontSize: "clamp(1.5rem, 5vw, 2rem)", marginBottom: "2rem" }}>
           Delete PDF Pages
         </h1>
 
         <div
+          className="upload-container"
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           style={{
             border: "2px dashed #dc3545",
             backgroundColor: "#fdf2f2",
             borderRadius: "10px",
-            padding: "4rem",
+            padding: "4rem 2rem",
             textAlign: "center",
             marginBottom: "2rem",
           }}
         >
           <div
-            style={{ fontSize: "3rem", color: "#dc3545", marginBottom: "1rem" }}
+            style={{ fontSize: "clamp(2rem, 8vw, 3rem)", color: "#dc3545", marginBottom: "1rem" }}
           >
             <i className="fa fa-pdf"></i>
             <i className="fa fa-scissors"></i>
@@ -732,7 +774,7 @@ const splitPdfAndDownload = async () => {
             style={{
               marginTop: "1rem",
               marginBottom: "1rem",
-              fontSize: "1.1rem",
+              fontSize: "clamp(0.95rem, 3vw, 1.1rem)",
             }}
           >
             Drag and drop a PDF file to remove pages
@@ -748,7 +790,7 @@ const splitPdfAndDownload = async () => {
               display: "inline-block",
               color: "#dc3545",
               fontWeight: "bold",
-              fontSize: "1rem",
+              fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
             }}
           >
             Select PDF File
@@ -765,6 +807,7 @@ const splitPdfAndDownload = async () => {
         {pdfFile && (
           <div style={{ marginBottom: "2rem" }}>
             <div
+              className="file-info-card"
               style={{
                 backgroundColor: "#f9f9f9",
                 padding: "1rem",
@@ -773,9 +816,10 @@ const splitPdfAndDownload = async () => {
                 justifyContent: "space-between",
                 alignItems: "center",
                 border: "1px solid #e9ecef",
+                gap: "1rem",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}>
                 <div
                   style={{
                     fontSize: "1.5rem",
@@ -785,11 +829,11 @@ const splitPdfAndDownload = async () => {
                 >
 
                 </div>
-                <div>
-                  <div style={{ fontWeight: "bold", fontSize: "1rem" }}>
+                <div style={{ overflow: "hidden" }}>
+                  <div style={{ fontWeight: "bold", fontSize: "clamp(0.9rem, 2.5vw, 1rem)", wordBreak: "break-word" }}>
                     {pdfFile.name}
                   </div>
-                  <div style={{ fontSize: "0.9rem", color: "#666" }}>
+                  <div style={{ fontSize: "clamp(0.8rem, 2vw, 0.9rem)", color: "#666" }}>
                     {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
                   </div>
                 </div>
@@ -806,6 +850,7 @@ const splitPdfAndDownload = async () => {
                   cursor: "pointer",
                   fontSize: "1.2rem",
                   padding: "0.5rem",
+                  flexShrink: 0,
                 }}
               >
                 <i className="fa fa-trash" aria-hidden="true"></i>
@@ -822,8 +867,9 @@ const splitPdfAndDownload = async () => {
                 padding: "0.75rem 1.5rem",
                 borderRadius: "5px",
                 cursor: "pointer",
-                fontSize: "1rem",
+                fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
                 fontWeight: "bold",
+                width: "100%",
               }}
             >
               Start Editing Pages
@@ -838,7 +884,7 @@ const splitPdfAndDownload = async () => {
             backgroundColor:  "rgb(253, 242, 242)",
             border: "1px solid red",
             borderRadius: "10px",
-            fontSize: "0.95rem",
+            fontSize: "clamp(0.85rem, 2vw, 0.95rem)",
           }}
         >
           <strong>⚠️ Important:</strong>
