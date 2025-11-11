@@ -1,5 +1,5 @@
-import connectDB from '../../lib/mongodb';
-import Tool from '../../models/Tool';
+import connectDB from '../../../lib/mongodb';
+import Tool from '../../../models/Tool';
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
