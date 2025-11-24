@@ -334,11 +334,11 @@ export default function AllToolsPage() {
   };
 
   const sections = [
-    { title: "PDF Operations", items: pdfOperations, category: "PDF Operations" },
-    { title: "Convert to PDF", items: convertToPDF, category: "Convert to PDF" },
-    { title: "Convert from PDF", items: convertFromPDF, category: "Convert from PDF" },
-    { title: "Advanced & Specialized Tools", items: advancedTools, category: "Advanced Tools" },
-    { title: "Premium", items: premiumTools, category: "Premium Tools" },
+    { title: "PDF Operations", items: pdfOperations, category: "PDF Operations",bordercolor:"#308F0080" },
+    { title: "Convert to PDF", items: convertToPDF, category: "Convert to PDF" ,bordercolor:"#FF800080"},
+    { title: "Convert from PDF", items: convertFromPDF, category: "Convert from PDF",bordercolor:"#D879FD80" },
+    { title: "Advanced & Specialized Tools", items: advancedTools, category: "Advanced Tools",bordercolor:"#1B95F84D" },
+    { title: "Premium", items: premiumTools, category: "Premium Tools", bordercolor:"#1B95F84D" },
   ];
 
   return (
@@ -347,8 +347,9 @@ export default function AllToolsPage() {
       <div
         style={{
           minHeight: "100vh",
-          backgroundColor: "#FAFAFA",
+          backgroundColor: "#ffffffff",
           paddingBottom: "3rem",
+          fontFamily: 'Georgia, "Times New Roman", serif',
         }}
       >
         <div
@@ -389,6 +390,7 @@ export default function AllToolsPage() {
                   lineHeight: "1.5",
                   margin: "0",
                   textAlign: isMobile ? "center" : "left",
+                  marginTop: isMobile ? "0rem" : "20px",
                 }}
               >
                 Easily manage your PDFs with our quick and reliable tools — split, merge, edit, or
@@ -403,6 +405,7 @@ export default function AllToolsPage() {
                 flexDirection: isMobile ? "column" : "row",
                 gap: "0.75rem",
                 alignItems: isMobile ? "stretch" : "center",
+                marginTop: isMobile ? "0rem" : "70px",
               }}
             >
               <div style={{ position: "relative", width: isMobile ? "100%" : "240px" }}>
@@ -489,13 +492,14 @@ export default function AllToolsPage() {
                         borderRadius: "12px",
                         padding: "1.25rem",
                         display: "flex",
+                        
                         flexDirection: "column",
                         justifyContent: "flex-start",
                         alignItems: "flex-start",
                         textAlign: "left",
                         cursor: "pointer",
                         transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                        border: "1px solid rgba(0,0,0,0.06)",
+                        border: `2px solid ${section.bordercolor}`,
                         textDecoration: "none",
                         height: "100%",
                         minHeight: "140px",
@@ -566,66 +570,123 @@ export default function AllToolsPage() {
         </div>
 
         {/* Footer */}
-        <footer
-          style={{
-            backgroundColor: "white",
-            padding: "2rem 0",
-            borderTop: "1px solid #e5e7eb",
-            marginTop: "3rem",
-          }}
-        >
-          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 2rem" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "2rem",
-              }}
-            >
-              <div>
-                <Link href="/">
-                  <img src="/logo.png" alt="Logo" style={{ height: "20px", cursor: "pointer" }} />
-                </Link>
-              </div>
-
-              <nav style={{ display: "flex", gap: "2rem", fontSize: "0.9rem" }}>
-                <Link href="/about" style={{ color: "#666", textDecoration: "none" }}>
-                  About
-                </Link>
-                <Link href="/blogs" style={{ color: "#666", textDecoration: "none" }}>
-                  Blog Posts
-                </Link>
-                <Link href="/faq" style={{ color: "#666", textDecoration: "none" }}>
-                  FAQ
-                </Link>
-                <Link href="/terms" style={{ color: "#666", textDecoration: "none" }}>
-                  Terms & Conditions
-                </Link>
-                <Link href="/privacy-policy" style={{ color: "#666", textDecoration: "none" }}>
-                  Privacy Policy
-                </Link>
-              </nav>
-
-              <div style={{ display: "flex", gap: "1rem" }}>
-                <a href="#" style={{ color: "#666", fontSize: "1.2rem" }}>
-                  <i className="fab fa-facebook"></i>
-                </a>
-                <a href="#" style={{ color: "#666", fontSize: "1.2rem" }}>
-                  <i className="fab fa-instagram"></i>
-                </a>
-                <a href="#" style={{ color: "#666", fontSize: "1.2rem" }}>
-                  <i className="fab fa-twitter"></i>
-                </a>
-                <a href="#" style={{ color: "#666", fontSize: "1.2rem" }}>
-                  <i className="fas fa-envelope"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-        </footer>
+        
       </div>
+      <footer
+  style={{
+    backgroundColor: "white",
+    padding: "1rem 0 2rem 0", // reduced padding
+    borderTop: "1px solid #e5e7eb",
+    width: "100%",
+    overflowX: "hidden",
+    backgroundImage: "url('/images/footer-bg.png')",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: isMobile ? "top center" : "center right",
+    backgroundSize: isMobile ? "cover" : "contain",
+  }}
+>
+  <div
+    style={{
+      maxWidth: "1200px",
+      margin: "0 auto",
+      padding: isMobile ? "0 1rem" : "0 2rem",
+      width: "100%",
+      position: "relative",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: isMobile ? "flex-start" : "space-between",
+        alignItems: isMobile ? "flex-start" : "center",
+        flexDirection: isMobile ? "column" : "row",
+        flexWrap: "wrap",
+        gap: isMobile ? "1rem" : "2rem",
+        width: "100%",
+      }}
+    >
+      {/* Logo */}
+      <div
+        style={{
+          position: "relative",
+          width: isMobile ? "100%" : "auto",
+          zIndex: 2,
+        }}
+      >
+        <a href="/">
+          <img
+            src="/Group-14.svg"
+            alt="Logo"
+            style={{ height: "20px", cursor: "pointer" }}
+          />
+        </a>
+      </div>
+
+      {/* Navigation */}
+      <nav
+        style={{
+          display: "flex",
+          gap: isMobile ? "1rem" : "2rem",
+          fontSize: "0.85rem",
+          flexDirection: isMobile ? "column" : "row",
+          width: isMobile ? "100%" : "auto",
+          marginLeft: isMobile ? "0" : "auto",
+          marginRight: isMobile ? "0" : "auto",
+          zIndex: 2,
+        }}
+      >
+        <a href="/about" style={{ color: "#000000ff", textDecoration: "none" }}>About</a>
+        <a href="/blogs" style={{ color: "#000000ff", textDecoration: "none" }}>Blog Posts</a>
+        <a href="/faq" style={{ color: "#000000ff", textDecoration: "none" }}>FAQ</a>
+        <a href="/terms" style={{ color: "#000000ff", textDecoration: "none" }}>Terms & Conditions</a>
+        <a href="/privacy-policy" style={{ color: "#000000ff", textDecoration: "none" }}>Privacy Policy</a>
+      </nav>
+    </div>
+
+    {/* Bottom Row: centered text + icons right */}
+    <div
+      style={{
+        marginTop: "1.5rem",
+        width: "100%",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexDirection: isMobile ? "column" : "row",
+      }}
+    >
+      {/* Center text */}
+      <div
+        style={{
+          color: "#000000ff",
+          fontSize: "0.8rem",
+          textAlign: isMobile ? "center" : "center",
+          flex: 1,
+          marginLeft: isMobile ?"0px":"250px"
+        }}
+      >
+        © 2025 FileMint. All rights reserved. Powered by PurpleMerit.
+      </div>
+
+      {/* Icons Right */}
+      <div
+        style={{
+          display: "flex",
+          gap: "1rem",
+          justifyContent: "flex-end",
+          fontSize: "1.6rem",
+          color: "#666",
+          flexShrink: 0,
+          marginTop: isMobile ? "1rem" : "0",
+        }}
+      >
+        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-facebook"></i></a>
+        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-instagram"></i></a>
+        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-x-twitter"></i></a>
+        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-youtube"></i></a>
+      </div>
+    </div>
+  </div>
+</footer>
     </>
   );
 }

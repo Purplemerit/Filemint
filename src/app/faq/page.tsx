@@ -3,7 +3,7 @@ import React from 'react'
 import Navbar from '@/app/components/Navbar'
 
 const faqs = [
-  { icon: '📝', question: 'How do I upload a PDF file for editing or conversion?', answer: 'Simply drag and drop…' },
+  { icon: './pen.png', question: 'How do I upload a PDF file for editing or conversion?', answer: 'Simply drag and drop…' },
   { icon: '🛡️', question: 'Are my files safe and private on this website?', answer: 'Yes, your files are encrypted…' },
   { icon: '📦', question: 'Is there a limit to the file size I can upload?', answer: 'Free users can upload…' },
   { icon: '🔒', question: 'Do I need to create an account to use the tools?', answer: 'No account is required…' },
@@ -26,8 +26,9 @@ export default function FAQPage() {
           padding: '3rem 5%',
           maxWidth: '1000px',
           margin: '0 auto',
-          background: '#fafafa',
+          background: '#ffffffff',
           borderRadius: '12px',
+          fontFamily: 'Georgia, "Times New Roman", serif',
         }}
       >
         {/* Decorative stickers */}
@@ -122,7 +123,7 @@ export default function FAQPage() {
                   marginBottom: '0.75rem',
                 }}
               >
-                {icon}
+                <img src={icon} alt="" style={{ width: '1.5rem'}} />
               </div>
               <h3 style={{ fontSize: '1.1rem', margin: 0, marginBottom: '.5rem' }}>
                 {question}

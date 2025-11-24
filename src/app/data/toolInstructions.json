@@ -1,0 +1,862 @@
+{
+  "merge-pdf": {
+    "title": "Step-by-Step Instruction",
+    "steps": [
+      {
+        "id": 1,
+        "title": "Upload Files from Any Source",
+        "text": "Start by uploading your PDF files through the method that suits you best. Whether it's from your device, Google Drive, Dropbox, copy-pasting content, or simply pasting a file URL, we support it all. No matter where your files are stored, bringing them in is just a click away.",
+        "image": "./toolsinstruction/merge1.svg",
+        "imagePosition": "right"
+      },
+      {
+        "id": 2,
+        "title": "Quick and Seamless PDF Merging",
+        "text": "Once your files are uploaded, our tool automatically arranges them, and you can easily reorder or remove pages if needed. With our fast conversion engine, you'll get your merged PDF in seconds — optimized and ready to use.",
+        "image": "./toolsinstruction/merge2.svg",
+        "imagePosition": "left"
+      },
+      {
+        "id": 3,
+        "title": "Customize and Download Instantly",
+        "text": "After merging, make any final adjustments your file needs — such as compressing, protecting, rotating, or adding a watermark. Our smart tools let you tailor the output to your exact needs. Once done, just hit Download, and your file is ready!",
+        "image": "./toolsinstruction/merge1.png",
+        "imagePosition": "right"
+      }
+    ]
+  },
+  "compress-pdf": {
+    "title": "How to Compress PDF",
+    "steps": [
+      {
+        "id": 1,
+        "title": "Upload Your PDF",
+        "text": "Drag and drop your PDF file or select it from your device, Google Drive, or Dropbox. Our tool accepts files up to 100MB.",
+        "image": "./toolsinstruction/compress1.png",
+        "imagePosition": "right"
+      },
+      {
+        "id": 2,
+        "title": "Choose Compression Level",
+        "text": "Select your preferred compression level: Maximum (smallest file), Recommended (balanced), or Minimum (best quality). Preview the estimated file size before compressing.",
+        "image": "./toolsinstruction/compress2.png",
+        "imagePosition": "left"
+      },
+      {
+        "id": 3,
+        "title": "Download Compressed PDF",
+        "text": "Once compression is complete, download your optimized PDF instantly. Your file is ready to share via email or upload anywhere with reduced size.",
+        "image": "./toolsinstruction/compress3.png",
+        "imagePosition": "right"
+      }
+    ]
+  },
+  "convert-pdf": {
+    "title": "Convert PDF to Any Format",
+    "steps": [
+      {
+        "id": 1,
+        "title": "Select Your PDF File",
+        "text": "Upload the PDF you want to convert from your device or cloud storage. We support batch conversion for multiple files.",
+        "image": "./toolimage1.svg",
+        "imagePosition": "right"
+      },
+      {
+        "id": 2,
+        "title": "Choose Output Format",
+        "text": "Select your desired output format: Word, Excel, PowerPoint, JPG, PNG, or more. Customize settings like image quality and page range.",
+        "image": "./toolimage1.svg",
+        "imagePosition": "left"
+      },
+      {
+        "id": 3,
+        "title": "Convert and Download",
+        "text": "Click convert and get your file in seconds. Download immediately or save to your preferred cloud storage.",
+        "image": "./toolimage1.svg",
+        "imagePosition": "right"
+      }
+    ]
+  },
+   "word-pdf": {
+    "title": "Convert Word to PDF",
+    "steps": [
+      {
+        "id": 1,
+        "title": "Select Your PDF File",
+        "text": "Upload the PDF you want to convert from your device or cloud storage. We support batch conversion for multiple files.",
+        "image": "./toolsinstruction/word-pdf1.png",
+        "imagePosition": "right"
+      },
+      {
+        "id": 2,
+        "title": "Choose Output Format",
+        "text": "Select your desired output format: Word, Excel, PowerPoint, JPG, PNG, or more. Customize settings like image quality and page range.",
+        "image": "./toolsinstruction/word-pdf2.png",
+        "imagePosition": "left"
+      },
+      {
+        "id": 3,
+        "title": "Convert and Download",
+        "text": "Click convert and get your file in seconds. Download immediately or save to your preferred cloud storage.",
+        "image": "./toolsinstruction/word-pdf3.png",
+        "imagePosition": "right"
+      }
+    ]
+  },
+  "compare-pdf": {
+    "title": "Cmpare Two PDF Files",
+    "steps": [
+      {
+        "id": 1,
+        "title": "Select Your PDF File",
+        "text": "Upload the PDF you want to convert from your device or cloud storage. We support batch conversion for multiple files.",
+        "image": "./toolsinstruction/comparepdf1.png",
+        "imagePosition": "right"
+      },
+      {
+        "id": 2,
+        "title": "Choose Output Format",
+        "text": "Select your desired output format: Word, Excel, PowerPoint, JPG, PNG, or more. Customize settings like image quality and page range.",
+        "image": "./toolsinstruction/comparepdf2.png",
+        "imagePosition": "left"
+      },
+      {
+        "id": 3,
+        "title": "Convert and Download",
+        "text": "Click convert and get your file in seconds. Download immediately or save to your preferred cloud storage.",
+        "image": "./toolsinstruction/comparepdf3.png",
+        "imagePosition": "right"
+      }
+    ]
+  },
+  "delete-pdf": {
+    "title": "delete PDF Pages",
+    "steps": [
+      {
+        "id": 1,
+        "title": "Select Your PDF File",
+        "text": "Upload the PDF you want to convert from your device or cloud storage. We support batch conversion for multiple files.",
+        "image": "./toolsinstruction/delete1.png",
+        "imagePosition": "right"
+      },
+      {
+        "id": 2,
+        "title": "Choose Output Format",
+        "text": "Select your desired output format: Word, Excel, PowerPoint, JPG, PNG, or more. Customize settings like image quality and page range.",
+        "image": "./toolsinstruction/delete2.png",
+        "imagePosition": "left"
+      },
+      {
+        "id": 3,
+        "title": "Convert and Download",
+        "text": "Click convert and get your file in seconds. Download immediately or save to your preferred cloud storage.",
+        "image": "./toolsinstruction/delete3.png",
+        "imagePosition": "right"
+      }
+    ]
+  },
+  "editpdf": {
+    "title": "delete PDF Pages",
+    "steps": [
+      {
+        "id": 1,
+        "title": "Select Your PDF File",
+        "text": "Upload the PDF you want to convert from your device or cloud storage. We support batch conversion for multiple files.",
+        "image": "./toolsinstruction/editpdf1.png",
+        "imagePosition": "right"
+      },
+      {
+        "id": 2,
+        "title": "Choose Output Format",
+        "text": "Select your desired output format: Word, Excel, PowerPoint, JPG, PNG, or more. Customize settings like image quality and page range.",
+        "image": "./toolsinstruction/editpdf2.png",
+        "imagePosition": "left"
+      },
+      {
+        "id": 3,
+        "title": "Convert and Download",
+        "text": "Click convert and get your file in seconds. Download immediately or save to your preferred cloud storage.",
+        "image": "./toolsinstruction/editpdf3.png",
+        "imagePosition": "right"
+      }
+    ]
+  },
+  "esignpdf": {
+    "title": "Add Esign to PDF Pages",
+    "steps": [
+      {
+        "id": 1,
+        "title": "Select Your PDF File",
+        "text": "Upload the PDF you want to convert from your device or cloud storage. We support batch conversion for multiple files.",
+        "image": "./toolsinstruction/esign1.png",
+        "imagePosition": "right"
+      },
+      {
+        "id": 2,
+        "title": "Choose Output Format",
+        "text": "Select your desired output format: Word, Excel, PowerPoint, JPG, PNG, or more. Customize settings like image quality and page range.",
+        "image": "./toolsinstruction/esign2.png",
+        "imagePosition": "left"
+      },
+      {
+        "id": 3,
+        "title": "Convert and Download",
+        "text": "Click convert and get your file in seconds. Download immediately or save to your preferred cloud storage.",
+        "image": "./toolsinstruction/esign3.png",
+        "imagePosition": "right"
+      }
+    ]
+  },
+  "split-pdf": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file through any method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we make it simple. No matter where your PDF is stored, getting it ready to split is just a click away.",
+      "image": "./toolsinstruction/splitpdf1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Select Pages to Extract or Remove",
+      "text": "Once your PDF is uploaded, preview all pages and choose exactly what you need. Select individual pages, page ranges, or click to mark pages for extraction. You can also choose to download non-selected pages. Our intuitive interface makes splitting your PDF effortless.",
+      "image": "./toolsinstruction/splitpdf2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your Split PDF Instantly",
+      "text": "After selecting your pages, choose your preferred download option — extract selected pages, remove unwanted pages, or create a custom arrangement. With just one click, your new PDF is generated and ready to download. Fast, secure, and hassle-free.",
+      "image": "./toolsinstruction/splitpdf3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"rotate-pdf": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we've got you covered. No matter where your PDF is stored, getting it ready to rotate is just a click away.",
+      "image": "./toolsinstruction/rotate1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Select and Rotate Pages",
+      "text": "Once your PDF is uploaded, preview all pages and select the ones you want to rotate. Choose individual pages, multiple pages, or rotate all at once. Simply click the rotation buttons to rotate pages 90°, 180°, or 270° clockwise. Our visual preview lets you see changes in real-time.",
+      "image": "./toolsinstruction/rotate2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your Rotated PDF",
+      "text": "After rotating your pages to the perfect orientation, review your changes and hit Download. Your rotated PDF is generated instantly with all pages oriented exactly as you need them. Fast, accurate, and ready to use.",
+      "image": "./toolsinstruction/rotate3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"reorder-pdf": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using any method that suits you best. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we make it seamless. No matter where your PDF is stored, getting it ready to reorder is just a click away.",
+      "image": "./toolsinstruction/reorder1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Drag and Drop to Reorder Pages",
+      "text": "Once your PDF is uploaded, preview all pages in a visual grid. Simply drag and drop pages to rearrange them in any order you want. You can also select specific pages to include or exclude from your final document. Our intuitive interface makes reorganizing your PDF effortless and precise.",
+      "image": "./toolsinstruction/reorder2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your Reordered PDF",
+      "text": "After arranging your pages in the perfect order, choose your download option — keep all pages in new order, download only selected pages, or exclude unwanted pages. With just one click, your reordered PDF is generated instantly and ready to download. Simple, fast, and exactly how you need it.",
+      "image": "./toolsinstruction/reorder3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"excel-to-pdf": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your Excel File",
+      "text": "Start by uploading your Excel file (.xlsx, .xls) using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your spreadsheet is stored, converting it to PDF is just a click away.",
+      "image": "./toolsinstruction/excelpdf1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic Conversion Processing",
+      "text": "Once your Excel file is uploaded, our advanced conversion engine automatically processes your spreadsheet. All formatting, formulas, charts, and layouts are preserved perfectly. The conversion happens in seconds, maintaining the exact look and structure of your original document.",
+      "image": "./toolsinstruction/excelpdf2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your PDF Instantly",
+      "text": "After conversion, your Excel spreadsheet is transformed into a professional PDF document. Preview the result and hit Download to get your file. Your PDF is ready to share, print, or archive — with all data and formatting intact.",
+      "image": "./toolsinstruction/excelpdf3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"ppt-to-pdf": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PowerPoint File",
+      "text": "Start by uploading your PowerPoint file (.pptx, .ppt) using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your presentation is stored, converting it to PDF is just a click away.",
+      "image": "./toolsinstruction/pptpdf1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic Conversion Processing",
+      "text": "Once your PowerPoint file is uploaded, our advanced conversion engine automatically processes your presentation. All slides, animations, transitions, images, and formatting are preserved perfectly. The conversion happens in seconds, maintaining the exact look and design of your original slides.",
+      "image": "./toolsinstruction/pptpdf2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your PDF Instantly",
+      "text": "After conversion, your PowerPoint presentation is transformed into a professional PDF document. Preview the result and hit Download to get your file. Your PDF is ready to share, present, or archive — with all slides and formatting intact.",
+      "image": "./toolsinstruction/pptpdf3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"jpg-to-pdf": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your JPG Images",
+      "text": "Start by uploading your JPG/JPEG images using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. Upload single or multiple images at once. No matter where your images are stored, converting them to PDF is just a click away.",
+      "image": "./toolsinstruction/jpgpdf1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Arrange and Customize Your Images",
+      "text": "Once your images are uploaded, preview them and arrange them in your preferred order. Drag and drop to reorder, remove unwanted images, or add more. Our tool automatically optimizes image quality and sizing to create a professional-looking PDF document.",
+      "image": "./toolsinstruction/jpgpdf2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your PDF Instantly",
+      "text": "After arranging your images, hit the Convert button and your JPG images are instantly transformed into a single PDF document. Preview the result and download your file. Your PDF is ready to share, print, or store — with all images perfectly formatted.",
+      "image": "./toolsinstruction/jpgpdf3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"png-to-pdf": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PNG Images",
+      "text": "Start by uploading your PNG images using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. Upload single or multiple images at once. No matter where your images are stored, converting them to PDF is just a click away.",
+      "image": "./toolsinstruction/pngpdf1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Arrange and Customize Your Images",
+      "text": "Once your images are uploaded, preview them and arrange them in your preferred order. Drag and drop to reorder, remove unwanted images, or add more. Our tool automatically preserves transparency and image quality to create a professional-looking PDF document.",
+      "image": "./toolsinstruction/pngpdf2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your PDF Instantly",
+      "text": "After arranging your images, hit the Convert button and your PNG images are instantly transformed into a single PDF document. Preview the result and download your file. Your PDF is ready to share, print, or store — with all images and transparency perfectly preserved.",
+      "image": "./toolsinstruction/pngpdf3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"tiff-to-pdf": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your TIFF Images",
+      "text": "Start by uploading your TIFF/TIF images using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. Upload single or multiple images at once. No matter where your high-resolution images are stored, converting them to PDF is just a click away.",
+      "image": "./toolsinstruction/tiffpdf1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Arrange and Customize Your Images",
+      "text": "Once your TIFF images are uploaded, preview them and arrange them in your preferred order. Drag and drop to reorder, remove unwanted images, or add more. Our tool automatically preserves the high quality and multi-page structure of TIFF files to create a professional PDF document.",
+      "image": "./toolsinstruction/tiffpdf2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your PDF Instantly",
+      "text": "After arranging your images, hit the Convert button and your TIFF images are instantly transformed into a single PDF document. Preview the result and download your file. Your PDF is ready to share, archive, or print — with all high-resolution details perfectly preserved.",
+      "image": "./toolsinstruction/tiffpdf3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"html-to-pdf": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your HTML File or URL",
+      "text": "Start by uploading your HTML file or providing a webpage URL using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a web URL, we support all sources. No matter where your HTML content is stored, converting it to PDF is just a click away.",
+      "image": "./toolsinstruction/htmlpdf1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic Rendering and Processing",
+      "text": "Once your HTML is uploaded, our advanced conversion engine automatically renders the webpage or HTML file. All styles, images, links, fonts, and layouts are captured perfectly. The conversion happens in seconds, maintaining the exact look and structure of your original HTML content.",
+      "image": "./toolsinstruction/htmlpdf2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your PDF Instantly",
+      "text": "After conversion, your HTML content is transformed into a professional PDF document. Preview the result and hit Download to get your file. Your PDF is ready to share, archive, or print — with all content, styling, and formatting perfectly preserved.",
+      "image": "./toolsinstruction/htmlpdf3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"scan-to-pdf": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your Scanned Images",
+      "text": "Start by uploading your scanned documents or images using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. Upload single or multiple scanned pages at once. No matter where your scanned files are stored, converting them to PDF is just a click away.",
+      "image": "./toolsinstruction/scanpdf1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Enhance and Arrange Your Scans",
+      "text": "Once your scanned images are uploaded, preview them and arrange them in your preferred order. Drag and drop to reorder, remove unwanted pages, or add more. Our tool automatically enhances scan quality, adjusts brightness and contrast, and removes backgrounds to create a clean, professional PDF document.",
+      "image": "./toolsinstruction/scanpdf2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your PDF Instantly",
+      "text": "After arranging and enhancing your scans, hit the Convert button and your scanned documents are instantly transformed into a single PDF file. Preview the result and download your file. Your PDF is ready to share, archive, or print — with all pages optimized and perfectly formatted.",
+      "image": "./toolsinstruction/scanpdf3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"pdf-to-word": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, converting it to an editable Word document is just a click away.",
+      "image": "./toolsinstruction/pdfword1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic Conversion Processing",
+      "text": "Once your PDF is uploaded, our advanced conversion engine automatically processes your document. All text, images, tables, formatting, and layouts are extracted and converted with precision. The conversion happens in seconds, maintaining the structure and editability of your content.",
+      "image": "./toolsinstruction/pdfword2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your Word Document",
+      "text": "After conversion, your PDF is transformed into a fully editable Word document (.docx). Preview the result and hit Download to get your file. Your Word document is ready to edit, modify, or share — with all content and formatting preserved.",
+      "image": "./toolsinstruction/pdfword3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"pdf-to-excel": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, converting it to an editable Excel spreadsheet is just a click away.",
+      "image": "./toolsinstruction/pdfexcel1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic Table Extraction",
+      "text": "Once your PDF is uploaded, our advanced conversion engine automatically identifies and extracts tables, data, and numbers from your document. All rows, columns, formulas, and formatting are converted with precision. The conversion happens in seconds, maintaining the structure and calculations of your data.",
+      "image": "./toolsinstruction/pdfexcel2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your Excel Spreadsheet",
+      "text": "After conversion, your PDF is transformed into a fully editable Excel spreadsheet (.xlsx). Preview the result and hit Download to get your file. Your Excel document is ready to analyze, calculate, or share — with all data and tables perfectly organized.",
+      "image": "./toolsinstruction/pdfexcel3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"pdf-to-ppt": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, converting it to an editable PowerPoint presentation is just a click away.",
+      "image": "./toolsinstruction/pdfppt1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic Slide Conversion",
+      "text": "Once your PDF is uploaded, our advanced conversion engine automatically transforms each page into individual slides. All text, images, graphics, and layouts are extracted and converted with precision. The conversion happens in seconds, maintaining the visual structure and design of your original document.",
+      "image": "./toolsinstruction/pdfppt2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your PowerPoint Presentation",
+      "text": "After conversion, your PDF is transformed into a fully editable PowerPoint presentation (.pptx). Preview the result and hit Download to get your file. Your presentation is ready to edit, customize, or present — with all content and formatting preserved.",
+      "image": "./toolsinstruction/pdfppt3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"pdf-to-jpg": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, converting it to high-quality JPG images is just a click away.",
+      "image": "./toolsinstruction/pdfjpg1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic Page-to-Image Conversion",
+      "text": "Once your PDF is uploaded, our advanced conversion engine automatically transforms each page into a separate JPG image. You can adjust the image quality to balance file size and resolution. The conversion happens in seconds, preserving all visual details and clarity of your original document.",
+      "image": "./toolsinstruction/pdfjpg2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your JPG Images",
+      "text": "After conversion, all your PDF pages are transformed into individual JPG images and packaged in a convenient ZIP file. Preview the results and hit Download to get your files. Your images are ready to share, post online, or use anywhere — with excellent quality and compatibility.",
+      "image": "./toolsinstruction/pdfjpg3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"pdf-to-png": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, converting it to high-quality PNG images is just a click away.",
+      "image": "./toolsinstruction/pdfpng1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic Page-to-Image Conversion",
+      "text": "Once your PDF is uploaded, our advanced conversion engine automatically transforms each page into a separate PNG image with transparency support. You can choose to enable or disable transparency based on your needs. The conversion happens in seconds, preserving all visual details and clarity of your original document.",
+      "image": "./toolsinstruction/pdfpng2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your PNG Images",
+      "text": "After conversion, all your PDF pages are transformed into individual PNG images and packaged in a convenient ZIP file. Preview the results and hit Download to get your files. Your images are ready to share, edit, or use anywhere — with lossless quality and transparency support.",
+      "image": "./toolsinstruction/pdfpng3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"pdf-to-text": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, extracting text content is just a click away.",
+      "image": "./toolsinstruction/pdftext1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic Text Extraction",
+      "text": "Once your PDF is uploaded, our advanced OCR and text extraction engine automatically identifies and extracts all readable text from your document. Whether it's native text or scanned content, we capture every word accurately. The extraction happens in seconds, maintaining paragraph structure and readability.",
+      "image": "./toolsinstruction/pdftext2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your Text File",
+      "text": "After extraction, all text from your PDF is converted into a plain text file (.txt). Preview the results and hit Download to get your file. Your text is ready to edit, search, copy, or use in any application — clean, accessible, and easy to work with.",
+      "image": "./toolsinstruction/pdftext3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"pdf-to-html": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, converting it to web-ready HTML is just a click away.",
+      "image": "./toolsinstruction/pdfhtml1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic HTML Conversion",
+      "text": "Once your PDF is uploaded, our advanced conversion engine automatically transforms your document into clean HTML code. All text, images, links, tables, and formatting are converted into semantic HTML and CSS. The conversion happens in seconds, creating responsive and web-compatible content.",
+      "image": "./toolsinstruction/pdfhtml2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your HTML File",
+      "text": "After conversion, your PDF is transformed into a complete HTML file with embedded styles and images. Preview the results and hit Download to get your file. Your HTML is ready to publish online, embed in websites, or edit — with all content properly structured for the web.",
+      "image": "./toolsinstruction/pdfhtml3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"pdf-to-markdown": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, converting it to clean Markdown format is just a click away.",
+      "image": "./toolsinstruction/pdfmarkdown1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic Markdown Conversion",
+      "text": "Once your PDF is uploaded, our advanced conversion engine automatically transforms your document into well-structured Markdown. All headings, paragraphs, lists, tables, links, and emphasis are converted into proper Markdown syntax. The conversion happens in seconds, creating clean and readable text with proper formatting.",
+      "image": "./toolsinstruction/pdfmarkdown2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your Markdown File",
+      "text": "After conversion, your PDF is transformed into a clean Markdown file (.md). Preview the results and hit Download to get your file. Your Markdown is ready to use in documentation, GitHub, wikis, or any text editor — lightweight, portable, and easy to edit.",
+      "image": "./toolsinstruction/pdfmarkdown3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"pdf-to-epub": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, converting it to eBook-ready EPUB format is just a click away.",
+      "image": "./toolsinstruction/pdfepub1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic EPUB Conversion",
+      "text": "Once your PDF is uploaded, our advanced conversion engine automatically transforms your document into a reflowable EPUB format. All text, images, chapters, and formatting are converted to be compatible with e-readers and reading apps. The conversion happens in seconds, creating a responsive eBook that adapts to any screen size.",
+      "image": "./toolsinstruction/pdfepub2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your EPUB File",
+      "text": "After conversion, your PDF is transformed into a complete EPUB file (.epub). Preview the results and hit Download to get your file. Your eBook is ready to read on Kindle, iPad, e-readers, or any reading app — with adjustable text size and optimized for comfortable reading.",
+      "image": "./toolsinstruction/pdfepub3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"pdf-to-xml": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, converting it to structured XML format is just a click away.",
+      "image": "./toolsinstruction/pdfxml1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic XML Structure Extraction",
+      "text": "Once your PDF is uploaded, our advanced conversion engine automatically extracts and structures your document content into XML format. All text, metadata, hierarchies, and document elements are converted into well-formed XML with proper tags and attributes. The conversion happens in seconds, creating machine-readable and structured data.",
+      "image": "./toolsinstruction/pdfxml2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your XML File",
+      "text": "After conversion, your PDF is transformed into a structured XML file (.xml). Preview the results and hit Download to get your file. Your XML is ready for data processing, integration, parsing, or system import — with all content organized in a standardized, machine-readable format.",
+      "image": "./toolsinstruction/pdfxml3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"add-watermark": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, adding a watermark for protection and branding is just a click away.",
+      "image": "./toolsinstruction/pdfwatermark1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Customize Your Watermark",
+      "text": "Once your PDF is uploaded, choose your watermark type — text or image. Customize the text content, font, size, color, opacity, rotation, and position. For image watermarks, upload your logo or signature and adjust placement. Preview your watermark in real-time to ensure it looks perfect on every page.",
+      "image": "./toolsinstruction/pdfwatermark2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your Watermarked PDF",
+      "text": "After customizing your watermark, hit the Apply button and your watermark is instantly added to all pages. Preview the result and download your file. Your watermarked PDF is ready to share, publish, or distribute — with your brand or copyright protection clearly visible.",
+      "image": "./toolsinstruction/pdfwatermark3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"extract-text-from-image": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your Image File",
+      "text": "Start by uploading your image file (JPG, PNG, TIFF, or any format) using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your image is stored, extracting text is just a click away.",
+      "image": "./toolsinstruction/ocr1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "Automatic OCR Text Recognition",
+      "text": "Once your image is uploaded, our advanced OCR (Optical Character Recognition) engine automatically scans and identifies all text in your image. Whether it's printed documents, screenshots, photos, or handwritten notes, we accurately recognize and extract every word. The process happens in seconds, supporting multiple languages and fonts.",
+      "image": "./toolsinstruction/ocr2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your Extracted Text",
+      "text": "After extraction, all recognized text is displayed and ready to use. Copy the text directly or download it as a text file (.txt). Your extracted text is ready to edit, search, translate, or use in any application — accurate, clean, and fully accessible.",
+      "image": "./toolsinstruction/ocr3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"pdf-summarizer": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, getting an intelligent summary is just a click away.",
+      "image": "./toolsinstruction/pdfsummarizer1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "AI-Powered Content Analysis",
+      "text": "Once your PDF is uploaded, our advanced AI engine automatically reads and analyzes your entire document. It identifies key points, main ideas, important facts, and critical information. Choose your preferred summary length — brief overview, medium summary, or detailed breakdown. The analysis happens in seconds, understanding context and meaning.",
+      "image": "./toolsinstruction/pdfsummarizer2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Get Your Summary Instantly",
+      "text": "After analysis, receive a clear, concise summary of your document highlighting the most important information. Copy the summary, download it as a text file, or get bullet points of key takeaways. Save hours of reading time with accurate, AI-generated summaries that capture the essence of your document.",
+      "image": "./toolsinstruction/pdfsummarizer3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"pdf-translator": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, translating it to any language is just a click away.",
+      "image": "./toolsinstruction/pdftranslate1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "AI-Powered Translation Processing",
+      "text": "Once your PDF is uploaded, select your target language from our extensive list of supported languages. Our advanced AI translation engine automatically translates all text while preserving the original formatting, layout, images, and structure. The translation happens in seconds, maintaining context, tone, and meaning across languages.",
+      "image": "./toolsinstruction/pdftranslate2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Download Your Translated PDF",
+      "text": "After translation, your document is transformed into a fully translated PDF in your chosen language. Preview the result and hit Download to get your file. Your translated PDF is ready to share globally — with accurate translations and original formatting perfectly preserved.",
+      "image": "./toolsinstruction/pdftranslate3.png",
+      "imagePosition": "right"
+    }
+  ]
+},
+"pdf-quiz": {
+  "title": "Step-by-Step Instruction",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Upload Your PDF File",
+      "text": "Start by uploading your PDF file using the method that works best for you. Whether it's from your device, Google Drive, Dropbox, or by pasting a file URL, we support all sources. No matter where your PDF is stored, generating an interactive quiz from your document is just a click away.",
+      "image": "./toolsinstruction/pdfquiz1.png",
+      "imagePosition": "right"
+    },
+    {
+      "id": 2,
+      "title": "AI-Powered Quiz Generation",
+      "text": "Once your PDF is uploaded, our advanced AI engine automatically analyzes your document content and generates intelligent quiz questions. Choose your quiz type — multiple choice, true/false, short answer, or mixed format. Select difficulty level and number of questions. The AI identifies key concepts and creates relevant, meaningful questions in seconds.",
+      "image": "./toolsinstruction/pdfquiz2.png",
+      "imagePosition": "left"
+    },
+    {
+      "id": 3,
+      "title": "Get Your Interactive Quiz",
+      "text": "After generation, review your custom quiz with questions and answers based on your document. Take the quiz interactively, download it as a document, or share it with others. Perfect for studying, teaching, training, or testing comprehension — with AI-generated questions that test real understanding.",
+      "image": "./toolsinstruction/pdfquiz3.png",
+      "imagePosition": "right"
+    }
+  ]
+}
+
+ 
+}

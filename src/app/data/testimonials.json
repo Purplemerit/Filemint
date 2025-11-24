@@ -1,0 +1,46 @@
+{
+  "testimonials": [
+    {
+      "id": 1,
+      "name": "Ananya T.",
+      "role": "College Student",
+      "rating": 5,
+      "text": "As a student, I constantly deal with PDF assignments. This platform lets me combine them easily before submitting. Huge time-saver!"
+    },
+    {
+      "id": 2,
+      "name": "Rahul M.",
+      "role": "Freelance Designer",
+      "rating": 5,
+      "text": "I use this tool daily to merge client documents. It's fast, reliable, and the interface is super clean. Highly recommended!"
+    },
+    {
+      "id": 3,
+      "name": "Priya S.",
+      "role": "HR Manager",
+      "rating": 4,
+      "text": "Managing employee documents has never been easier. I can merge multiple PDFs in seconds. Great tool for office work!"
+    },
+    {
+      "id": 4,
+      "name": "Amit K.",
+      "role": "Small Business Owner",
+      "rating": 5,
+      "text": "This platform saved me hours of work. I can now send consolidated invoices to clients without any hassle."
+    },
+    {
+      "id": 5,
+      "name": "Sneha R.",
+      "role": "Research Scholar",
+      "rating": 5,
+      "text": "Perfect for combining research papers and references. The quality stays intact and it's completely free!"
+    },
+    {
+      "id": 6,
+      "name": "Vikram P.",
+      "role": "Lawyer",
+      "rating": 4,
+      "text": "I deal with legal documents daily. This tool helps me organize case files efficiently. Very secure and reliable."
+    }
+  ]
+}

@@ -4,7 +4,12 @@ import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 // ✅ Import the new CSS Module
 import styles from "./SettingsPage.module.css";
-
+import { FaRegUser } from "react-icons/fa";
+import { IoDiamondOutline } from "react-icons/io5";
+import { IoSettingsOutline } from "react-icons/io5";
+import { Icon } from "next/dist/lib/metadata/types/metadata-types";
+import { IconType } from "react-icons";
+import { FaPencilAlt } from "react-icons/fa";
 // ✅ Helper type for message state
 type MessageState = { type: "" | "success" | "error"; text: string };
 const initialMessage: MessageState = { type: "", text: "" };
@@ -37,26 +42,27 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ user, activeTab, setActiveTab, onLogout }) => {
-  const SidebarItem = (label: string, key: "account" | "subscription" | "settings") => (
+  const SidebarItem = (label: string, key: "account" | "subscription" | "settings",Icon:IconType,) => (
     <button
       type="button"
       onClick={() => setActiveTab(key)}
       // ✅ Conditionally apply 'active' class
       className={`${styles.sidebarItem} ${activeTab === key ? styles.active : ""}`}
-    >
+    >  <Icon size={18} style={{ marginRight: "18px" ,marginTop:"-4px"}} />
       {label}
     </button>
   );
 
   return (
-    <div className={styles.sidebar}>
-      <div className={styles.brand}>FileMint</div>
+    <div className={styles.sidebar} style={{fontFamily: 'Georgia, "Times New Roman", serif',}}>
+      {/* <div className={styles.brand} >FileMint</div> */}
+      <img src="/Group-14.svg" alt="Logo" className={styles.brand} style={{height:"26px", marginLeft:"-20px"}}/>
       <div className={styles.profileAvatar}>{getInitials(user)}</div>
-      <div className={styles.displayName}>{getDisplayName(user)}</div>
+      {/* <div className={styles.displayName}>{getDisplayName(user)}</div> */}
 
-      {SidebarItem("Account", "account")}
-      {SidebarItem("Subscription", "subscription")}
-      {SidebarItem("Settings", "settings")}
+      {SidebarItem("Account", "account",FaRegUser )}
+      {SidebarItem("Subscription", "subscription",IoDiamondOutline )}
+      {SidebarItem("Settings", "settings",IoSettingsOutline )}
 
       <button onClick={onLogout} className={styles.logoutButton}>
         Log Out
@@ -284,13 +290,13 @@ const AccountSettingsTab: React.FC<{ user: any; token: string | null }> = ({ use
   return (
     <>
       <div className={styles.heading}>Account</div>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: "2rem" }}>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: "2rem" ,marginLeft:"-50px"}}>
         <div className={styles.profileAvatar} style={{ width: 60, height: 60, fontSize: 20, marginRight: '1rem' }}>
           {getInitials(user)}
         </div>
         {/* ✅ A11y: This should be a button if it does something (e.g., open modal) */}
-        <button type="button" className={styles.clickableText} style={{ textDecoration: 'none' }}>
-          ✏️ Update profile
+        <button type="button" className={styles.clickableText} style={{ textDecoration: 'none' , color:"black"}}>
+          <FaPencilAlt /> Update profile
         </button>
       </div>
       <AccountDetailsForm user={user} token={token} />
@@ -314,7 +320,7 @@ const SubscriptionTab: React.FC = () => {
   return (
     <>
       <div className={styles.heading}>Subscriptions</div>
-      <div className={styles.upgradeLink}>Upgrade to Premium 💎</div>
+      <div className={styles.upgradeLink} style={{color:"black"}}>Upgrade to Premium<IoDiamondOutline/> </div>
       {features.map((item, i) => (
         <div key={i} className={styles.featureItem}>
           <span className={styles.featureCheck}>✓</span> {item}
@@ -329,13 +335,13 @@ const SubscriptionTab: React.FC = () => {
 // =================================================================
 const SettingsTab: React.FC = () => {
   return (
-    <>
-      <div className={styles.heading}>Preferences</div>
+    < >
+      <div className={styles.heading} style={{fontFamily: 'Georgia, "Times New Roman", serif'}} >Preferences</div>
 
-      <div className={styles.preferenceItem}>
+      <div className={styles.preferenceItem} style={{fontFamily: 'Georgia, "Times New Roman", serif',marginBottom:"20px"}} >
         <div className={styles.preferenceTitle}>Language</div>
         <div className={styles.preferenceText}>English</div>
-        <button type="button" className={styles.clickableText}>
+        <button type="button" className={styles.clickableText} style={{textDecoration:"none"}}>
           Change
         </button>
       </div>

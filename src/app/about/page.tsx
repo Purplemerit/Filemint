@@ -2,10 +2,18 @@
 import React from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
-
+import { useEffect, useState } from "react";
 const AboutPage = () => {
+   const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        const checkWidth = () => setIsMobile(window.innerWidth <= 720);
+        checkWidth();
+        window.addEventListener("resize", checkWidth);
+        return () => window.removeEventListener("resize", checkWidth);
+      }, []);
   return (
-    <div style={{ margin: "0 auto", fontFamily: "sans-serif" }}>
+   
+    <div style={{ margin: "0 auto", fontFamily: "Georgia, Times New Roman, serif" }}>
       <Navbar />
 
       {/* Main Content */}
@@ -14,7 +22,7 @@ const AboutPage = () => {
           maxWidth: "1200px",
           margin: "0 auto",
           padding: "2rem 1rem",
-          textAlign: "center",
+          textAlign: "left",
         }}
       >
         <h1
@@ -24,7 +32,7 @@ const AboutPage = () => {
             color: "#222",
           }}
         >
-          Why Choose FileMint.com
+          Why Choose<a style={{color:"#082988"}}> FileMint.com</a>
         </h1>
         <h3
           style={{
@@ -42,7 +50,7 @@ const AboutPage = () => {
             color: "#555",
             lineHeight: 1.6,
             maxWidth: "800px",
-            margin: "0 auto",
+            // margin: "0 auto",
           }}
         >
           Our platform empowers users to convert, compress, and manage documents
@@ -90,6 +98,7 @@ const AboutPage = () => {
               display: "flex",
               flexDirection: "column",
               gap: "1rem",
+              border: "2px solid #FF800033",
             }}
           >
             <div
@@ -124,6 +133,7 @@ const AboutPage = () => {
               display: "flex",
               flexDirection: "column",
               gap: "1rem",
+              border: "2px solid #39B93933",
             }}
           >
             <div
@@ -160,6 +170,7 @@ const AboutPage = () => {
               display: "flex",
               flexDirection: "column",
               gap: "1rem",
+              border: "2px solid #9AEBFE",
             }}
           >
             <div
@@ -214,6 +225,7 @@ const AboutPage = () => {
               display: "flex",
               flexDirection: "column",
               gap: "1rem",
+              border: "2px solid #B80DFB33",
             }}
           >
             <div
@@ -243,67 +255,120 @@ const AboutPage = () => {
 
       {/* Footer */}
       <footer
+  style={{
+    backgroundColor: "white",
+    padding: "1rem 0 2rem 0", // reduced padding
+    borderTop: "1px solid #e5e7eb",
+    width: "100%",
+    overflowX: "hidden",
+    backgroundImage: "url('/images/footer-bg.png')",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: isMobile ? "top center" : "center right",
+    backgroundSize: isMobile ? "cover" : "contain",
+  }}
+>
+  <div
+    style={{
+      maxWidth: "1200px",
+      margin: "0 auto",
+      padding: isMobile ? "0 1rem" : "0 2rem",
+      width: "100%",
+      position: "relative",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: isMobile ? "flex-start" : "space-between",
+        alignItems: isMobile ? "flex-start" : "center",
+        flexDirection: isMobile ? "column" : "row",
+        flexWrap: "wrap",
+        gap: isMobile ? "1rem" : "2rem",
+        width: "100%",
+      }}
+    >
+      {/* Logo */}
+      <div
         style={{
-          backgroundColor: "white",
-          padding: "2rem 1rem",
-          borderTop: "1px solid #e5e7eb",
-          marginTop: "3rem",
+          position: "relative",
+          width: isMobile ? "100%" : "auto",
+          zIndex: 2,
         }}
       >
-        <div
-          style={{
-            maxWidth: "1200px",
-            margin: "0 auto",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "1rem",
-          }}
-        >
-          {/* Logo */}
-          <Link href="/">
-            <img
-              src="/logo.png"
-              alt="Logo"
-              style={{ height: "30px", cursor: "pointer" }}
-            />
-          </Link>
+        <a href="/">
+          <img
+            src="/Group-14.svg"
+            alt="Logo"
+            style={{ height: "20px", cursor: "pointer" }}
+          />
+        </a>
+      </div>
 
-          {/* Footer Nav */}
-          <nav
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              justifyContent: "center",
-              gap: "1rem",
-              fontSize: "0.95rem",
-            }}
-          >
-            <Link href="/about" style={{ color: "#666", textDecoration: "none" }}>
-              About
-            </Link>
-            <Link href="/blog" style={{ color: "#666", textDecoration: "none" }}>
-              Blog Posts
-            </Link>
-            <Link href="/faq" style={{ color: "#666", textDecoration: "none" }}>
-              FAQ
-            </Link>
-            <Link href="/terms" style={{ color: "#666", textDecoration: "none" }}>
-              Terms & Conditions
-            </Link>
-            <Link
-              href="/privacy-policy"
-              style={{ color: "#666", textDecoration: "none" }}
-            >
-              Privacy Policy
-            </Link>
-          </nav>
+      {/* Navigation */}
+      <nav
+        style={{
+          display: "flex",
+          gap: isMobile ? "1rem" : "2rem",
+          fontSize: "0.85rem",
+          flexDirection: isMobile ? "column" : "row",
+          width: isMobile ? "100%" : "auto",
+          marginLeft: isMobile ? "0" : "auto",
+          marginRight: isMobile ? "0" : "auto",
+          zIndex: 2,
+        }}
+      >
+        <a href="/about" style={{ color: "#000000ff", textDecoration: "none" }}>About</a>
+        <a href="/blogs" style={{ color: "#000000ff", textDecoration: "none" }}>Blog Posts</a>
+        <a href="/faq" style={{ color: "#000000ff", textDecoration: "none" }}>FAQ</a>
+        <a href="/terms" style={{ color: "#000000ff", textDecoration: "none" }}>Terms & Conditions</a>
+        <a href="/privacy-policy" style={{ color: "#000000ff", textDecoration: "none" }}>Privacy Policy</a>
+      </nav>
+    </div>
 
-          <p style={{ fontSize: "0.8rem", color: "#aaa", marginTop: "1rem" }}>
-            © {new Date().getFullYear()} FileMint.com — All rights reserved.
-          </p>
-        </div>
-      </footer>
+    {/* Bottom Row: centered text + icons right */}
+    <div
+      style={{
+        marginTop: "1.5rem",
+        width: "100%",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexDirection: isMobile ? "column" : "row",
+      }}
+    >
+      {/* Center text */}
+      <div
+        style={{
+          color: "#000000ff",
+          fontSize: "0.8rem",
+          textAlign: isMobile ? "center" : "center",
+          flex: 1,
+          marginLeft: isMobile ?"0px":"250px"
+        }}
+      >
+        © 2025 FileMint. All rights reserved. Powered by PurpleMerit.
+      </div>
+
+      {/* Icons Right */}
+      <div
+        style={{
+          display: "flex",
+          gap: "1rem",
+          justifyContent: "flex-end",
+          fontSize: "1.6rem",
+          color: "#666",
+          flexShrink: 0,
+          marginTop: isMobile ? "1rem" : "0",
+        }}
+      >
+        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-facebook"></i></a>
+        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-instagram"></i></a>
+        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-x-twitter"></i></a>
+        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-youtube"></i></a>
+      </div>
+    </div>
+  </div>
+</footer>
     </div>
   );
 };

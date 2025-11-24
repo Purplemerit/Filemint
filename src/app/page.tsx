@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <AdBanner />
+      
       <HomePage />
     </>
   )

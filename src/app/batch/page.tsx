@@ -38,7 +38,7 @@ const batchTools = [
     title: "Word to PDF",
     icon: "fas fa-file-pdf",
     color: "#E5F0FF",
-    route: "/batch/wordtopdf",
+    route: "/wordtopdf",
   },
 ];
 

@@ -1,38 +1,80 @@
 "use client";
 
-// import { useState } from "react";
 import Navbar from "../components/Navbar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
+import { TbShare3 } from "react-icons/tb";
+import { 
+  PiFiles, 
+  PiLink, 
+  PiClipboard, 
+  PiCaretDown,
+  PiUploadSimple,
+  PiCheckCircle,
+  PiX
+} from "react-icons/pi";
+import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
+import ShareModal from "../components/ShareModal";
+import { useGoogleDrivePicker } from "../hooks/useGoogleDrivePicker";
+import { useDropboxPicker } from "../hooks/useDropboxPicker";
+import ToolInstructions from "../components/ToolInstructions";
+import toolData from "../data/toolInstructions.json";
+import Testimonials from "../components/Testimonials";
+import testimonialData from "../data/testimonials.json";
+import Footer from "../components/footer";
+
 export default function TiffToPdfPage() {
-  const { token, isLoading } = useAuth();
-  const router = useRouter();
-
-  // ✅ Redirect if not logged in
-  // useEffect(() => {
-  //   if (!isLoading && !token) {
-  //     router.push("/login");
-  //   }
-  // }, [isLoading, token, router]);
-
-  // if (isLoading || !token) {
-  //   return (
-  //     <div
-  //       style={{
-  //         textAlign: "center",
-  //         marginTop: "5rem",
-  //         fontSize: "1.5rem",
-  //         fontWeight: "bold",
-  //       }}
-  //     >
-  //       Checking authentication...
-  //     </div>
-  //   );
-  // }
   const [files, setFiles] = useState<File[]>([]);
   const [isConverting, setIsConverting] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showUrlModal, setShowUrlModal] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const { token, isLoading } = useAuth();
+  const router = useRouter();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [convertedBlob, setConvertedBlob] = useState<Blob | null>(null);
+  const instructionData = toolData["tiff-to-pdf"] || toolData["tiff-to-pdf"];
+
   const [error, setError] = useState<string | null>(null);
+  const [convertedBlobUrl, setConvertedBlobUrl] = useState<string | null>(null);
+
+  const { openPicker: openGoogleDrivePicker } = useGoogleDrivePicker({
+    onFilePicked: (file) => {
+      if (file.name.endsWith(".tiff") || file.name.endsWith(".tif")) {
+        setFiles((prev) => [...prev, file]);
+        setError(null);
+      } else {
+        setError("Only TIFF/TIF files are supported.");
+      }
+      setIsDropdownOpen(false);
+    },
+  });
+
+  const { openPicker: openDropboxPicker } = useDropboxPicker({
+    onFilePicked: (file) => {
+      if (file.name.endsWith(".tiff") || file.name.endsWith(".tif")) {
+        setFiles((prev) => [...prev, file]);
+        setError(null);
+      } else {
+        setError("Only TIFF/TIF files are supported.");
+      }
+      setIsDropdownOpen(false);
+    },
+  });
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -41,20 +83,81 @@ export default function TiffToPdfPage() {
     );
     if (droppedFiles.length < e.dataTransfer.files.length) {
       setError("Only TIFF/TIF files are supported.");
+    } else {
+      setError(null);
     }
     setFiles((prev) => [...prev, ...droppedFiles]);
+    setConvertedBlobUrl(null);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const selectedFiles = Array.from(e.target.files).filter((file) =>
-        file.name.endsWith(".tiff") || file.name.endsWith(".tif")
-      );
-      if (selectedFiles.length < e.target.files.length) {
-        setError("Only TIFF/TIF files are supported.");
-      }
-      setFiles((prev) => [...prev, ...selectedFiles]);
+    const selectedFiles = Array.from(e.target.files || []).filter((file) =>
+      file.name.endsWith(".tiff") || file.name.endsWith(".tif")
+    );
+    if (selectedFiles.length < (e.target.files?.length || 0)) {
+      setError("Only TIFF/TIF files are supported.");
+    } else {
+      setError(null);
     }
+    setFiles((prev) => [...prev, ...selectedFiles]);
+    setConvertedBlobUrl(null);
+    setIsDropdownOpen(false);
+  };
+
+  const handleFromDevice = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handlePasteUrl = () => {
+    setShowUrlModal(true);
+    setIsDropdownOpen(false);
+  };
+
+  const handleUrlSubmit = async () => {
+    if (!urlInput.trim()) return;
+    
+    try {
+      setIsUploading(true);
+      const response = await fetch(urlInput);
+      const blob = await response.blob();
+      
+      const fileName = urlInput.split("/").pop() || "downloaded.tif";
+      if (!fileName.endsWith(".tiff") && !fileName.endsWith(".tif")) {
+        alert("URL must point to a TIFF/TIF file");
+        return;
+      }
+      
+      const file = new File([blob], fileName, { type: "image/tiff" });
+      setFiles((prev) => [...prev, file]);
+      setUrlInput("");
+      setShowUrlModal(false);
+      setError(null);
+      setConvertedBlobUrl(null);
+    } catch (error) {
+      alert("Failed to fetch TIFF file from URL");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFromClipboard = async () => {
+    try {
+      const clipboardItems = await navigator.clipboard.read();
+      for (const item of clipboardItems) {
+        const imageTypes = item.types.filter(type => type.startsWith('image/'));
+        if (imageTypes.length > 0) {
+          const blob = await item.getType(imageTypes[0]);
+          const file = new File([blob], "clipboard.tif", { type: "image/tiff" });
+          setFiles((prev) => [...prev, file]);
+          setError(null);
+          setConvertedBlobUrl(null);
+          break;
+        }
+      }
+    } catch (error) {
+      alert("No image found in clipboard or clipboard access denied");
+    }
+    setIsDropdownOpen(false);
   };
 
   const removeFile = (index: number) => {
@@ -96,13 +199,9 @@ export default function TiffToPdfPage() {
       }
 
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "converted.pdf";
-      a.click();
-      window.URL.revokeObjectURL(url);
-      setFiles([]);
+      setConvertedBlob(blob);
+      const url = URL.createObjectURL(blob);
+      setConvertedBlobUrl(url);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
       setError(errorMessage);
@@ -111,134 +210,376 @@ export default function TiffToPdfPage() {
     }
   };
 
+  const downloadConvertedPdf = () => {
+    if (!convertedBlobUrl) return;
+
+    const a = document.createElement('a');
+    a.href = convertedBlobUrl;
+    a.download = 'converted.pdf';
+    a.click();
+  };
+
+  const handleShare = () => {
+    if (!convertedBlob) {
+      alert("Please convert the TIFF files first before sharing");
+      return;
+    }
+    setShowShareModal(true);
+  };
+
+  const menuItems = [
+    { icon: <PiUploadSimple size={18} />, label: "From Device", onClick: handleFromDevice },
+    { icon: <PiLink size={18} />, label: "Paste URL", onClick: handlePasteUrl },
+    { icon: <FaGoogleDrive size={16} />, label: "Google Drive", onClick: openGoogleDrivePicker },
+    { icon: <FaDropbox size={16} />, label: "Drop Box", onClick: openDropboxPicker },
+    { icon: <PiClipboard size={18} />, label: "From Clipboard", onClick: handleFromClipboard },
+  ];
+
   return (
     <div>
-      <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-      />
-
       <Navbar />
 
       <div style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 2rem" }}>
-        <h1 style={{ fontSize: "2rem", marginBottom: "2rem" }}>Convert TIFF to PDF</h1>
+        <h1 style={{ 
+          fontSize: "2rem", 
+          fontWeight: "600",
+          marginBottom: "2rem",
+          textAlign: "left",
+          color: "#1a1a1a",
+          fontFamily: 'Georgia, "Times New Roman", serif',
+        }}>
+          TIFF to PDF
+        </h1>
 
-        {error && (
-          <div
-            style={{
-              backgroundColor: "#ffe6e6",
-              padding: "1rem",
-              borderRadius: "5px",
-              marginBottom: "1rem",
-              color: "#d00",
-            }}
-          >
-            {error}
-          </div>
-        )}
-
+        {/* Drop Zone */}
         <div
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           style={{
-            border: "2px dashed #90EE90",
-            backgroundColor: "#f0fff0",
-            borderRadius: "10px",
-            padding: "4rem",
+           border: "3px solid #FF800080",
+            backgroundColor: "rgb(255 234 215)",
+            borderRadius: "12px",
+            padding: "2rem",
             textAlign: "center",
             marginBottom: "2rem",
+            position: "relative",
+            minHeight: "280px",
           }}
         >
-          <i className="fas fa-cloud-upload-alt" style={{ fontSize: "3rem", color: "#888" }}></i>
-          <p style={{ marginTop: "1rem", marginBottom: "1rem" }}>
-            Drag and drop a TIFF/TIF file here
-          </p>
-          <label
-            htmlFor="fileInput"
-            style={{
-              backgroundColor: "white",
-              padding: "0.5rem 1rem",
-              border: "1px solid #ccc",
-              borderRadius: "5px",
-              cursor: "pointer",
-              display: "inline-block",
-            }}
-          >
-            Select File
-            <input
-              id="fileInput"
-              type="file"
-              accept=".tiff,.tif"
-              multiple
-              onChange={handleFileChange}
-              style={{ display: "none" }}
-            />
-          </label>
-        </div>
+          {files.length === 0 ? (
+            /* Empty State */
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "300px",
+              minHeight: "220px",
+            }}>
+              <div style={{ marginBottom: "1.5rem" }}>
+                <img src="./upload.svg" alt="Upload Icon" />
+              </div>
 
-        {files.length > 0 && (
-          <div style={{ marginBottom: "2rem" }}>
-            {files.map((file, index) => (
-              <div
-                key={index}
-                style={{
-                  backgroundColor: "#f9f9f9",
-                  padding: "0.75rem 1rem",
-                  borderRadius: "5px",
-                  marginBottom: "0.5rem",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <span>
-                  <i
-                    className="fas fa-file-image"
-                    style={{ color: "#28a745", marginRight: "0.5rem" }}
-                  ></i>
-                  {file.name}
-                </span>
+              <div ref={dropdownRef} style={{ position: "relative" }}>
                 <button
-                  onClick={() => removeFile(index)}
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   style={{
-                    background: "none",
-                    border: "none",
-                    color: "#c00",
+                    backgroundColor: "white",
+                    padding: "0.6rem 1rem",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: "6px",
                     cursor: "pointer",
-                    fontSize: "1rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    fontSize: "0.9rem",
+                    fontWeight: "500",
+                    color: "#333",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                   }}
                 >
-                  <i className="fas fa-trash-alt"></i>
+                  <PiFiles size={18} />
+                  Select Files
+                  <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
                 </button>
-              </div>
-            ))}
 
-            <button
-              onClick={handleConvert}
-              disabled={isConverting}
+                {isDropdownOpen && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 4px)",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      backgroundColor: "white",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      zIndex: 1000,
+                      minWidth: "180px",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {menuItems.map((item, index) => (
+                      <button
+                        key={index}
+                        onClick={item.onClick}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                          padding: "0.7rem 1rem",
+                          width: "100%",
+                          border: "none",
+                          backgroundColor: "transparent",
+                          cursor: "pointer",
+                          fontSize: "0.85rem",
+                          color: "#333",
+                          textAlign: "left",
+                          transition: "background-color 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f5f5f5";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
+                      >
+                        <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
+                          {item.icon}
+                        </span>
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".tiff,.tif"
+                  multiple
+                  onChange={handleFileChange}
+                  style={{ display: "none" }}
+                />
+              </div>
+            </div>
+          ) : (
+            /* Files Uploaded State */
+            <div>
+              <div style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "0.5rem",
+                marginBottom: "1.5rem",
+              }}>
+                <button
+                  onClick={handleConvert}
+                  disabled={isConverting}
+                  style={{
+                    backgroundColor: isConverting ? "#ccc" : "#28a745",
+                    color: "white",
+                    border: "none",
+                    padding: "0.5rem 1rem",
+                    borderRadius: "6px",
+                    cursor: isConverting ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    fontSize: "0.85rem",
+                    fontWeight: "500",
+                    opacity: isConverting ? 0.7 : 1,
+                  }}
+                >
+                  {isConverting ? "Converting..." : "Convert to PDF"}
+                </button>
+                {convertedBlobUrl && (
+                  <>
+                    <button
+                      onClick={downloadConvertedPdf}
+                      style={{
+                        backgroundColor: "#007bff",
+                        color: "white",
+                        border: "none",
+                        padding: "0.5rem 1rem",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.85rem",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Download PDF
+                    </button>
+                    <button
+                      onClick={handleShare}
+                      style={{
+                        backgroundColor: "white",
+                        color: "#333",
+                        border: "1px solid #e0e0e0",
+                        padding: "0.5rem 1rem",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.85rem",
+                        fontWeight: "500",
+                      }}
+                    >
+                      <TbShare3 />
+                      Share
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <div style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "1rem",
+                justifyContent: "center",
+                marginBottom: "1.5rem",
+              }}>
+                {files.map((file, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      backgroundColor: "white",
+                      borderRadius: "8px",
+                      width: "120px",
+                      height: "140px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      position: "relative",
+                    }}
+                  >
+                    <button
+                      onClick={() => removeFile(index)}
+                      style={{
+                        position: "absolute",
+                        top: "4px",
+                        right: "4px",
+                        background: "rgba(255, 255, 255, 1)",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: "25px",
+                        height: "25px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        color: "black",
+                      }}
+                    >
+                      <PiX size={35} />
+                    </button>
+                    
+                    <div style={{
+                      width: "40px",
+                      height: "50px",
+                      backgroundColor: "#28a745",
+                      borderRadius: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      fontSize: "0.7rem",
+                      fontWeight: "bold",
+                      marginBottom: "0.5rem"
+                    }}>
+                      TIFF
+                    </div>
+                    <span style={{ 
+                      fontSize: "0.65rem", 
+                      color: "#666", 
+                      maxWidth: "100px", 
+                      overflow: "hidden", 
+                      textOverflow: "ellipsis", 
+                      whiteSpace: "nowrap",
+                      padding: "0 0.5rem"
+                    }}>
+                      {file.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {error && (
+                <p style={{ 
+                  color: "#dc2626", 
+                  fontSize: "0.85rem", 
+                  marginTop: "1rem",
+                  textAlign: "center"
+                }}>
+                  {error}
+                </p>
+              )}
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "0.75rem",
+                  marginTop: "1.5rem",
+                  opacity: 0.4,
+                }}
+              >
+                <PiUploadSimple size={18} />
+                <PiLink size={18} />
+                <FaGoogleDrive size={16} />
+                <FaDropbox size={16} />
+                <PiClipboard size={18} />
+              </div>
+            </div>
+          )}
+
+          {files.length === 0 && (
+            <div
               style={{
-                marginTop: "1rem",
-                backgroundColor: isConverting ? "#ccc" : "#28a745",
-                color: "white",
-                border: "none",
-                padding: "0.6rem 1.2rem",
-                borderRadius: "5px",
-                cursor: isConverting ? "not-allowed" : "pointer",
-                fontSize: "1rem",
+                position: "absolute",
+                right: "1rem",
+                top: "90%",
+                transform: "translateY(-50%)",
+                display: "flex",
+                gap: "0.5rem",
+                opacity: 0.4,
               }}
             >
-              <i className="fas fa-file-pdf" style={{ marginRight: "0.5rem" }}></i>
-              {isConverting ? "Converting..." : "Convert to PDF"}
-            </button>
-          </div>
-        )}
-
-        <div style={{ marginTop: "3rem" }}>
-          <p style={{ marginBottom: "1rem", fontSize: "0.95rem" }}>
-            Easily convert TIFF and TIF images into high-quality PDFs.
-          </p>
+              <PiUploadSimple size={20} />
+              <PiLink size={20} />
+              <FaGoogleDrive size={18} />
+              <FaDropbox size={18} />
+              <PiClipboard size={20} />
+            </div>
+          )}
         </div>
 
+        {/* Info Section */}
+        <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
+          <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
+            Easily convert TIFF and TIF images into high-quality PDF documents.
+          </p>
+          <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
+            {[
+              "Upload multiple TIFF/TIF files (up to 10 at once)",
+              "Convert all images into one PDF document",
+              "High-quality conversion preserving image details",
+              "Works on any device — desktop, tablet, or mobile"
+            ].map((text, index) => (
+              <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
+                {text}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Security Section */}
         <div
           style={{
             marginTop: "3rem",
@@ -247,14 +588,124 @@ export default function TiffToPdfPage() {
             border: "1px solid #cce5ff",
             borderRadius: "10px",
             fontSize: "0.95rem",
+            fontFamily: 'Georgia, "Times New Roman", serif',
           }}
         >
           <strong>Protected. Encrypted. Automatically Deleted.</strong>
-          <p style={{ marginTop: "0.5rem" }}>
+          <p style={{ marginTop: "0.5rem", color: "#555" }}>
             Your TIFF files are encrypted during upload and automatically deleted after 2 hours. No tracking. No storage. Full privacy.
           </p>
+          <div
+            style={{
+              marginTop: "1rem",
+              display: "flex",
+              justifyContent: "space-around",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "1rem",
+              filter: "grayscale(100%)",
+            }}
+          >
+            <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
+            <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
+            <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
+            <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />
+          </div>
         </div>
       </div>
+
+      {/* URL Input Modal */}
+      {showUrlModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+          }}
+          onClick={() => setShowUrlModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "2rem",
+              borderRadius: "10px",
+              width: "90%",
+              maxWidth: "500px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginBottom: "1rem" }}>Paste TIFF URL</h3>
+            <input
+              type="url"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="https://example.com/image.tiff"
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                border: "1px solid #ccc",
+                borderRadius: "6px",
+                fontSize: "0.9rem",
+                marginBottom: "1rem",
+                boxSizing: "border-box",
+              }}
+            />
+            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowUrlModal(false)}
+                style={{
+                  padding: "0.5rem 1rem",
+                  border: "1px solid #ccc",
+                  borderRadius: "6px",
+                  backgroundColor: "white",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUrlSubmit}
+                disabled={isUploading}
+                style={{
+                  padding: "0.5rem 1rem",
+                  border: "none",
+                  borderRadius: "6px",
+                  backgroundColor: "#28a745",
+                  color: "white",
+                  cursor: isUploading ? "not-allowed" : "pointer",
+                  opacity: isUploading ? 0.7 : 1,
+                }}
+              >
+                {isUploading ? "Loading..." : "Add TIFF"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ToolInstructions 
+        title={instructionData.title} 
+        steps={instructionData.steps} 
+      />
+      <Testimonials 
+        title="What Our Users Say"
+        testimonials={testimonialData.testimonials}
+        autoScrollInterval={3000} 
+      />
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        fileBlob={convertedBlob}
+        fileName="converted.pdf"
+      />
+      <Footer />
     </div>
   );
 }

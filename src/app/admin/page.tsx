@@ -717,6 +717,7 @@ const AdminPanel = () => {
                       ))}
                     </tbody>
                   </table>
+                  
                 </div>
               ) : (
                 <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '2rem' }}>

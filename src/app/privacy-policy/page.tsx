@@ -3,7 +3,7 @@ import React from "react";
 import Navbar from '../components/Navbar';
 const PrivacyPolicy = () => {
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column",fontFamily: 'Georgia, "Times New Roman", serif' }}>
       <Navbar />
       <main
         style={{
@@ -15,7 +15,7 @@ const PrivacyPolicy = () => {
           boxSizing: "border-box",
         }}
       >
-        <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "2rem", textAlign: "center" }}>
+        <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "2rem", textAlign: "left" }}>
           Privacy Policy
         </h1>
 
@@ -40,7 +40,7 @@ const PrivacyPolicy = () => {
 
           <ul style={{ marginLeft: "1.5rem", marginBottom: "1rem", lineHeight: "1.6" }}>
             <li style={{ marginBottom: "0.5rem" }}>
-              <strong>a) Uploaded Files:</strong>
+              <a>a) Uploaded Files:</a>
               <ul style={{ marginLeft: "1.5rem", marginTop: "0.5rem", lineHeight: "1.6" }}>
                 <li>Files you upload for editing, merging, converting, etc.</li>
                 <li>These are temporarily stored and automatically deleted after a short period (see Section 4).</li>
@@ -48,7 +48,7 @@ const PrivacyPolicy = () => {
             </li>
 
             <li style={{ marginBottom: "0.5rem" }}>
-              <strong>b) Personal Information (Optional):</strong>
+              <a>b) Personal Information (Optional):</a>
               <ul style={{ marginLeft: "1.5rem", marginTop: "0.5rem", lineHeight: "1.6" }}>
                 <li>Name</li>
                 <li>Email address</li>
@@ -58,7 +58,7 @@ const PrivacyPolicy = () => {
             </li>
 
             <li style={{ marginBottom: "0.5rem" }}>
-              <strong>c) Usage Data (Automatically Collected):</strong>
+              <a>c) Usage Data (Automatically Collected):</a>
               <ul style={{ marginLeft: "1.5rem", marginTop: "0.5rem", lineHeight: "1.6" }}>
                 <li>Browser type and version</li>
                 <li>Device type</li>

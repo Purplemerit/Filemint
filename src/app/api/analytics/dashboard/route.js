@@ -4,7 +4,7 @@ import Tool from '../../../models/Tool';
 import Click from '../../../models/Click';
 import Analytics from '../../../models/Analytics';
 import { NextResponse } from 'next/server';
-
+import PageView from "../../../models/PageView"; 
 export async function GET() {
   try {
     await connectDB();

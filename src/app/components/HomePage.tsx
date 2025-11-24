@@ -4,7 +4,7 @@ import Link from "next/link";
 import AdBanner from "./AdBanner";
 import BGSvgComponent from "./BG";
 import { useEffect, useState } from "react";
-
+import { IoIosArrowForward } from "react-icons/io";
 
 export default function HomePage() {
   const [isMobile, setIsMobile] = useState(false);
@@ -74,7 +74,7 @@ export default function HomePage() {
   }, []);
   return (
     <>
-      <AdBanner />
+      {/* <AdBanner /> */}
       {/* Hero Section */}
   <main
   style={{
@@ -88,6 +88,7 @@ export default function HomePage() {
     overflow: "hidden",
     width: "100%",
     maxWidth: "100vw",
+    fontFamily: 'Georgia, "Times New Roman", serif',
   }}
 >
   {/* Text Section */}
@@ -95,15 +96,17 @@ export default function HomePage() {
     className="text-section"
     style={{
       flex: "1",
-      textAlign: "center",
+      textAlign: "left",
       paddingRight: "0",
       marginLeft: "6vw",
       position: "relative",
       zIndex: 2,
+      fontFamily: 'Georgia, "Times New Roman", serif',
+      
     }}
   >
-    <h1 style={{ fontSize: "4rem", marginBottom: "1rem" }}>
-      Effortlessly <span style={{ color: "#294FFF" }}>Convert</span>
+    <h1 style={{ fontSize: "4rem", marginBottom: "1rem",  }}>
+      Effortlessly <span style={{ color: "#082988" }}>Convert</span>
       <br />
       Your Files in Seconds
     </h1>
@@ -121,7 +124,7 @@ export default function HomePage() {
         </Link>
       </button>
       <button className="secondary-btn">
-        <Link href="/about" style={{ color: "inherit", textDecoration: "none" }}>
+        <Link href="/about" style={{ color: "#000000ff", textDecoration: "none" }}>
           Learn More
         </Link>
       </button>
@@ -180,10 +183,10 @@ export default function HomePage() {
     .secondary-btn {
       padding: 1.25rem 3rem;
       background: white;
-      color: #0070f3;
+      color: #000000ff;
       font-size: 1.1rem;
       font-weight: 600;
-      border: 2px solid #0070f3;
+      border: 2px solid #6A89A5;
       border-radius: 12px;
       cursor: pointer;
       transition: all 0.3s ease;
@@ -205,7 +208,7 @@ export default function HomePage() {
       top: -40px;
       left: 6%;
       width: 750px;
-      height: 500px;
+      height: auto;
       z-index: 5;
     }
 
@@ -297,231 +300,229 @@ export default function HomePage() {
     }
   `}</style>
 </main>
-
+<AdBanner />
  {/* Popular Tools Section */}
 <section style={{ padding: "0", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
   <h2
     className="section-title"
     style={{
       fontSize: "2.8rem",
-      fontWeight: "700",
-      marginBottom: "2rem",
+      fontWeight: "500",
+      marginBottom: "2.5rem",
       textAlign: "center",
       color: "#222",
+      fontFamily: 'Georgia, "Times New Roman", serif'
     }}
   >
     Popular Tools
   </h2>
 
-  <div className="tools-grid">
-    {[
-      {
-        title: "Merge PDF",
-        img: "./image1.svg",
-        color: "#D5F5D5",
-        route: "/mergepdf",
-        desc: "Combine multiple PDF files into one organized document in seconds — fast, simple, and secure.",
-      },
-      {
-        title: "PDF to Word",
-        img: "./image2.svg",
-        color: "#E8D5FF",
-        route: "/pdftoword",
-        desc: "Converts PDF documents into editable Microsoft Word format.",
-      },
-      {
-        title: "Word to PDF",
-        img: "./image3.svg",
-        color: "#E5F0FF",
-        route: "/wordtopdf",
-        desc: "Transforms Microsoft Word documents into PDF format.",
-      },
-      {
-        title: "Edit PDF",
-        img: "./image4.svg",
-        color: "#FFE5D5",
-        route: "/editpdf",
-        desc: "Changes text, images, or structure within a PDF using editing tools.",
-      },
-      {
-        title: "eSign PDF",
-        img: "./image5.svg",
-        color: "#F0D5FF",
-        route: "/esignpdf",
-        desc: "Add secure and legally valid eSignatures to your PDF documents.",
-      },
-      {
-        title: "Compare PDF",
-        img: "./image6.svg",
-        color: "#D5E5FF",
-        route: "/comparepdf",
-        desc: "Compare two PDF documents side by side to find differences easily.",
-      },
-    ].map((tool, index) => (
-      <Link href={tool.route} key={index} style={{ textDecoration: "none" }}>
-        <div
-          className="tool-card"
-          style={{
-            backgroundColor: tool.color,
-            borderRadius: "16px",
-            padding: "2rem 1.5rem",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-start",
-            alignItems: "flex-start",
-            textAlign: "left",
-            cursor: "pointer",
-            transition: "transform 0.2s ease",
-            boxShadow: "0 4px 10px rgba(0, 0, 0, 0.05)",
-            width: "100%",
-            maxWidth: "280px",
-            minHeight: "200px",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-5px)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-        >
-          <img
-            src={tool.img}
-            alt={tool.title}
+  <div className="tools-container">
+    <div className="tools-grid">
+      {[
+        {
+          title: "Merge PDF",
+          img: "./image2.svg",
+          color: "#D5F5D5",
+          route: "/mergepdf",
+          desc: "Combine multiple PDF files into one organized document in seconds — fast, simple, and secure.",
+          bordercolor: "#A3D9A5",
+        },
+        
+        {
+          title: "Word to PDF",
+          img: "./images/summarizer.svg",
+          color: "#E5F0FF",
+          route: "/wordtopdf",
+          desc: "Transforms Microsoft Word documents into PDF format.",
+          bordercolor: "#1B95F84D",
+        },
+        {
+          title: "eSign PDF",
+          img: "./image5.svg",
+          color: "#F0D5FF",
+          route: "/esignpdf",
+          desc: "Add secure and legally valid eSignatures to your PDF documents.",
+          bordercolor: "#D879FD80",
+        },
+        {
+          title: "Edit PDF",
+          img: "./image1.svg",
+          color: "#FFE5D5",
+          route: "/editpdf",
+          desc: "Changes text, images, or structure within a PDF using editing tools.",
+          bordercolor: "#FF800080",
+        },
+        {
+          title: "PDF to Word",
+          img: "./image3.svg",
+          color: "#E8D5FF",
+          route: "/pdftoword",
+          desc: "Converts PDF documents into editable Microsoft Word format.",
+          bordercolor: "#D879FD80",
+        },
+        {
+          title: "Compare PDF",
+          img: "./images/comparelast.svg",
+          color: "#D5E5FF",
+          route: "/comparepdf",
+          desc: "Compare two PDF documents side by side to find differences easily.",
+          bordercolor: "#1B95F84D",
+        },
+      ].map((tool, index) => (
+        <Link href={tool.route} key={index} style={{ textDecoration: "none" }}>
+          <div
+            className="tool-card"
             style={{
-              width: "36px",
-              height: "36px",
-              marginBottom: "1rem",
-            }}
-          />
-          <h3
-            style={{
-              fontSize: "1.1rem",
-              fontWeight: "700",
-              color: "#222",
-              marginBottom: "0.5rem",
-            }}
-          >
-            {tool.title}
-          </h3>
-          <p
-            style={{
-              fontSize: "0.9rem",
-              color: "#555",
-              lineHeight: "1.4",
-              margin: 0,
-            }}
-          >
-            {tool.desc}
-          </p>
-        </div>
-      </Link>
-    ))}
-  </div>
+              backgroundColor: tool.color,
+              border: `2px solid ${tool.bordercolor}`,
 
-  <div className="view-all-container">
-    <Link
-      href="/all"
-      style={{
-        color: "#000",
-        textDecoration: "none",
-        fontWeight: "600",
-        fontSize: "1.1rem",
-      }}
-    >
-      View All
-    </Link>
+              borderRadius: "12px",
+              padding: "1.75rem 1.5rem",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "flex-start",
+              alignItems: "flex-start",
+              textAlign: "left",
+              cursor: "pointer",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
+              height: "100%",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-4px)";
+              e.currentTarget.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.06)";
+            }}
+          >
+            <img
+              src={tool.img}
+              alt={tool.title}
+              style={{
+                width: "38px",
+                height: "38px",
+                marginBottom: "1rem",
+              }}
+            />
+            <h3
+              style={{
+                fontSize: "1.15rem",
+                fontWeight: "600",
+                color: "#222",
+                marginBottom: "0.5rem",
+              }}
+            >
+              {tool.title}
+            </h3>
+            <p
+              style={{
+                fontSize: "0.9rem",
+                color: "#555",
+                lineHeight: "1.5",
+                margin: 0,
+              }}
+            >
+              {tool.desc}
+            </p>
+          </div>
+        </Link>
+      ))}
+    </div>
+
+    <div className="view-all-container">
+      <Link
+        href="/all"
+        style={{
+          color: "#000",
+          textDecoration: "none",
+          fontWeight: "600",
+          fontSize: "1.05rem",
+          textDecorationLine: "underline",
+        }}
+      >
+        View All
+      </Link>
+    </div>
   </div>
 
   <style jsx>{`
+    .tools-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
     .tools-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 2rem;
-      max-width: 1024px;
-      margin: 0 auto;
-      justify-items: center;
-      box-sizing: border-box;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
     }
 
     .tool-card {
       width: 100%;
-      max-width: 280px;
-      min-height: 200px;
+      height: 100%;
     }
 
     .view-all-container {
       text-align: right;
-      margin-top: 2rem;
-      max-width: 1024px;
-      margin-left: auto;
-      margin-right: auto;
+      padding-top: 0.5rem;
     }
 
     @media (max-width: 1024px) and (min-width: 641px) {
+      .tools-container {
+        max-width: 768px;
+      }
+
       .tools-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 1.5rem;
-        max-width: 768px;
-        padding-left: 24px;
-        padding-right: 24px;
-      }
-      
-      .view-all-container {
-        padding-left: 24px;
-        padding-right: 24px;
-      }
-      
-      .section-title {
-        padding-left: 24px;
-        padding-right: 24px;
       }
     }
 
     @media (max-width: 640px) {
       .section-title {
         font-size: 2rem !important;
-        margin-bottom: 1.5rem !important;
-        padding-left: 20px;
-        padding-right: 20px;
+        margin-bottom: 2rem !important;
+      }
+
+      .tools-container {
+        padding: 0 20px;
       }
 
       .tools-grid {
         grid-template-columns: 1fr;
-        gap: 1.5rem;
-        padding-left: 20px;
-        padding-right: 20px;
+        gap: 1.25rem;
+        margin-bottom: 1.25rem;
       }
 
       .tool-card {
-        max-width: 100% !important;
-        min-height: 180px !important;
         padding: 1.75rem 1.5rem !important;
       }
 
       .tool-card img {
         width: 40px !important;
         height: 40px !important;
-        margin-bottom: 1rem !important;
       }
 
       .tool-card h3 {
         font-size: 1.15rem !important;
-        margin-bottom: 0.6rem !important;
       }
 
       .tool-card p {
         font-size: 0.95rem !important;
-        line-height: 1.5 !important;
       }
 
       .view-all-container {
         text-align: center !important;
-        padding-left: 20px;
-        padding-right: 20px;
       }
 
       @media (pointer: coarse) {
         .tool-card {
           transition: none !important;
-        }
-        .tool-card:hover {
-          transform: none !important;
         }
       }
     }
@@ -537,6 +538,7 @@ export default function HomePage() {
     padding: isMobile ? "60px 1rem" : "100px 40px",
     boxSizing: "border-box",
     overflowX: "hidden",
+    fontFamily: 'Georgia, "Times New Roman", serif'
   }}
 >
   <div
@@ -544,12 +546,13 @@ export default function HomePage() {
       maxWidth: "1300px",
       margin: "0 auto",
       textAlign: "center",
+      fontFamily: 'Georgia, "Times New Roman", serif'
     }}
   >
     <h2
       style={{
         fontSize: "2.8rem",
-        fontWeight: "700",
+        fontWeight: "520",
         color: "#111",
       }}
     >
@@ -557,9 +560,10 @@ export default function HomePage() {
     </h2>
     <p
       style={{
-        fontSize: "1.4rem",
-        color: "#444",
-        marginTop: "8px",
+         fontSize: "2.8rem",
+        fontWeight: "520",
+        color: "#111",
+        marginTop: "-25px",
       }}
     >
       Made Simple (and Free)
@@ -573,9 +577,7 @@ export default function HomePage() {
         lineHeight: "1.8",
       }}
     >
-      Experience pro-level file conversion with zero setup or fees. From OCR to
-      PDF tools, everything you need is fast, simple, no hidden fees — just
-      smart results.
+      Experience pro-level file conversion without the complexity or the cost. From OCR to PDF tools, everything you need—no sign-ups, no hidden fees, just instant results
     </p>
   </div>
 
@@ -600,7 +602,7 @@ export default function HomePage() {
       }}
     >
       <div style={{ flex: "1 1 500px", textAlign: "left" }}>
-        <h3 style={{ fontSize: "1.8rem", fontWeight: "600", color: "#111" }}>
+        <h3 style={{ fontSize: "1.8rem", fontWeight: "500", color: "#111" }}>
           No Watermark on Output
         </h3>
         <p
@@ -646,7 +648,7 @@ export default function HomePage() {
         />
       </div>
       <div style={{ flex: "1 1 500px", textAlign: "left" }}>
-        <h3 style={{ fontSize: "1.8rem", fontWeight: "600", color: "#111" }}>
+        <h3 style={{ fontSize: "1.8rem", fontWeight: "500", color: "#111" }}>
           Convert from Anywhere
         </h3>
         <p
@@ -677,7 +679,7 @@ export default function HomePage() {
       }}
     >
       <div style={{ flex: "1 1 500px", textAlign: "left" }}>
-        <h3 style={{ fontSize: "1.8rem", fontWeight: "600", color: "#111" }}>
+        <h3 style={{ fontSize: "1.8rem", fontWeight: "500", color: "#111" }}>
           Customize After Conversion
         </h3>
         <p
@@ -723,7 +725,7 @@ export default function HomePage() {
         />
       </div>
       <div style={{ flex: "1 1 500px", textAlign: "left" }}>
-        <h3 style={{ fontSize: "1.8rem", fontWeight: "600", color: "#111" }}>
+        <h3 style={{ fontSize: "1.8rem", fontWeight: "500", color: "#111" }}>
           Image/PDF Text Conversion
         </h3>
         <p
@@ -796,7 +798,7 @@ export default function HomePage() {
               lineHeight: 1.05,
               margin: "0 auto 0.6rem",
               color: "#111",
-              fontWeight: 600,
+              fontWeight: 500,
               maxWidth: "900px",
             }}
           >
@@ -812,10 +814,12 @@ export default function HomePage() {
               fontSize: "1rem",
               maxWidth: "760px",
               lineHeight: 1.6,
+              marginBottom:"85px",
+              fontFamily: 'Georgia, "Times New Roman", serif'
             }}
           >
             Our user-friendly platform allows you to convert files effortlessly.
-            Just drag and drop your documents to get started.
+            Just drag <br></br>and drop your documents to get started.
           </p>
         </div>
 
@@ -838,6 +842,7 @@ export default function HomePage() {
               gap: "2rem",
               alignItems: "flex-start",
               flexDirection: isMobile ? "column" : "row",
+              fontFamily: 'Georgia, "Times New Roman", serif'
             }}
           >
             <div style={{ flex: "1 1 45%", minWidth: "220px" }}>
@@ -846,18 +851,18 @@ export default function HomePage() {
                   width: "56px",
                   height: "56px",
                   borderRadius: "10px",
-                  border: "2px solid #ffd6e8",
+                  
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   marginBottom: "16px",
-                  background: "#fff",
+                  
                 }}
               >
                 <img
                   src="./section3-2.svg"
                   alt="Choose Files"
-                  style={{ width: "28px", height: "28px" }}
+                  style={{ width: "56px", height: "56px" , marginBottom: "16px"}}
                 />
               </div>
 
@@ -891,14 +896,14 @@ export default function HomePage() {
                     display: "inline-block",
                     padding: "8px 14px",
                     borderRadius: "8px",
-                    border: "1px solid #c9cdd1",
+                    border: "2px solid #6A89A5",
                     textDecoration: "none",
                     color: "#111",
                     fontSize: "0.95rem",
                     background: "#fff",
                   }}
                 >
-                  Learn More ▸
+                  Learn More <IoIosArrowForward style={{ verticalAlign: "-3px" }} />
                 </a>
               </div>
             </div>
@@ -909,18 +914,18 @@ export default function HomePage() {
                   width: "56px",
                   height: "56px",
                   borderRadius: "10px",
-                  border: "2px solid #d6f3f0",
+                 
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   marginBottom: "16px",
-                  background: "#fff",
+                 
                 }}
               >
                 <img
                   src="./section3-1.svg"
                   alt="Get Started"
-                  style={{ width: "26px", height: "26px" }}
+                  style={{ width: "56px", height: "56px",marginBottom: "16px" }}
                 />
               </div>
 
@@ -1023,16 +1028,18 @@ export default function HomePage() {
         width: "100%",
         maxWidth: "100vw",
         overflowX: "hidden",
+        fontFamily: 'Georgia, "Times New Roman", serif',
       }}
     >
       <div style={{ maxWidth: "1100px", margin: "0 auto", textAlign: "center" }}>
         <h2
           style={{
             fontSize: isMobile ? "1.9rem" : "2.8rem",
-            fontWeight: 600,
+            fontWeight: 500,
             color: "#222",
             marginBottom: isMobile ? "2rem" : "3rem",
             lineHeight: 1.3,
+            
           }}
         >
           Effortlessly transform documents
@@ -1052,23 +1059,23 @@ export default function HomePage() {
             <div
               key={i}
               style={{
-                backgroundColor: "#fff",
+                // backgroundColor: "#fff",
                 borderRadius: "16px",
                 padding: isMobile ? "1.5rem 1rem" : "2rem",
-                textAlign: "center",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                textAlign: isMobile ? "center" : "left",
+                // boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                 transition: "transform 0.2s ease",
               }}
             >
               <div
                 style={{
                   display: "inline-flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  backgroundColor: `${tool.color}10`,
+                  justifyContent: "left",
+                  alignItems: "left",
+                  // backgroundColor: `${tool.color}10`,
                   borderRadius: "12px",
-                  width: isMobile ? "70px" : "80px",
-                  height: isMobile ? "70px" : "80px",
+                  width: isMobile ? "60px" : "70px",
+                  height: isMobile ? "60px" : "70px",
                   marginBottom: "1.2rem",
                   border: `1.5px solid ${tool.color}40`,
                 }}
@@ -1077,8 +1084,8 @@ export default function HomePage() {
                   src={tool.img}
                   alt={tool.title}
                   style={{
-                    width: isMobile ? "30px" : "36px",
-                    height: isMobile ? "30px" : "36px",
+                    width: isMobile ? "60px" : "70px",
+                    height: isMobile ? "60px" : "70px",
                     objectFit: "contain",
                   }}
                 />
@@ -1120,7 +1127,7 @@ export default function HomePage() {
                   transition: "all 0.3s",
                 }}
               >
-                {tool.btnText} →
+                {tool.btnText} <IoIosArrowForward style={{ verticalAlign: "-3px" }} />
               </Link>
             </div>
           ))}
@@ -1140,10 +1147,11 @@ export default function HomePage() {
         <h2
           style={{
             fontSize: isMobile ? "1.9rem" : "2.8rem",
-            fontWeight: 600,
+            fontWeight: 500,
             color: "#222",
             marginBottom: isMobile ? "2rem" : "3rem",
             lineHeight: 1.3,
+            fontFamily: 'Georgia, "Times New Roman", serif',
           }}
         >
           Convert your files in 3 quick,
@@ -1163,11 +1171,11 @@ export default function HomePage() {
             <div
               key={i}
               style={{
-                backgroundColor: "#fff",
+                // backgroundColor: "#fff",
                 borderRadius: "16px",
                 padding: isMobile ? "1.5rem 1rem" : "2rem",
-                textAlign: "center",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                textAlign: isMobile ? "center" :"left",
+                // boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                 transition: "transform 0.2s ease",
               }}
             >
@@ -1176,20 +1184,21 @@ export default function HomePage() {
                   display: "inline-flex",
                   justifyContent: "center",
                   alignItems: "center",
-                  backgroundColor: `${tool.color}10`,
+                  // backgroundColor: `${tool.color}10`,
                   borderRadius: "12px",
-                  width: isMobile ? "70px" : "80px",
-                  height: isMobile ? "70px" : "80px",
+                  width: isMobile ? "60px" : "70px",
+                  height: isMobile ? "0px" : "70px",
                   marginBottom: "1.2rem",
                   border: `1.5px solid ${tool.color}40`,
+                  fontFamily: 'Georgia, "Times New Roman", serif',
                 }}
               >
                 <img
                   src={tool.img}
                   alt={tool.title}
                   style={{
-                    width: isMobile ? "30px" : "36px",
-                    height: isMobile ? "30px" : "36px",
+                    width: isMobile ? "60px" : "70px",
+                    height: isMobile ? "60px" : "70px",
                     objectFit: "contain",
                   }}
                 />
@@ -1198,9 +1207,10 @@ export default function HomePage() {
               <h3
                 style={{
                   fontSize: isMobile ? "1.1rem" : "1.25rem",
-                  fontWeight: 600,
+                  fontWeight: 500,
                   marginBottom: "0.6rem",
                   color: "#222",
+                  fontFamily: 'Georgia, "Times New Roman", serif',
                 }}
               >
                 {tool.title}
@@ -1212,6 +1222,7 @@ export default function HomePage() {
                   fontSize: isMobile ? "0.9rem" : "0.95rem",
                   lineHeight: 1.6,
                   marginBottom: "1.4rem",
+                  fontFamily: 'Georgia, "Times New Roman", serif',
                 }}
               >
                 {tool.desc}
@@ -1229,9 +1240,10 @@ export default function HomePage() {
                   border: `1.8px solid ${tool.btnColor}`,
                   fontSize: isMobile ? "0.9rem" : "1rem",
                   transition: "all 0.3s",
+                  fontFamily: 'Georgia, "Times New Roman", serif',
                 }}
               >
-                {tool.btnText} →
+                {tool.btnText}<IoIosArrowForward style={{ verticalAlign: "-3px" }} />
               </Link>
             </div>
           ))}
@@ -1262,6 +1274,7 @@ export default function HomePage() {
             fontSize: isMobile ? "1rem" : "1.5rem",
             fontWeight: 600,
             marginBottom: isMobile ? "1rem" : "2rem",
+            fontFamily: 'Georgia, "Times New Roman", serif',
           }}
         >
           Trusted By:
@@ -1331,7 +1344,7 @@ export default function HomePage() {
               lineHeight: 1.05,
               margin: "0 auto 0.6rem",
               color: "#111",
-              fontWeight: 600,
+              fontWeight: 500,
               maxWidth: "900px",
             }}
           >
@@ -1347,6 +1360,8 @@ export default function HomePage() {
               fontSize: "1rem",
               maxWidth: "760px",
               lineHeight: 1.6,
+              marginBottom:"80px",
+              fontFamily: 'Georgia, "Times New Roman", serif',
             }}
           >
             Our user-friendly platform allows you to convert files effortlessly. Just drag and drop your documents to get started.
@@ -1380,18 +1395,19 @@ export default function HomePage() {
                   width: "56px",
                   height: "56px",
                   borderRadius: "10px",
-                  border: "2px solid #f5ffd6ff",
+                  // border: "2px solid #f5ffd6ff",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   marginBottom: "16px",
                   background: "#fff",
+                  fontFamily: 'Georgia, "Times New Roman", serif',
                 }}
               >
                 <img
                   src="./imagefianl3.svg"
                   alt="Choose Files"
-                  style={{ width: "28px", height: "28px" }}
+                  style={{ width: "50px", height: "50px" }}
                 />
               </div>
 
@@ -1401,6 +1417,7 @@ export default function HomePage() {
                   margin: "0 0 8px",
                   color: "#111",
                   fontWeight: 600,
+                  fontFamily: 'Georgia, "Times New Roman", serif',
                 }}
               >
                 Choose Files
@@ -1411,6 +1428,7 @@ export default function HomePage() {
                   color: "#5a5a5a",
                   lineHeight: 1.6,
                   fontSize: "0.95rem",
+                  fontFamily: 'Georgia, "Times New Roman", serif',
                 }}
               >
                 Start Converting your file quickly
@@ -1425,14 +1443,15 @@ export default function HomePage() {
                     display: "inline-block",
                     padding: "8px 14px",
                     borderRadius: "8px",
-                    border: "1px solid #c9cdd1",
+                    border: "2px solid #6A89A5",
                     textDecoration: "none",
                     color: "#111",
                     fontSize: "0.95rem",
                     background: "#fff",
+                    fontFamily: 'Georgia, "Times New Roman", serif',
                   }}
                 >
-                  Learn More ▸
+                  Learn More <IoIosArrowForward style={{ verticalAlign: "-3px" }} />
                 </a>
               </div>
             </div>
@@ -1443,7 +1462,7 @@ export default function HomePage() {
                   width: "56px",
                   height: "56px",
                   borderRadius: "10px",
-                  border: "2px solid #b4e5feff",
+                  // border: "2px solid #b4e5feff",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1454,7 +1473,7 @@ export default function HomePage() {
                 <img
                   src="./imagefianl2.svg"
                   alt="Get Started"
-                  style={{ width: "26px", height: "26px" }}
+                  style={{ width: "50px", height: "50px" }}
                 />
               </div>
 
@@ -1464,6 +1483,7 @@ export default function HomePage() {
                   margin: "0 0 8px",
                   color: "#111",
                   fontWeight: 600,
+                  fontFamily: 'Georgia, "Times New Roman", serif',
                 }}
               >
                 Get Started
@@ -1474,6 +1494,7 @@ export default function HomePage() {
                   color: "#5a5a5a",
                   lineHeight: 1.6,
                   fontSize: "0.95rem",
+                  fontFamily: 'Georgia, "Times New Roman", serif',
                 }}
               >
                 Just upload and start converting your file
@@ -1549,99 +1570,123 @@ export default function HomePage() {
 </section>
 
       {/* Footer */}
-      <footer
+     <footer
+  style={{
+    backgroundColor: "white",
+    padding: "1rem 0 2rem 0", // reduced padding
+    borderTop: "1px solid #e5e7eb",
+    width: "100%",
+    overflowX: "hidden",
+    backgroundImage: "url('/images/footer-bg.png')",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: isMobile ? "top center" : "center right",
+    backgroundSize: isMobile ? "cover" : "contain",
+  }}
+>
+  <div
+    style={{
+      maxWidth: "1200px",
+      margin: "0 auto",
+      padding: isMobile ? "0 1rem" : "0 2rem",
+      width: "100%",
+      position: "relative",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: isMobile ? "flex-start" : "space-between",
+        alignItems: isMobile ? "flex-start" : "center",
+        flexDirection: isMobile ? "column" : "row",
+        flexWrap: "wrap",
+        gap: isMobile ? "1rem" : "2rem",
+        width: "100%",
+      }}
+    >
+      {/* Logo */}
+      <div
         style={{
-          backgroundColor: "white",
-          padding: "2rem 0",
-          borderTop: "1px solid #e5e7eb",
-          width: "100%",
-          maxWidth: "100vw",
-          overflowX: "hidden",
+          position: "relative",
+          width: isMobile ? "100%" : "auto",
+          zIndex: 2,
         }}
       >
-        <div
-          style={{ 
-            maxWidth: "1200px", 
-            margin: "0 auto", 
-            padding: isMobile ? "0 1rem" : "0 2rem",
-            width: "100%",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: isMobile ? "flex-start" : "space-between",
-              alignItems: isMobile ? "flex-start" : "center",
-              flexDirection: isMobile ? "column" : "row",
-              flexWrap: "wrap",
-              gap: isMobile ? "1.5rem" : "2rem",
-              width: "100%",
-            }}
-          >
-            {/* Logo */}
-            <div style={{ 
-              position: isMobile ? "relative" : "absolute", 
-              left: isMobile ? "0" : "2rem",
-              width: isMobile ? "100%" : "auto",
-            }}>
-              <Link href="/">
-                <img
-                  src="/logo.png"
-                  alt="Logo"
-                  style={{ height: "20px", cursor: "pointer" }}
-                />
-              </Link>
-            </div>
+        <a href="/">
+          <img
+            src="/Group-14.svg"
+            alt="Logo"
+            style={{ height: "20px", cursor: "pointer" }}
+          />
+        </a>
+      </div>
 
-            {/* Navigation */}
-            <nav style={{ 
-              display: "flex", 
-              gap: isMobile ? "1rem" : "2rem", 
-              fontSize: "0.9rem",
-              flexDirection: isMobile ? "column" : "row",
-              width: isMobile ? "100%" : "auto",
-              marginLeft: isMobile ? "0" : "auto",
-              marginRight: isMobile ? "0" : "auto",
-            }}>
-              <Link href="/about" style={{ color: "#666", textDecoration: "none" }}>
-                About
-              </Link>
-              <Link href="/blogs" style={{ color: "#666", textDecoration: "none" }}>
-                Blog Posts
-              </Link>
-              <Link href="/faq" style={{ color: "#666", textDecoration: "none" }}>
-                FAQ
-              </Link>
-              <Link href="/terms" style={{ color: "#666", textDecoration: "none" }}>
-                Terms & Conditions
-              </Link>
-              <Link href="/privacy-policy" style={{ color: "#666", textDecoration: "none" }}>
-                Privacy Policy
-              </Link>
-            </nav>
+      {/* Navigation */}
+      <nav
+        style={{
+          display: "flex",
+          gap: isMobile ? "1rem" : "2rem",
+          fontSize: "0.85rem",
+          flexDirection: isMobile ? "column" : "row",
+          width: isMobile ? "100%" : "auto",
+          marginLeft: isMobile ? "0" : "auto",
+          marginRight: isMobile ? "0" : "auto",
+          zIndex: 2,
+        }}
+      >
+        <a href="/about" style={{ color: "#000000ff", textDecoration: "none" }}>About</a>
+        <a href="/blogs" style={{ color: "#000000ff", textDecoration: "none" }}>Blog Posts</a>
+        <a href="/faq" style={{ color: "#000000ff", textDecoration: "none" }}>FAQ</a>
+        <a href="/terms" style={{ color: "#000000ff", textDecoration: "none" }}>Terms & Conditions</a>
+        <a href="/privacy-policy" style={{ color: "#000000ff", textDecoration: "none" }}>Privacy Policy</a>
+      </nav>
+    </div>
 
-            {/* Social Icons */}
-            <div style={{ 
-              display: "flex", 
-              gap: "1rem",
-              width: isMobile ? "100%" : "auto",
-            }}>
-              <a href="#" style={{ color: "#666", fontSize: "1.2rem" }}>
-                <i className="fab fa-facebook"></i>
-              </a>
-              <a href="#" style={{ color: "#666", fontSize: "1.2rem" }}>
-                <i className="fab fa-instagram"></i>
-              </a>
-              <a href="#" style={{ color: "#666", fontSize: "1.2rem" }}>
-                <i className="fab fa-twitter"></i>
-              </a>
-              <a href="#" style={{ color: "#666", fontSize: "1.2rem" }}>
-                <i className="fas fa-envelope"></i>
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
+    {/* Bottom Row: centered text + icons right */}
+    <div
+      style={{
+        marginTop: "1.5rem",
+        width: "100%",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexDirection: isMobile ? "column" : "row",
+      }}
+    >
+      {/* Center text */}
+      <div
+        style={{
+          color: "#000000ff",
+          fontSize: "0.8rem",
+          textAlign: isMobile ? "center" : "center",
+          flex: 1,
+          marginLeft: isMobile ?"0px":"250px"
+        }}
+      >
+        © 2025 FileMint. All rights reserved. Powered by PurpleMerit.
+      </div>
+
+      {/* Icons Right */}
+      <div
+        style={{
+          display: "flex",
+          gap: "1rem",
+          justifyContent: "flex-end",
+          fontSize: "1.6rem",
+          color: "#666",
+          flexShrink: 0,
+          marginTop: isMobile ? "1rem" : "0",
+        }}
+      >
+        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-facebook"></i></a>
+        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-instagram"></i></a>
+        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-x-twitter"></i></a>
+        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-youtube"></i></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
 
       {/* Global CSS fixes for horizontal scroll */}
       {/* <style jsx global>{`
