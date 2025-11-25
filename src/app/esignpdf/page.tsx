@@ -52,6 +52,7 @@ export default function ESignPdfPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [scale, setScale] = useState(1.5);
+  const [pdfLoaded, setPdfLoaded] = useState(false);
   const canvasRefs = useRef<HTMLCanvasElement[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const signatureFileInputRef = useRef<HTMLInputElement>(null);
@@ -204,6 +205,7 @@ export default function ESignPdfPage() {
 
   const loadPdf = async (url: string) => {
     try {
+      setPdfLoaded(false);
       // @ts-ignore
       const loadingTask = window.pdfjsLib.getDocument(url);
       const pdf = await loadingTask.promise;
@@ -229,9 +231,11 @@ export default function ESignPdfPage() {
         canvases.push(canvas);
       }
       canvasRefs.current = canvases;
+      setPdfLoaded(true); // Trigger re-render to display canvases
     } catch (error) {
       console.error("Error loading PDF:", error);
       alert("Error loading PDF. Please try again.");
+      setPdfLoaded(false);
     }
   };
 
@@ -340,10 +344,12 @@ export default function ESignPdfPage() {
 
       for (const signature of signatures) {
         const page = pages[signature.page - 1];
-        const { height: pageHeight } = page.getSize();
+        const { height: pageHeight, width: pageWidth } = page.getSize();
 
-        const pdfX = signature.x;
-        const pdfY = pageHeight - signature.y - signature.height;
+        // Convert canvas coordinates to PDF coordinates
+        // Signatures are positioned on scaled canvas, need to convert back to actual PDF coordinates
+        const pdfX = signature.x / scale;
+        const pdfY = pageHeight - (signature.y / scale) - (signature.height / scale);
 
         if (signature.type === "text") {
           page.drawText(signature.content, {
@@ -364,8 +370,8 @@ export default function ESignPdfPage() {
             page.drawImage(image, {
               x: pdfX,
               y: pdfY,
-              width: signature.width,
-              height: signature.height,
+              width: signature.width / scale,
+              height: signature.height / scale,
             });
           } catch (imgError) {
             console.error("Error adding image signature:", imgError);
@@ -399,6 +405,7 @@ export default function ESignPdfPage() {
     setTextSignature("");
     setImageSignature("");
     setPdfDoc(null);
+    setPdfLoaded(false);
     canvasRefs.current = [];
   };
 
