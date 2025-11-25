@@ -3,8 +3,20 @@ import pdfParse from 'pdf-parse';
 import { Document, Packer, Paragraph } from 'docx';
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
-// Configure PDF.js worker
-GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+// Configure PDF.js worker - use local worker for serverless environments
+if (typeof window === 'undefined') {
+  // Server-side: use the worker from node_modules
+  try {
+    const pdfjsWorker = require('pdfjs-dist/build/pdf.worker.min.js');
+    GlobalWorkerOptions.workerSrc = pdfjsWorker;
+  } catch (e) {
+    // Fallback to require.resolve path
+    GlobalWorkerOptions.workerSrc = require.resolve('pdfjs-dist/build/pdf.worker.min.js');
+  }
+} else {
+  // Client-side fallback (shouldn't be used in this API route)
+  GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+}
 
 async function extractTextWithPdfJs(pdfBuffer: Buffer): Promise<string> {
   try {
@@ -32,24 +44,29 @@ async function extractTextWithPdfJs(pdfBuffer: Buffer): Promise<string> {
 }
 
 async function convertPdfToDocx(pdfFile: File): Promise<Buffer> {
+  console.log('Converting PDF to DOCX, file size:', pdfFile.size, 'bytes');
   const pdfBuffer = Buffer.from(await pdfFile.arrayBuffer());
   let extractedText = '';
 
   try {
     // Try pdf-parse first
+    console.log('Attempting extraction with pdf-parse...');
     const data = await pdfParse(pdfBuffer);
     extractedText = data.text;
-    console.log('Extracted Text using pdf-parse');
+    console.log('Extracted Text using pdf-parse, length:', extractedText.length);
   } catch (error) {
-    console.log('pdf-parse failed, trying PDF.js fallback:', error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.log('pdf-parse failed, trying PDF.js fallback. Error:', errorMsg);
 
     try {
       // Fallback to PDF.js
+      console.log('Attempting extraction with PDF.js...');
       extractedText = await extractTextWithPdfJs(pdfBuffer);
-      console.log('Extracted Text using PDF.js');
+      console.log('Extracted Text using PDF.js, length:', extractedText.length);
     } catch (fallbackError) {
-      console.error('Both extraction methods failed:', fallbackError);
-      throw new Error('Failed to extract text from PDF. The PDF may be corrupted or encrypted.');
+      const fallbackMsg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+      console.error('Both extraction methods failed. pdf-parse error:', errorMsg, 'PDF.js error:', fallbackMsg);
+      throw new Error(`Failed to extract text from PDF. pdf-parse: ${errorMsg}, PDF.js: ${fallbackMsg}`);
     }
   }
 
@@ -74,12 +91,12 @@ async function convertPdfToDocx(pdfFile: File): Promise<Buffer> {
 
 export async function POST(req: NextRequest) {
   try {
-
+    console.log('PDF to Word conversion API called');
     const formData = await req.formData();
     const files = formData.getAll('files') as File[];
 
-   
-    console.log("Uploaded Files:", files);
+
+    console.log("Uploaded Files:", files.map(f => ({ name: f.name, size: f.size, type: f.type })));
 
     if (!files || files.length === 0) {
       return new NextResponse(
@@ -88,7 +105,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    console.log('Starting conversion for file:', files[0].name);
     const docFileBuffer = await convertPdfToDocx(files[0]);
+    console.log('Conversion successful, buffer size:', docFileBuffer.length);
 
     return new NextResponse(docFileBuffer, {
       status: 200,
@@ -99,8 +118,21 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error during PDF to DOCX conversion:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorStack = error instanceof Error ? error.stack : '';
+
+    console.error('Error details:', {
+      message: errorMessage,
+      stack: errorStack,
+      type: error?.constructor?.name
+    });
+
     return new NextResponse(
-      JSON.stringify({ error: 'An error occurred during file upload or conversion' }),
+      JSON.stringify({
+        error: 'An error occurred during file upload or conversion',
+        details: errorMessage,
+        type: error?.constructor?.name
+      }),
       { status: 500 }
     );
   }
