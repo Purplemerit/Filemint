@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFile } from "fs/promises";
-import path from "path";
+import { getStore } from "@netlify/blobs";
 
 export async function GET(
   request: NextRequest,
@@ -8,10 +7,24 @@ export async function GET(
 ) {
   try {
     const filename = params.filename;
-    const filePath = path.join(process.cwd(), "public", "shared", filename);
 
-    // Read the file
-    const fileBuffer = await readFile(filePath);
+    // Get Netlify Blobs store
+    const store = getStore({
+      name: "shared-files",
+      consistency: "strong",
+    });
+
+    // Retrieve file from Netlify Blobs
+    const blob = await store.get(filename, { type: "arrayBuffer" });
+
+    if (!blob) {
+      throw new Error("File not found");
+    }
+
+    const fileBuffer = Buffer.from(blob as ArrayBuffer);
+
+    // Get metadata
+    const metadata = await store.getMetadata(filename);
 
     // Determine content type based on file extension
     const extension = filename.split('.').pop()?.toLowerCase();
@@ -77,13 +90,23 @@ export async function GET(
       'mkv': 'video/x-matroska',
     };
 
-    const contentType = contentTypeMap[extension || ''] || 'application/octet-stream';
+    // Use metadata mimeType if available, otherwise fall back to extension mapping
+    const contentType = (metadata?.mimeType as string) || contentTypeMap[extension || ''] || 'application/octet-stream';
+    const originalFileName = (metadata?.fileName as string) || filename;
+
+    // Check if file has expired
+    if (metadata?.expiresAt) {
+      const expiryDate = new Date(metadata.expiresAt as string);
+      if (new Date() > expiryDate) {
+        throw new Error("File has expired");
+      }
+    }
 
     // Return the file with appropriate headers
     return new NextResponse(fileBuffer, {
       headers: {
         'Content-Type': contentType,
-        'Content-Disposition': `inline; filename="${filename}"`,
+        'Content-Disposition': `inline; filename="${originalFileName}"`,
         'Cache-Control': 'public, max-age=3600',
         'Access-Control-Allow-Origin': '*',
         'X-Content-Type-Options': 'nosniff',
