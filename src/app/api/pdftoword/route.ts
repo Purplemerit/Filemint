@@ -1,19 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pdfParse from 'pdf-parse'; 
-import { Document, Packer, Paragraph } from 'docx'; 
+import pdfParse from 'pdf-parse';
+import { Document, Packer, Paragraph } from 'docx';
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
+
+// Configure PDF.js worker
+GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+
+async function extractTextWithPdfJs(pdfBuffer: Buffer): Promise<string> {
+  try {
+    // Convert Buffer to Uint8Array for PDF.js
+    const uint8Array = new Uint8Array(pdfBuffer);
+
+    const loadingTask = getDocument({ data: uint8Array });
+    const pdf = await loadingTask.promise;
+    let fullText = '';
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      fullText += pageText + '\n';
+    }
+
+    return fullText;
+  } catch (error) {
+    console.error('PDF.js extraction failed:', error);
+    throw error;
+  }
+}
 
 async function convertPdfToDocx(pdfFile: File): Promise<Buffer> {
   const pdfBuffer = Buffer.from(await pdfFile.arrayBuffer());
+  let extractedText = '';
 
-  const data = await pdfParse(pdfBuffer);
+  try {
+    // Try pdf-parse first
+    const data = await pdfParse(pdfBuffer);
+    extractedText = data.text;
+    console.log('Extracted Text using pdf-parse');
+  } catch (error) {
+    console.log('pdf-parse failed, trying PDF.js fallback:', error);
 
-  console.log('Extracted Text:', data.text);
+    try {
+      // Fallback to PDF.js
+      extractedText = await extractTextWithPdfJs(pdfBuffer);
+      console.log('Extracted Text using PDF.js');
+    } catch (fallbackError) {
+      console.error('Both extraction methods failed:', fallbackError);
+      throw new Error('Failed to extract text from PDF. The PDF may be corrupted or encrypted.');
+    }
+  }
+
+  if (!extractedText || extractedText.trim().length === 0) {
+    throw new Error('No text could be extracted from the PDF. The PDF may contain only images.');
+  }
+
+  console.log('Extracted Text:', extractedText.substring(0, 200) + '...');
 
   const doc = new Document({
     sections: [
       {
         properties: {},
-        children: data.text.split('\n').map(line => new Paragraph(line)),
+        children: extractedText.split('\n').map(line => new Paragraph(line.trim())),
       },
     ],
   });
