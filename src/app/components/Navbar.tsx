@@ -58,13 +58,13 @@ export default function Header() {
             
             {/* Language Dropdown */}
             <li className="lang-dropdown-wrapper" ref={dropdownRef} >
-              <button 
+              <button
                 className="lang-button"
                 onClick={() => setLangOpen(!langOpen)}
                 aria-label="Language selector"
 
               >
-                <img src="/subway_world.png" alt="Language" className="world-icon" style={{marginLeft:"40px"}}/>
+                <img src="/subway_world.png" alt="Language" className="world-icon" />
               </button>
               {langOpen && (
                 <div className="lang-dropdown">
@@ -247,6 +247,7 @@ export default function Header() {
     width: 24px;
     height: 24px;
     display: block;
+    margin-left: 40px;
   }
 
   .lang-dropdown {
@@ -442,12 +443,15 @@ export default function Header() {
     }
 
     /* Language dropdown in mobile */
+    .world-icon {
+      margin-left: 0;
+    }
+
     .lang-dropdown {
-      position: relative;
-      top: 8px;
-      right: auto;
-      left: 50%;
-      transform: translateX(-50%);
+      position: static;
+      width: 100%;
+      margin-top: 8px;
+      transform: none;
     }
 
     .lang-button {
