@@ -1,0 +1,24 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Enable Netlify Blobs
+[functions]
+  node_bundler = "esbuild"
+
+# Ensure API routes are serverless functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/shared/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
