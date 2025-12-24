@@ -8,17 +8,8 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# Enable Netlify Blobs
+# Enable Netlify Blobs and configure serverless functions
 [functions]
   node_bundler = "esbuild"
-
-# Ensure API routes are serverless functions
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/shared/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+  external_node_modules = ["sharp", "canvas", "@sparticuz/chromium", "puppeteer-core"]
+  included_files = ["node_modules/@sparticuz/chromium/bin/*"]
