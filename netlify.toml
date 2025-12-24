@@ -7,18 +7,18 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
 
-# Enable Netlify Blobs
+# Enable Netlify Blobs and configure functions
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["sharp", "canvas", "@sparticuz/chromium", "puppeteer-core"]
+  included_files = ["node_modules/@sparticuz/chromium/bin/*"]
 
-# Ensure API routes are serverless functions
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+# Increase function timeout and memory for PDF processing
+[[functions]]
+  path = "/.netlify/functions/*"
+  node_bundler = "esbuild"
 
-[[redirects]]
-  from = "/shared/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+[functions.environment]
+  AWS_LAMBDA_FUNCTION_TIMEOUT = "60"
