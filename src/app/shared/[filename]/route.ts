@@ -3,10 +3,10 @@ import { getStore } from "@netlify/blobs";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { filename: string } }
+  { params }: { params: Promise<{ filename: string }> }
 ) {
   try {
-    const filename = params.filename;
+    const { filename } = await params;
 
     // Get Netlify Blobs store
     const store = getStore({
