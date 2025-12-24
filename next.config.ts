@@ -1,28 +1,24 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  webpack: (config, { isServer }) => {
 
-    // Exclude canvas and related modules from client-side bundle
+  webpack: (config, { isServer }) => {
+    // Client-side: exclude native modules
     if (!isServer) {
       config.resolve.alias = {
-        ...config.resolve.alias,
+        ...(config.resolve.alias || {}),
         canvas: false,
         encoding: false,
       };
     }
 
-    // Externalize canvas for server-side to avoid bundling native modules
+    // Server-side: avoid bundling native canvas
     if (isServer) {
       config.externals = config.externals || [];
-      config.externals.push('canvas');
+      config.externals.push("canvas");
     }
 
     return config;
