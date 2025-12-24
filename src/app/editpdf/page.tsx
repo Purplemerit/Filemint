@@ -24,6 +24,10 @@ import Testimonials from "../components/Testimonials";
 import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 
+
+import VerticalAdLeft from "../components/Verticaladleft";
+import VerticalAdRight from "../components/Verticaladright";
+
 export default function EditPdfPage() {
   const { token, isLoading } = useAuth();
   const router = useRouter();
@@ -916,33 +920,45 @@ export default function EditPdfPage() {
     <div>
       <Navbar />
 
-      <div style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 2rem" }}>
-        <h1 style={{ 
-          fontSize: "2rem", 
-          fontWeight: "600",
-          marginBottom: "2rem",
-          textAlign: "left",
-          color: "#1a1a1a",
-          fontFamily: 'Georgia, "Times New Roman", serif',
-        }}>
-          Edit PDF
-        </h1>
+      <div style={{
+        display: "flex",
+        maxWidth: "1400px",
+        margin: "4rem auto",
+        padding: "0 2rem",
+        gap: "2rem",
+        alignItems: "flex-start"
+      }}>
+        {/* Left Ad */}
+        <VerticalAdLeft/>
 
-        {/* Drop Zone */}
-        <div
-          onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
-          style={{
-             border: "3px solid rgba(57, 185, 57, 0.4)",
-            backgroundColor: "rgba(144, 238, 144, 0.2)",
-            borderRadius: "12px",
-            padding: "2rem",
-            textAlign: "center",
+        {/* Main Content */}
+        <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
+          <h1 style={{
+            fontSize: "2rem",
+            fontWeight: "600",
             marginBottom: "2rem",
-            position: "relative",
-            minHeight: "280px",
-          }}
-        >
+            textAlign: "left",
+            color: "#1a1a1a",
+            fontFamily: 'Georgia, "Times New Roman", serif',
+          }}>
+            Edit PDF
+          </h1>
+
+          {/* Drop Zone */}
+          <div
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+            style={{
+               border: "3px solid rgba(57, 185, 57, 0.4)",
+              backgroundColor: "rgba(144, 238, 144, 0.2)",
+              borderRadius: "12px",
+              padding: "2rem",
+              textAlign: "center",
+              marginBottom: "2rem",
+              position: "relative",
+              minHeight: "280px",
+            }}
+          >
           {!pdfFile ? (
             /* Empty State */
             <div style={{
@@ -1217,6 +1233,10 @@ export default function EditPdfPage() {
             <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />
           </div>
         </div>
+        </div>
+
+        {/* Right Ad */}
+        <VerticalAdRight />
       </div>
 
       {/* URL Input Modal */}

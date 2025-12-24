@@ -26,7 +26,8 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import * as pdfjsLib from "pdfjs-dist";
 import JSZip from "jszip";
-
+import VerticalAdLeft from "../components/Verticaladleft";
+import VerticalAdRight from "../components/Verticaladright";
 // Configure PDF.js worker
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -294,7 +295,19 @@ export default function PdfToPngPage() {
   return (
     <div>
       <Navbar />
+      <div style={{
+        display: "flex",
+        maxWidth: "1400px",
+        margin: "4rem auto",
+        padding: "0 2rem",
+        gap: "2rem",
+        alignItems: "flex-start"
+      }}>
+        {/* Left Ad */}
+        <VerticalAdLeft />
 
+        {/* Main Content */}
+        <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
       <div style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 2rem" }}>
         <h1 style={{ 
           fontSize: "2rem", 
@@ -688,6 +701,8 @@ export default function PdfToPngPage() {
             Complete privacy guaranteed - your files never leave your computer.
           </p>
         </div>
+      </div></div>
+      <VerticalAdRight />
       </div>
 
       {/* URL Input Modal */}

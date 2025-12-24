@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(for dir in rotatepdf reorderpdf deletepdfpages watermark comparepdf ocr translate summarizer wordtopdf exceltopdf ppttopdf jpgtopdf pngtopdf tifftopdf htmltopdf scantopdf pdftoexcel pdftoppt pdftojpg pdftopng pdftotext pdftohtml pdftomarkdown pdftoepub pdftoxml esignpdf quiz)",
+      "Bash(do if [ -f \"$dir/page.tsx\" ])",
+      "Bash(then echo \"$dir\")",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(git restore:*)",
+      "Bash(test:*)",
+      "Bash(node update_all_ads.js:*)",
+      "Bash(npm run build:*)",
+      "Bash(node fix_ads_structure.js:*)",
+      "Bash(npx tsc:*)",
+      "Bash(cat:*)",
+      "Bash(timeout 180 npm run build)",
+      "Bash(node final_fix.js:*)",
+      "Bash(git checkout:*)"
+    ]
+  }
+}
