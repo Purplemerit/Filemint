@@ -26,7 +26,8 @@ import Footer from "../components/footer";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-
+import VerticalAdLeft from "../components/Verticaladleft";
+import VerticalAdRight from "../components/Verticaladright";
 declare global {
   interface Window {
     pdfjsLib: any;
@@ -915,8 +916,20 @@ export default function PdfReorderPage() {
   return (
     <div>
       <Navbar />
-      <div style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 2rem" }}>
-        <h1 style={{ fontSize: "2rem", fontWeight: "600", marginBottom: "2rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>Reorder PDF Pages</h1>
+      <div style={{
+        display: "flex",
+        maxWidth: "1400px",
+        margin: "4rem auto",
+        padding: "0 2rem",
+        gap: "2rem",
+        alignItems: "flex-start"
+      }}>
+        {/* Left Ad */}
+        <VerticalAdLeft />
+
+        {/* Main Content */}
+        <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
+          <h1 style={{ fontSize: "2rem", fontWeight: "600", marginBottom: "2rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>Reorder PDF Pages</h1>
 
         <div onDrop={handleDrop} onDragOver={(e) => e.preventDefault()} style={{ border: "3px solid rgba(57, 185, 57, 0.4)",backgroundColor: "rgba(144, 238, 144, 0.2)", borderRadius: "12px", padding: "2rem", textAlign: "center", marginBottom: "2rem", position: "relative", minHeight: "280px" }}>
           {!file ? (
@@ -988,6 +1001,10 @@ export default function PdfReorderPage() {
             All processing happens in your browser. Your PDF never gets uploaded to any server. Complete privacy guaranteed.
           </p>
         </div>
+        </div>
+
+        {/* Right Ad */}
+        <VerticalAdRight />
       </div>
 
       {showUrlModal && (

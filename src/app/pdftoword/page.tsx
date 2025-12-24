@@ -23,7 +23,8 @@ import toolData from "../data/toolInstructions.json";
 import Testimonials from "../components/Testimonials";
 import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
-
+import VerticalAdLeft from "../components/Verticaladleft";
+import VerticalAdRight from "../components/Verticaladright";
 export default function PdfToWordPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -211,7 +212,19 @@ export default function PdfToWordPage() {
     <div>
       <Navbar />
 
-      <div style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 2rem" }}>
+      <div style={{
+        display: "flex",
+        maxWidth: "1400px",
+        margin: "4rem auto",
+        padding: "0 2rem",
+        gap: "2rem",
+        alignItems: "flex-start"
+      }}>
+        {/* Left Ad */}
+        <VerticalAdLeft />
+
+        {/* Main Content */}
+        <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
         <h1 style={{ 
           fontSize: "2rem", 
           fontWeight: "600",
@@ -541,9 +554,12 @@ export default function PdfToWordPage() {
             <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
             <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
             <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
-            <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />
-          </div>
+            <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />          </div>
         </div>
+        </div>
+
+        {/* Right Ad */}
+        <VerticalAdRight />
       </div>
 
       {/* URL Input Modal */}
