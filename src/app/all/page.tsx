@@ -2,6 +2,8 @@
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useRouter } from "next/navigation";
 
 // ------------------- TOOLS DATA -------------------
 const pdfOperations = [
@@ -238,6 +240,7 @@ const premiumTools = [
     route: "/summarizer",
     image: "./images/summarizer.svg",
     color: "#E6F0FF",
+    isPremium: true,
   },
   {
     title: "PDF Language Converter",
@@ -245,6 +248,7 @@ const premiumTools = [
     route: "/translate",
     image: "./images/translate.svg",
     color: "#E6F0FF",
+    isPremium: true,
   },
   {
     title: "All Questions Generator",
@@ -252,6 +256,7 @@ const premiumTools = [
     route: "/quiz",
     image: "./images/question.svg",
     color: "#E6F0FF",
+    isPremium: true,
   },
 ];
 
@@ -259,6 +264,8 @@ const premiumTools = [
 export default function AllToolsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobile, setIsMobile] = useState(false);
+  const { isPremium } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 640);
@@ -482,70 +489,148 @@ export default function AllToolsPage() {
                     gap: "0.875rem",
                   }}
                 >
-                  {filteredItems.map((tool, i) => (
-                    <Link
-                      key={i}
-                      href={tool.route}
-                      onClick={() => trackToolClick(tool, section.category)}
-                      style={{
-                        backgroundColor: tool.color,
-                        borderRadius: "12px",
-                        padding: "1.25rem",
-                        display: "flex",
-                        
-                        flexDirection: "column",
-                        justifyContent: "flex-start",
-                        alignItems: "flex-start",
-                        textAlign: "left",
-                        cursor: "pointer",
-                        transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                        border: `2px solid ${section.bordercolor}`,
-                        textDecoration: "none",
-                        height: "100%",
-                        minHeight: "140px",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow =
-                          "0 4px 12px rgba(0, 0, 0, 0.08)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
-                    >
-                      <img
-                        src={tool.image}
-                        alt={tool.title}
-                        style={{
-                          width: "32px",
-                          height: "32px",
-                          marginBottom: "0.75rem",
+                  {filteredItems.map((tool, i) => {
+                    const isLocked = tool.isPremium && !isPremium;
+
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => {
+                          if (isLocked) {
+                            alert("This is a Premium feature. Please upgrade to access this tool.");
+                            router.push("/pricing");
+                          } else {
+                            trackToolClick(tool, section.category);
+                          }
                         }}
-                      />
-                      <h3
                         style={{
-                          fontSize: "0.9375rem",
-                          fontWeight: "600",
-                          color: "#000",
-                          marginBottom: "0.375rem",
-                          lineHeight: "1.3",
+                          backgroundColor: tool.color,
+                          borderRadius: "12px",
+                          padding: "1.25rem",
+                          display: "flex",
+                          position: "relative",
+                          flexDirection: "column",
+                          justifyContent: "flex-start",
+                          alignItems: "flex-start",
+                          textAlign: "left",
+                          cursor: "pointer",
+                          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                          border: `2px solid ${section.bordercolor}`,
+                          textDecoration: "none",
+                          height: "100%",
+                          minHeight: "140px",
+                          opacity: isLocked ? 0.7 : 1,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-2px)";
+                          e.currentTarget.style.boxShadow =
+                            "0 4px 12px rgba(0, 0, 0, 0.08)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "none";
                         }}
                       >
-                        {tool.title}
-                      </h3>
-                      <p
-                        style={{
-                          fontSize: "0.8125rem",
-                          color: "#666",
-                          lineHeight: "1.4",
-                          margin: 0,
-                        }}
-                      >
-                        {tool.description}
-                      </p>
-                    </Link>
-                  ))}
+                        {isLocked && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "0.5rem",
+                              right: "0.5rem",
+                              backgroundColor: "#667eea",
+                              color: "white",
+                              padding: "0.25rem 0.5rem",
+                              borderRadius: "4px",
+                              fontSize: "0.75rem",
+                              fontWeight: "600",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.25rem",
+                            }}
+                          >
+                            <span>🔒</span>
+                            <span>PREMIUM</span>
+                          </div>
+                        )}
+                        {!isLocked ? (
+                          <Link
+                            href={tool.route}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              display: "flex",
+                              flexDirection: "column",
+                              textDecoration: "none",
+                            }}
+                          >
+                            <img
+                              src={tool.image}
+                              alt={tool.title}
+                              style={{
+                                width: "32px",
+                                height: "32px",
+                                marginBottom: "0.75rem",
+                              }}
+                            />
+                            <h3
+                              style={{
+                                fontSize: "0.9375rem",
+                                fontWeight: "600",
+                                color: "#000",
+                                marginBottom: "0.375rem",
+                                lineHeight: "1.3",
+                              }}
+                            >
+                              {tool.title}
+                            </h3>
+                            <p
+                              style={{
+                                fontSize: "0.8125rem",
+                                color: "#666",
+                                lineHeight: "1.4",
+                                margin: 0,
+                              }}
+                            >
+                              {tool.description}
+                            </p>
+                          </Link>
+                        ) : (
+                          <>
+                            <img
+                              src={tool.image}
+                              alt={tool.title}
+                              style={{
+                                width: "32px",
+                                height: "32px",
+                                marginBottom: "0.75rem",
+                              }}
+                            />
+                            <h3
+                              style={{
+                                fontSize: "0.9375rem",
+                                fontWeight: "600",
+                                color: "#000",
+                                marginBottom: "0.375rem",
+                                lineHeight: "1.3",
+                              }}
+                            >
+                              {tool.title}
+                            </h3>
+                            <p
+                              style={{
+                                fontSize: "0.8125rem",
+                                color: "#666",
+                                lineHeight: "1.4",
+                                margin: 0,
+                              }}
+                            >
+                              {tool.description}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             );

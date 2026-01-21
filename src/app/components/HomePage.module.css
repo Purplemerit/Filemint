@@ -1,0 +1,482 @@
+/* HomePage.module.css - Production-ready styles for HomePage */
+
+/* ==================== HERO SECTION ==================== */
+.main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 90vh;
+    gap: 0;
+    flex-wrap: wrap;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100vw;
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+.textSection {
+    flex: 1;
+    text-align: left;
+    padding-right: 0;
+    margin-left: 6vw;
+    position: relative;
+    z-index: 2;
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+.heroTitle {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+.heroTitleHighlight {
+    color: #082988;
+}
+
+.heroDescription {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.svgSection {
+    flex: 1;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+}
+
+.svgSection svg {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.heroButtons {
+    display: flex;
+    justify-content: flex-start;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+}
+
+.primaryBtn {
+    padding: 1.25rem 3rem;
+    background: linear-gradient(103deg, #0e1c29 -19.6%, #323d68 129.35%);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    box-shadow:
+        0 5px 12px 0 rgba(46, 64, 128, 0.25),
+        0 4px 4px 0 rgba(184, 193, 230, 0.35) inset;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.primaryBtn:hover {
+    transform: translateY(-2px);
+}
+
+.secondaryBtn {
+    padding: 1.25rem 3rem;
+    background: white;
+    color: #000000;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: 2px solid #6A89A5;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.secondaryBtn:hover {
+    transform: translateY(-2px);
+}
+
+/* Floating images */
+.floating {
+    position: absolute;
+    opacity: 0.9;
+    animation: float 6s ease-in-out infinite;
+    z-index: 1;
+}
+
+.floating1 {
+    top: -40px;
+    left: 6%;
+    width: 750px;
+    height: auto;
+    z-index: 5;
+}
+
+.floating2 {
+    top: 75%;
+    right: 70px;
+    animation-delay: 1.5s;
+}
+
+.floating3 {
+    bottom: -30px;
+    left: 10%;
+    top: 470px;
+    animation-delay: 3s;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* ==================== POPULAR TOOLS SECTION ==================== */
+.sectionTitle {
+    font-size: 2.8rem;
+    font-weight: 500;
+    margin-bottom: 2.5rem;
+    text-align: center;
+    color: #222;
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+.toolsContainer {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.toolsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.toolCard {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    padding: 1.75rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.toolCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.toolCardImage {
+    width: 38px;
+    height: 38px;
+    margin-bottom: 1rem;
+}
+
+.toolCardTitle {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 0.5rem;
+}
+
+.toolCardDesc {
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.viewAllContainer {
+    text-align: right;
+    padding-top: 0.5rem;
+}
+
+.viewAllLink {
+    color: #000;
+    text-decoration: underline;
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+/* ==================== ADVANCED TOOLS SECTION ==================== */
+.advancedSection {
+    width: 100%;
+    max-width: 100vw;
+    background: #fff;
+    padding: 100px 40px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+.advancedSectionMobile {
+    padding: 60px 1rem;
+}
+
+.advancedContainer {
+    max-width: 1300px;
+    margin: 0 auto;
+    text-align: center;
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+.advancedTitle {
+    font-size: 2.8rem;
+    font-weight: 520;
+    color: #111;
+}
+
+.advancedSubtitle {
+    font-size: 2.8rem;
+    font-weight: 520;
+    color: #111;
+    margin-top: -25px;
+}
+
+.advancedDesc {
+    font-size: 1.1rem;
+    color: #555;
+    max-width: 800px;
+    margin: 20px auto 60px;
+    line-height: 1.8;
+}
+
+.featuresContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 100px;
+    align-items: center;
+}
+
+.featureRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 50px;
+    width: 100%;
+    max-width: 1200px;
+}
+
+.featureRowReverse {
+    display: flex;
+    flex-wrap: wrap-reverse;
+    align-items: center;
+    justify-content: space-between;
+    gap: 50px;
+    width: 100%;
+    max-width: 1200px;
+}
+
+.featureText {
+    flex: 1 1 500px;
+    text-align: left;
+}
+
+.featureImage {
+    flex: 1 1 400px;
+    text-align: center;
+}
+
+.featureTitle {
+    font-size: 1.8rem;
+    font-weight: 500;
+    color: #111;
+}
+
+.featureDesc {
+    color: #666;
+    line-height: 1.8;
+    margin-top: 15px;
+    font-size: 1.05rem;
+}
+
+.featureImg {
+    width: 100%;
+    max-width: 380px;
+}
+
+/* ==================== RESPONSIVE STYLES ==================== */
+@media (max-width: 768px) {
+    .main {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 0;
+        width: 100%;
+        max-width: 100vw;
+    }
+
+    .floating {
+        display: none;
+    }
+
+    .svgSection {
+        position: absolute;
+        top: 10%;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        opacity: 0.25;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .svgSection svg {
+        width: 110%;
+        height: auto;
+        object-fit: cover;
+    }
+
+    .textSection {
+        margin: 0 !important;
+        margin-left: 0 !important;
+        padding: 12vh 8vw !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        position: relative;
+        z-index: 2;
+        background: transparent;
+        text-align: center;
+        width: 100%;
+    }
+
+    .heroTitle {
+        font-size: 2rem !important;
+        line-height: 1.25;
+        margin-bottom: 1rem;
+        padding: 0 1rem;
+    }
+
+    .heroDescription {
+        font-size: 1rem !important;
+        line-height: 1.4;
+        padding: 0 1rem;
+    }
+
+    .heroButtons {
+        justify-content: center;
+        gap: 1rem;
+        padding: 0 1rem;
+        width: 100%;
+    }
+
+    .primaryBtn,
+    .secondaryBtn {
+        padding: 0.9rem 2rem;
+        font-size: 1rem;
+    }
+
+    .sectionTitle {
+        font-size: 2rem !important;
+        margin-bottom: 2rem !important;
+    }
+
+    .toolsContainer {
+        padding: 0 20px;
+    }
+
+    .toolsGrid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .toolCard {
+        padding: 1.75rem 1.5rem !important;
+    }
+
+    .toolCardImage {
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    .toolCardTitle {
+        font-size: 1.15rem !important;
+    }
+
+    .toolCardDesc {
+        font-size: 0.95rem !important;
+    }
+
+    .viewAllContainer {
+        text-align: center !important;
+    }
+
+    .advancedSection {
+        padding: 60px 15px !important;
+    }
+
+    .advancedTitle,
+    .advancedSubtitle {
+        font-size: 1.8rem !important;
+    }
+
+    .featureTitle {
+        font-size: 1.25rem !important;
+    }
+
+    .featureDesc {
+        font-size: 0.95rem !important;
+    }
+
+    .featureImg {
+        max-width: 280px !important;
+    }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+    .toolsContainer {
+        max-width: 768px;
+    }
+
+    .toolsGrid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .advancedSection {
+        padding: 80px 25px !important;
+    }
+
+    .advancedTitle,
+    .advancedSubtitle {
+        font-size: 2.2rem !important;
+    }
+
+    .featureTitle {
+        font-size: 1.4rem !important;
+    }
+
+    .featureDesc {
+        font-size: 1rem !important;
+    }
+}
+
+/* Touch device optimization */
+@media (pointer: coarse) {
+    .toolCard {
+        transition: none !important;
+    }
+}

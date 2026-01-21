@@ -2,20 +2,20 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
-// ✅ Import the new CSS Module
 import styles from "./SettingsPage.module.css";
 import { FaRegUser } from "react-icons/fa";
 import { IoDiamondOutline } from "react-icons/io5";
 import { IoSettingsOutline } from "react-icons/io5";
-import { Icon } from "next/dist/lib/metadata/types/metadata-types";
 import { IconType } from "react-icons";
 import { FaPencilAlt } from "react-icons/fa";
-// ✅ Helper type for message state
+import Link from "next/link";
+
+// Helper type for message state
 type MessageState = { type: "" | "success" | "error"; text: string };
 const initialMessage: MessageState = { type: "", text: "" };
 
-// ✅ Safely get initials (prevents crash for OAuth users)
-const getInitials = (user: any) : string => {
+// Safely get initials
+const getInitials = (user: any): string => {
   if (!user) return "U";
   const first = user.firstName?.charAt(0) || "";
   const last = user.lastName?.charAt(0) || "";
@@ -23,7 +23,7 @@ const getInitials = (user: any) : string => {
   return initials || "U";
 };
 
-// ✅ Safe display name
+// Safe display name
 const getDisplayName = (user: any): string => {
   if (!user) return "";
   if (user.firstName || user.lastName)
@@ -35,34 +35,35 @@ const getDisplayName = (user: any): string => {
 // 1. SIDEBAR COMPONENT
 // =================================================================
 interface SidebarProps {
-  user: any; // Replace 'any' with your User type
+  user: any;
   activeTab: string;
   setActiveTab: (tab: "account" | "subscription" | "settings") => void;
   onLogout: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ user, activeTab, setActiveTab, onLogout }) => {
-  const SidebarItem = (label: string, key: "account" | "subscription" | "settings",Icon:IconType,) => (
+  const SidebarItem = (label: string, key: "account" | "subscription" | "settings", Icon: IconType) => (
     <button
       type="button"
       onClick={() => setActiveTab(key)}
-      // ✅ Conditionally apply 'active' class
       className={`${styles.sidebarItem} ${activeTab === key ? styles.active : ""}`}
-    >  <Icon size={18} style={{ marginRight: "18px" ,marginTop:"-4px"}} />
+    >
+      <Icon size={18} style={{ marginRight: "18px", marginTop: "-4px" }} />
       {label}
     </button>
   );
 
   return (
-    <div className={styles.sidebar} style={{fontFamily: 'Georgia, "Times New Roman", serif',}}>
-      {/* <div className={styles.brand} >FileMint</div> */}
-      <img src="/Group-14.svg" alt="Logo" className={styles.brand} style={{height:"26px", marginLeft:"-20px"}}/>
+    <div className={styles.sidebar}>
+      <div className={styles.brand}>
+        <span style={{ fontSize: "1.25rem", fontWeight: "700", color: "#fff", fontFamily: 'Georgia, serif' }}>FileMint</span>
+      </div>
       <div className={styles.profileAvatar}>{getInitials(user)}</div>
-      {/* <div className={styles.displayName}>{getDisplayName(user)}</div> */}
+      <div className={styles.displayName}>{getDisplayName(user)}</div>
 
-      {SidebarItem("Account", "account",FaRegUser )}
-      {SidebarItem("Subscription", "subscription",IoDiamondOutline )}
-      {SidebarItem("Settings", "settings",IoSettingsOutline )}
+      {SidebarItem("Account", "account", FaRegUser)}
+      {SidebarItem("Subscription", "subscription", IoDiamondOutline)}
+      {SidebarItem("Settings", "settings", IoSettingsOutline)}
 
       <button onClick={onLogout} className={styles.logoutButton}>
         Log Out
@@ -72,26 +73,20 @@ const Sidebar: React.FC<SidebarProps> = ({ user, activeTab, setActiveTab, onLogo
 };
 
 // =================================================================
-// 2. MESSAGE COMPONENT (Helper)
+// 2. MESSAGE COMPONENT
 // =================================================================
 const MessageDisplay: React.FC<{ message: MessageState }> = ({ message }) => {
   if (!message.text) return null;
   return (
-    <div
-      className={`${styles.messageBox} ${
-        message.type === "success" ? styles.messageSuccess : styles.messageError
-      }`}
-    >
+    <div className={`${styles.messageBox} ${message.type === "success" ? styles.messageSuccess : styles.messageError}`}>
       {message.text}
     </div>
   );
 };
 
 // =================================================================
-// 3. ACCOUNT TAB (Split into sub-forms)
+// 3. ACCOUNT TAB
 // =================================================================
-
-// 3a. Account Details Form
 const AccountDetailsForm: React.FC<{ user: any; token: string | null }> = ({ user, token }) => {
   const [accountForm, setAccountForm] = useState({
     firstName: user?.firstName || "",
@@ -140,9 +135,7 @@ const AccountDetailsForm: React.FC<{ user: any; token: string | null }> = ({ use
       </div>
 
       <div className={styles.formSection}>
-        <label className={styles.label} htmlFor="firstName">
-          First Name
-        </label>
+        <label className={styles.label} htmlFor="firstName">First Name</label>
         <input
           type="text"
           name="firstName"
@@ -153,10 +146,7 @@ const AccountDetailsForm: React.FC<{ user: any; token: string | null }> = ({ use
           className={styles.inputField}
           required
         />
-        
-        <label className={styles.label} htmlFor="lastName">
-          Last Name
-        </label>
+        <label className={styles.label} htmlFor="lastName">Last Name</label>
         <input
           type="text"
           name="lastName"
@@ -167,7 +157,6 @@ const AccountDetailsForm: React.FC<{ user: any; token: string | null }> = ({ use
           className={styles.inputField}
           required
         />
-        
         <button type="submit" disabled={isAccountLoading} className={styles.submitButton}>
           {isAccountLoading ? "Saving..." : "Save Changes"}
         </button>
@@ -176,7 +165,6 @@ const AccountDetailsForm: React.FC<{ user: any; token: string | null }> = ({ use
   );
 };
 
-// 3b. Password Change Form
 const PasswordChangeForm: React.FC<{ token: string | null }> = ({ token }) => {
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -254,9 +242,7 @@ const PasswordChangeForm: React.FC<{ token: string | null }> = ({ token }) => {
       <div className={styles.formSection}>
         {passwordFields.map((field) => (
           <div key={field.name} className={styles.passwordInputWrapper}>
-            <label className="sr-only" htmlFor={field.name}> {/* Screen-reader only label */}
-              {field.label}
-            </label>
+            <label className="sr-only" htmlFor={field.name}>{field.label}</label>
             <input
               type={showPassword[field.key] ? "text" : "password"}
               name={field.name}
@@ -285,18 +271,20 @@ const PasswordChangeForm: React.FC<{ token: string | null }> = ({ token }) => {
   );
 };
 
-// 3c. Account Tab Container
 const AccountSettingsTab: React.FC<{ user: any; token: string | null }> = ({ user, token }) => {
   return (
     <>
       <div className={styles.heading}>Account</div>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: "2rem" ,marginLeft:"-50px"}}>
-        <div className={styles.profileAvatar} style={{ width: 60, height: 60, fontSize: 20, marginRight: '1rem' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
+        <div className={styles.profileAvatar} style={{ width: 60, height: 60, fontSize: 16, backgroundColor: "#1e2b50", color: "#fff" }}>
           {getInitials(user)}
         </div>
-        {/* ✅ A11y: This should be a button if it does something (e.g., open modal) */}
-        <button type="button" className={styles.clickableText} style={{ textDecoration: 'none' , color:"black"}}>
-          <FaPencilAlt /> Update profile
+        <button
+          type="button"
+          className={styles.clickableText}
+          onClick={() => alert("Profile photo uploading requires cloud storage integration which is not yet configured.")}
+        >
+          <FaPencilAlt size={12} /> Update photo
         </button>
       </div>
       <AccountDetailsForm user={user} token={token} />
@@ -309,18 +297,64 @@ const AccountSettingsTab: React.FC<{ user: any; token: string | null }> = ({ use
 // 4. SUBSCRIPTION TAB
 // =================================================================
 const SubscriptionTab: React.FC = () => {
+  const router = useRouter();
+  const handleUpgrade = () => {
+    router.push('/pricing'); // Redirect to pricing page
+  };
+
   const features = [
     "Full access to all tools in FileMint",
     "Unlimited storage for all your files",
     "Work on Web, Mobile and Desktop",
-    "Convert scanned PDF to Word with OCR, Sign with digital signatures, audio to PDF, PDF language Converter, API Generator, Bulk PDF Merge",
-    "No Ads.",
+    "OCR, Digital Signatures, PDF Translation",
+    "No Ads & Priority Support",
   ];
 
   return (
     <>
-      <div className={styles.heading}>Subscriptions</div>
-      <div className={styles.upgradeLink} style={{color:"black"}}>Upgrade to Premium<IoDiamondOutline/> </div>
+      <div className={styles.heading}>Subscription</div>
+
+      <div style={{
+        background: "linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%)",
+        borderRadius: "12px",
+        padding: "1.5rem",
+        marginBottom: "2rem",
+        border: "1px solid #c7d2fe"
+      }}>
+        <div style={{ fontSize: "0.85rem", color: "#6b7280", marginBottom: "0.25rem" }}>Current Plan</div>
+        <div style={{ fontSize: "1.25rem", fontWeight: "700", color: "#1e2b50", marginBottom: "0.5rem" }}>Basic (Free)</div>
+        <div style={{ fontSize: "0.9rem", color: "#4b5563" }}>Limited access to tools</div>
+      </div>
+
+      <div style={{
+        background: "linear-gradient(135deg, #1e2b50 0%, #323d68 100%)",
+        borderRadius: "12px",
+        padding: "1.5rem",
+        marginBottom: "1.5rem",
+        color: "#fff"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+          <IoDiamondOutline size={20} />
+          <span style={{ fontSize: "1.125rem", fontWeight: "600" }}>Premium Plan</span>
+        </div>
+        <div style={{ fontSize: "2rem", fontWeight: "700", marginBottom: "0.5rem" }}>₹299<span style={{ fontSize: "0.9rem", fontWeight: "400" }}>/month</span></div>
+        <button
+          onClick={handleUpgrade}
+          style={{
+            width: "100%",
+            padding: "0.75rem",
+            background: "#fbbf24",
+            border: "none",
+            borderRadius: "8px",
+            color: "#1f2937",
+            fontWeight: "600",
+            cursor: "pointer",
+            fontSize: "0.95rem",
+            marginTop: "0.5rem"
+          }}>Upgrade Now</button>
+      </div>
+
+      <div style={{ fontSize: "1rem", fontWeight: "600", marginBottom: "1rem", color: "#374151" }}>What you get:</div>
       {features.map((item, i) => (
         <div key={i} className={styles.featureItem}>
           <span className={styles.featureCheck}>✓</span> {item}
@@ -333,33 +367,80 @@ const SubscriptionTab: React.FC = () => {
 // =================================================================
 // 5. SETTINGS TAB
 // =================================================================
-const SettingsTab: React.FC = () => {
+interface SettingsTabProps {
+  token: string | null;
+  logout: () => void;
+}
+
+const SettingsTab: React.FC<SettingsTabProps> = ({ token, logout }) => {
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
+
+  const handleToggleNotifications = () => {
+    setNotificationsEnabled(!notificationsEnabled);
+    // Simulate saving preference
+    setTimeout(() => alert(notificationsEnabled ? "Notifications disabled" : "Notifications enabled"), 100);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch("/api/user/profile", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        alert("Account deleted successfully.");
+        logout();
+        router.push("/signup");
+      } else {
+        const data = await response.json();
+        alert(data.error || "Failed to delete account");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("An error occurred while deleting account");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    < >
-      <div className={styles.heading} style={{fontFamily: 'Georgia, "Times New Roman", serif'}} >Preferences</div>
+    <>
+      <div className={styles.heading}>Preferences</div>
 
-      <div className={styles.preferenceItem} style={{fontFamily: 'Georgia, "Times New Roman", serif',marginBottom:"20px"}} >
-        <div className={styles.preferenceTitle}>Language</div>
-        <div className={styles.preferenceText}>English</div>
-        <button type="button" className={styles.clickableText} style={{textDecoration:"none"}}>
-          Change
-        </button>
-      </div>
-
+      {/* Email Notifications */}
       <div className={styles.preferenceItem}>
-        <div className={styles.preferenceTitle}>Email Notifications</div>
-        <div className={styles.preferenceText}>
-          No longer wish to receive promotional emails from us? You can do so here.
+        <div>
+          <div className={styles.preferenceTitle}>Email Notifications</div>
+          <div className={styles.preferenceText}>Receive promotional emails</div>
         </div>
-        <button type="button" className={styles.dangerText}>
-          Disable Emails
-        </button>
+        <div
+          onClick={handleToggleNotifications}
+          className={`${styles.toggleSwitch} ${notificationsEnabled ? styles.active : ""}`}
+        >
+          <div className={styles.toggleKnob}></div>
+        </div>
       </div>
 
-      <div className={styles.preferenceItem}>
-        <div className={styles.preferenceTitle}>Manage Account</div>
-        <button type="button" className={styles.dangerText}>
-          Delete Account
+      {/* Danger Zone */}
+      <div className={styles.dangerZone}>
+        <div className={styles.dangerTitle}>Danger Zone</div>
+        <button
+          type="button"
+          onClick={handleDeleteAccount}
+          disabled={isDeleting}
+          className={styles.dangerButton}
+        >
+          {isDeleting ? "Deleting..." : "Delete Account"}
         </button>
       </div>
     </>
@@ -374,14 +455,12 @@ const SettingsPage: React.FC = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"account" | "subscription" | "settings">("account");
 
-  // Auth redirection
   useEffect(() => {
     if (!isLoading && !user) {
       router.push("/login");
     }
   }, [user, isLoading, router]);
 
-  // Loading spinner
   if (isLoading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
@@ -390,12 +469,10 @@ const SettingsPage: React.FC = () => {
     );
   }
 
-  // Null render until redirect effect fires
   if (!user) {
     return null;
   }
 
-  // Helper to render the correct tab
   const renderActiveTab = () => {
     switch (activeTab) {
       case "account":
@@ -403,7 +480,7 @@ const SettingsPage: React.FC = () => {
       case "subscription":
         return <SubscriptionTab />;
       case "settings":
-        return <SettingsTab />;
+        return <SettingsTab token={token} logout={logout} />;
       default:
         return null;
     }

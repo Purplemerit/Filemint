@@ -1,6 +1,7 @@
 'use client'
 import React, { useState } from 'react'
 import Navbar from '@/app/components/Navbar'
+import Footer from '@/app/components/footer'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect} from "react";
@@ -105,20 +106,65 @@ export default function BlogsPage() {
         }, []);
   return (
     <>
+      <style>{`
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
       <Navbar />
 
-      <main style={{ padding: '3rem 5%', maxWidth: '1200px', margin: '0 auto' ,fontFamily: "Georgia, Times New Roman, serif" }}>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>Our Blogs</h1>
-        <p style={{ color: '#666', marginBottom: '2rem', lineHeight: 1.6 }}>
-          Dive into our expert articles on everything PDF—tips, deep dives, and quick tricks to make your workflow seamless.
-        </p>
+      {/* Hero Section */}
+      <section
+        style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          padding: isMobile ? '5rem 1.5rem 4rem' : '6rem 2rem 5rem',
+          textAlign: 'center',
+          color: 'white',
+        }}
+      >
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h1
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: isMobile ? '2.5rem' : '3.5rem',
+              fontWeight: '500',
+              marginBottom: '1.25rem',
+              lineHeight: 1.2,
+            }}
+          >
+            Our Blogs
+          </h1>
+          <p
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: isMobile ? '1.1rem' : '1.35rem',
+              opacity: 0.95,
+              lineHeight: 1.6,
+              maxWidth: '700px',
+              margin: '0 auto',
+            }}
+          >
+            Dive into our expert articles on everything PDF—tips, deep dives, and quick tricks to make your workflow seamless.
+          </p>
+        </div>
+      </section>
+
+      <main style={{ padding: isMobile ? '3rem 1.5rem' : '4rem 2rem', maxWidth: '1200px', margin: '-2rem auto 0', position: 'relative', zIndex: 10 }}>
 
         {/* Grid */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '1.5rem',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+            gap: isMobile ? '2rem' : '2.5rem',
+            justifyItems: 'stretch',
           }}
         >
           {posts.map(({ title, desc, image }, idx) => (
@@ -128,33 +174,78 @@ export default function BlogsPage() {
                 display: 'flex',
                 flexDirection: 'column',
                 background: '#fff',
-                border: '1px solid #eee',
-                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '16px',
                 overflow: 'hidden',
+                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.06)',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 12px 30px rgba(102, 126, 234, 0.15)';
+                e.currentTarget.style.borderColor = '#667eea';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e5e7eb';
               }}
             >
-              <div style={{ position: 'relative', width: '100%', height: 180 }}>
-                <Image src={image} alt={title} fill style={{ objectFit: 'cover' }} />
+              <div style={{ position: 'relative', width: '100%', height: 200, overflow: 'hidden' }}>
+                <Image
+                  src={image}
+                  alt={title}
+                  fill
+                  style={{ objectFit: 'cover', transition: 'transform 0.3s ease' }}
+                />
               </div>
 
-              <div style={{ padding: '1rem', flexGrow: 1 }}>
-                <h2 style={{ fontSize: '1.25rem', margin: '0 0 .5rem' }}>{title}</h2>
-                <p style={{ fontSize: '.95rem', color: '#555', margin: 0 }}>{desc}</p>
+              <div style={{ padding: isMobile ? '1.25rem' : '1.5rem', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <h2
+                  style={{
+                    fontFamily: "Georgia, 'Times New Roman', serif",
+                    fontSize: isMobile ? '1.25rem' : '1.35rem',
+                    fontWeight: '600',
+                    margin: '0 0 0.75rem',
+                    color: '#323D68',
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {title}
+                </h2>
+                <p
+                  style={{
+                    fontFamily: "Georgia, 'Times New Roman', serif",
+                    fontSize: '.95rem',
+                    color: '#6b7280',
+                    margin: 0,
+                    lineHeight: 1.6,
+                    flexGrow: 1,
+                  }}
+                >
+                  {desc}
+                </p>
               </div>
 
-              <div style={{ padding: '0 1rem 1rem' }}>
+              <div style={{ padding: isMobile ? '0 1.25rem 1.25rem' : '0 1.5rem 1.5rem' }}>
                 <button
                   onClick={() => setSelectedPost({ title, desc, image })}
                   style={{
-                    color: '#0070f3',
+                    color: '#667eea',
                     fontWeight: 600,
-                    fontSize: '.9rem',
+                    fontSize: '.95rem',
                     border: 'none',
                     background: 'none',
                     cursor: 'pointer',
+                    padding: '0.5rem 0',
+                    fontFamily: "system-ui, sans-serif",
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
                   }}
                 >
-                  Read Blog →
+                  Read Blog <span style={{ fontSize: '1.1rem' }}>→</span>
                 </button>
               </div>
             </div>
@@ -171,171 +262,94 @@ export default function BlogsPage() {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.6)',
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
               zIndex: 1000,
-              padding: '1rem',
+              padding: isMobile ? '1rem' : '2rem',
+              backdropFilter: 'blur(4px)',
             }}
           >
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
                 background: '#fff',
-                borderRadius: '10px',
-                maxWidth: '500px',
+                borderRadius: '20px',
+                maxWidth: '600px',
                 width: '100%',
-                padding: '1rem',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                padding: 0,
+                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                overflow: 'hidden',
+                animation: 'slideUp 0.3s ease',
               }}
             >
-              <Image
-                src={selectedPost.image}
-                alt={selectedPost.title}
-                width={500}
-                height={300}
-                style={{ borderRadius: '6px', objectFit: 'cover', width: '100%', height: 'auto' }}
-              />
-              <h2 style={{ marginTop: '1rem', fontSize: '1.5rem' }}>{selectedPost.title}</h2>
-              <p style={{ color: '#555', marginTop: '.5rem', lineHeight: 1.6 }}>
-                {selectedPost.desc}
-              </p>
+              <div style={{ position: 'relative', width: '100%', height: isMobile ? 200 : 300 }}>
+                <Image
+                  src={selectedPost.image}
+                  alt={selectedPost.title}
+                  fill
+                  style={{ objectFit: 'cover' }}
+                />
+              </div>
 
-              <button
-                onClick={closeModal}
-                style={{
-                  marginTop: '1rem',
-                  background: '#0070f3',
-                  color: 'white',
-                  border: 'none',
-                  padding: '.6rem 1.2rem',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                }}
-              >
-                Close
-              </button>
+              <div style={{ padding: isMobile ? '1.5rem' : '2rem' }}>
+                <h2
+                  style={{
+                    fontFamily: "Georgia, 'Times New Roman', serif",
+                    fontSize: isMobile ? '1.5rem' : '1.75rem',
+                    fontWeight: '600',
+                    color: '#323D68',
+                    marginBottom: '1rem',
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {selectedPost.title}
+                </h2>
+                <p
+                  style={{
+                    fontFamily: "Georgia, 'Times New Roman', serif",
+                    color: '#6b7280',
+                    fontSize: '1rem',
+                    lineHeight: 1.7,
+                    marginBottom: '1.5rem',
+                  }}
+                >
+                  {selectedPost.desc}
+                </p>
+
+                <button
+                  onClick={closeModal}
+                  style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.75rem 2rem',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                    transition: 'all 0.3s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.3)';
+                  }}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}
-        
+
       </main>
-       <footer
-  style={{
-    backgroundColor: "white",
-    padding: "1rem 0 2rem 0", // reduced padding
-    borderTop: "1px solid #e5e7eb",
-    width: "100%",
-    overflowX: "hidden",
-    backgroundImage: "url('/images/footer-bg.png')",
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: isMobile ? "top center" : "center right",
-    backgroundSize: isMobile ? "cover" : "contain",
-  }}
->
-  <div
-    style={{
-      maxWidth: "1200px",
-      margin: "0 auto",
-      padding: isMobile ? "0 1rem" : "0 2rem",
-      width: "100%",
-      position: "relative",
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: isMobile ? "flex-start" : "space-between",
-        alignItems: isMobile ? "flex-start" : "center",
-        flexDirection: isMobile ? "column" : "row",
-        flexWrap: "wrap",
-        gap: isMobile ? "1rem" : "2rem",
-        width: "100%",
-      }}
-    >
-      {/* Logo */}
-      <div
-        style={{
-          position: "relative",
-          width: isMobile ? "100%" : "auto",
-          zIndex: 2,
-        }}
-      >
-        <a href="/">
-          <img
-            src="/Group-14.svg"
-            alt="Logo"
-            style={{ height: "20px", cursor: "pointer" }}
-          />
-        </a>
-      </div>
-
-      {/* Navigation */}
-      <nav
-        style={{
-          display: "flex",
-          gap: isMobile ? "1rem" : "2rem",
-          fontSize: "0.85rem",
-          flexDirection: isMobile ? "column" : "row",
-          width: isMobile ? "100%" : "auto",
-          marginLeft: isMobile ? "0" : "auto",
-          marginRight: isMobile ? "0" : "auto",
-          zIndex: 2,
-        }}
-      >
-        <a href="/about" style={{ color: "#000000ff", textDecoration: "none" }}>About</a>
-        <a href="/blogs" style={{ color: "#000000ff", textDecoration: "none" }}>Blog Posts</a>
-        <a href="/faq" style={{ color: "#000000ff", textDecoration: "none" }}>FAQ</a>
-        <a href="/terms" style={{ color: "#000000ff", textDecoration: "none" }}>Terms & Conditions</a>
-        <a href="/privacy-policy" style={{ color: "#000000ff", textDecoration: "none" }}>Privacy Policy</a>
-      </nav>
-    </div>
-
-    {/* Bottom Row: centered text + icons right */}
-    <div
-      style={{
-        marginTop: "1.5rem",
-        width: "100%",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        flexDirection: isMobile ? "column" : "row",
-      }}
-    >
-      {/* Center text */}
-      <div
-        style={{
-          color: "#000000ff",
-          fontSize: "0.8rem",
-          textAlign: isMobile ? "center" : "center",
-          flex: 1,
-          marginLeft: isMobile ?"0px":"250px"
-        }}
-      >
-        © 2025 FileMint. All rights reserved. Powered by PurpleMerit.
-      </div>
-
-      {/* Icons Right */}
-      <div
-        style={{
-          display: "flex",
-          gap: "1rem",
-          justifyContent: "flex-end",
-          fontSize: "1.6rem",
-          color: "#666",
-          flexShrink: 0,
-          marginTop: isMobile ? "1rem" : "0",
-        }}
-      >
-        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-facebook"></i></a>
-        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-instagram"></i></a>
-        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-x-twitter"></i></a>
-        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-youtube"></i></a>
-      </div>
-    </div>
-  </div>
-</footer>
+      <Footer />
     </>
   )
 }

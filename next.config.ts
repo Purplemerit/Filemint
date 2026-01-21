@@ -5,6 +5,16 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
 
+  // Optimize CSS loading to prevent FOUC
+  experimental: {
+    optimizeCss: true, // Enable CSS optimization
+  },
+
+  // Ensure CSS is loaded synchronously
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
+
   webpack: (config, { isServer }) => {
     // Client-side: exclude native modules
     if (!isServer) {

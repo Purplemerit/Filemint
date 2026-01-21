@@ -57,10 +57,13 @@ const LoginPage = () => {
               style={{
                 backgroundColor: "#fee",
                 color: "#c33",
-                padding: "10px",
-                borderRadius: "5px",
+                padding: "12px",
+                borderRadius: "8px",
                 marginBottom: "15px",
                 textAlign: "center",
+                border: "1px solid #fcc",
+                fontSize: "14px",
+                lineHeight: "1.5"
               }}
             >
               {error}

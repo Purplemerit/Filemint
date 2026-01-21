@@ -10,7 +10,7 @@ export default function Header() {
   const { user, isLoading } = useAuth();
   const pathname = usePathname();
   const dropdownRef = useRef(null);
-  
+
   const getInitials = () => {
     if (!user) return "?";
     const first = user.firstName?.charAt(0) || user.email?.charAt(0) || "?";
@@ -35,7 +35,7 @@ export default function Header() {
         {/* Logo */}
         <div className="logo-container">
           <Link href="/">
-            <img src="/Group-14.svg" alt="Logo" className="logo" style={{height:"26px"}}/>
+            <img src="/Group-14.svg" alt="Logo" className="logo" style={{ height: "26px" }} />
           </Link>
         </div>
 
@@ -54,8 +54,9 @@ export default function Header() {
           <ul>
             <li><a href="/" className={pathname === "/" ? "active" : ""}><span className="nav-link">Home page</span></a></li>
             <li><a href="/all" className={pathname === "/all" ? "active" : ""}><span className="nav-link">Tools</span></a></li>
+            <li><a href="/pricing" className={pathname === "/pricing" ? "active" : ""}><span className="nav-link">Pricing</span></a></li>
             <li><a href="/about" className={pathname === "/about" ? "active" : ""}><span className="nav-link">About</span></a></li>
-            
+
             {/* Language Dropdown */}
             <li className="lang-dropdown-wrapper" ref={dropdownRef} >
               <button
@@ -107,7 +108,7 @@ export default function Header() {
           <div className="right desktop-only">
             {!user ? (
               <a href="/login" className="no-underline">
-                <span className="nav-link login"><span style={{color:"white"}}>Login</span></span>
+                <span className="nav-link login"><span style={{ color: "white" }}>Login</span></span>
               </a>
             ) : (
               <Link href="/profile">

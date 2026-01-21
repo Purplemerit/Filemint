@@ -42,6 +42,7 @@ export default function PdfWatermarkPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [watermarkedBlob, setWatermarkedBlob] = useState<Blob | null>(null);
+  const autoDownloadTimerRef = useRef<NodeJS.Timeout | null>(null);
   const instructionData = toolData["add-watermark"] 
 
   const [watermarkedBlobUrl, setWatermarkedBlobUrl] = useState<string | null>(null);
@@ -206,6 +207,14 @@ export default function PdfWatermarkPage() {
       setWatermarkedBlob(blob);
       const url = URL.createObjectURL(blob);
       setWatermarkedBlobUrl(url);
+
+      // Start auto-download timer
+      if (autoDownloadTimerRef.current) {
+        clearTimeout(autoDownloadTimerRef.current);
+      }
+      autoDownloadTimerRef.current = setTimeout(() => {
+        downloadWatermarkedPdf();
+      }, 7000);
     } catch (err: any) {
       setError("Failed to process the PDF. Please try again.");
     } finally {
@@ -220,6 +229,12 @@ export default function PdfWatermarkPage() {
     a.href = watermarkedBlobUrl;
     a.download = "watermarked.pdf";
     a.click();
+
+    // Clear auto-download timer if exists
+    if (autoDownloadTimerRef.current) {
+      clearTimeout(autoDownloadTimerRef.current);
+      autoDownloadTimerRef.current = null;
+    }
   };
 
   const handleShare = () => {
@@ -240,6 +255,35 @@ export default function PdfWatermarkPage() {
 
   return (
     <div>
+      <style>{`
+        @media (max-width: 768px) {
+          .watermark-settings {
+            padding: 1rem !important;
+          }
+          .watermark-preview {
+            min-height: 100px !important;
+            padding: 1rem !important;
+          }
+          .watermark-preview > div {
+            font-size: ${fontSize * 0.6}px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .watermark-settings {
+            padding: 0.8rem !important;
+          }
+          .watermark-settings h3 {
+            font-size: 0.9rem !important;
+          }
+          .watermark-settings label {
+            font-size: 0.85rem !important;
+          }
+          .watermark-settings input[type="text"] {
+            font-size: 0.85rem !important;
+            padding: 0.5rem !important;
+          }
+        }
+      `}</style>
       <Navbar />
 
       <div style={{
@@ -511,16 +555,16 @@ export default function PdfWatermarkPage() {
               </div>
 
               {/* Watermark Settings */}
-              <div style={{ 
-                backgroundColor: "white", 
-                padding: "1.5rem", 
+              <div className="watermark-settings" style={{
+                backgroundColor: "white",
+                padding: "1.5rem",
                 borderRadius: "8px",
                 marginBottom: "1rem",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
               }}>
-                <h3 style={{ 
-                  fontSize: "1rem", 
-                  fontWeight: "600", 
+                <h3 style={{
+                  fontSize: "1rem",
+                  fontWeight: "600",
                   marginBottom: "1rem",
                   color: "#333"
                 }}>
@@ -625,7 +669,7 @@ export default function PdfWatermarkPage() {
                 </div>
 
                 {/* Preview */}
-                <div style={{
+                <div className="watermark-preview" style={{
                   marginTop: "1.5rem",
                   padding: "2rem",
                   backgroundColor: "#f5f5f5",
@@ -646,7 +690,10 @@ export default function PdfWatermarkPage() {
                       color: `rgba(179, 179, 179, ${opacity})`,
                       transform: `rotate(${rotation}deg)`,
                       fontWeight: "bold",
-                      userSelect: "none"
+                      userSelect: "none",
+                      textAlign: "center",
+                      maxWidth: "90%",
+                      wordWrap: "break-word"
                     }}
                   >
                     {watermark || "Your Watermark"}
