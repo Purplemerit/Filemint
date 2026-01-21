@@ -66,7 +66,8 @@ export default function ESignPdfPage() {
   const [signedFileBlob, setSignedFileBlob] = useState<Blob | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+  const autoDownloadTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const instructionData = toolData["esignpdf"];
 
   // Google Drive picker
@@ -103,6 +104,13 @@ export default function ESignPdfPage() {
       document.head.removeChild(script);
     };
   }, []);
+
+  // Reload PDF when scale changes
+  useEffect(() => {
+    if (pdfUrl && pdfDoc && isSigningMode) {
+      loadPdf(pdfUrl);
+    }
+  }, [scale]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -296,20 +304,25 @@ export default function ESignPdfPage() {
     if (!draggedSignature || !containerRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
+    const scrollTop = containerRef.current.scrollTop;
     const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top + containerRef.current.scrollTop;
+    const y = e.clientY - rect.top + scrollTop;
 
     const page = getPageFromCoordinates(y);
     const relativeCoords = getRelativeCoordinates(x, y, page);
+
+    // Adjust signature position to center it at drop point
+    const signatureWidth = draggedSignature.type === "text" ? 200 : 150;
+    const signatureHeight = draggedSignature.type === "text" ? 40 : 60;
 
     const newSignature = {
       id: Date.now().toString(),
       type: draggedSignature.type,
       content: draggedSignature.content,
-      x: relativeCoords.x,
-      y: relativeCoords.y,
-      width: draggedSignature.type === "text" ? 200 : 150,
-      height: draggedSignature.type === "text" ? 40 : 60,
+      x: relativeCoords.x - signatureWidth / 2,
+      y: relativeCoords.y - signatureHeight / 2,
+      width: signatureWidth,
+      height: signatureHeight,
       page: page,
     };
 
@@ -394,11 +407,38 @@ export default function ESignPdfPage() {
       URL.revokeObjectURL(url);
 
       alert("PDF signed and downloaded successfully!");
+
+      // Clear auto-download timer if exists
+      if (autoDownloadTimerRef.current) {
+        clearTimeout(autoDownloadTimerRef.current);
+        autoDownloadTimerRef.current = null;
+      }
     } catch (error) {
       console.error("Error generating signed PDF:", error);
       alert("Error generating signed PDF. Please try again.");
     }
   };
+
+  // Auto-download after 7 seconds when signatures are added
+  useEffect(() => {
+    if (signatures.length > 0 && pdfDoc) {
+      // Clear existing timer
+      if (autoDownloadTimerRef.current) {
+        clearTimeout(autoDownloadTimerRef.current);
+      }
+
+      // Set new timer for 7 seconds
+      autoDownloadTimerRef.current = setTimeout(() => {
+        downloadSignedPdf();
+      }, 7000);
+    }
+
+    return () => {
+      if (autoDownloadTimerRef.current) {
+        clearTimeout(autoDownloadTimerRef.current);
+      }
+    };
+  }, [signatures]);
 
   const goBack = () => {
     setIsSigningMode(false);
@@ -652,7 +692,9 @@ export default function ESignPdfPage() {
                 <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Zoom</h4>
                 <div className="zoom-controls" style={{ display: "flex", gap: "0.5rem" }}>
                   <button
-                    onClick={() => setScale(Math.max(0.5, scale - 0.25))}
+                    onClick={() => {
+                      setScale(Math.max(0.5, scale - 0.25));
+                    }}
                     style={{
                       backgroundColor: "#007bff",
                       color: "white",
@@ -667,7 +709,9 @@ export default function ESignPdfPage() {
                     Zoom Out
                   </button>
                   <button
-                    onClick={() => setScale(Math.min(3, scale + 0.25))}
+                    onClick={() => {
+                      setScale(Math.min(3, scale + 0.25));
+                    }}
                     style={{
                       backgroundColor: "#007bff",
                       color: "white",

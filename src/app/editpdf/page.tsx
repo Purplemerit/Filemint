@@ -69,7 +69,8 @@ export default function EditPdfPage() {
   const [editedFileBlob, setEditedFileBlob] = useState<Blob | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+  const autoDownloadTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const instructionData = toolData["editpdf"];
 
   // Google Drive picker
@@ -414,11 +415,38 @@ export default function EditPdfPage() {
       URL.revokeObjectURL(url);
 
       alert("PDF edited and downloaded successfully!");
+
+      // Clear auto-download timer if exists
+      if (autoDownloadTimerRef.current) {
+        clearTimeout(autoDownloadTimerRef.current);
+        autoDownloadTimerRef.current = null;
+      }
     } catch (error) {
       console.error("Error generating edited PDF:", error);
       alert("Error generating edited PDF. Please try again.");
     }
   };
+
+  // Auto-download after 7 seconds when annotations are added
+  useEffect(() => {
+    if (annotations.length > 0 && pdfFile) {
+      // Clear existing timer
+      if (autoDownloadTimerRef.current) {
+        clearTimeout(autoDownloadTimerRef.current);
+      }
+
+      // Set new timer for 7 seconds
+      autoDownloadTimerRef.current = setTimeout(() => {
+        downloadEditedPdf();
+      }, 7000);
+    }
+
+    return () => {
+      if (autoDownloadTimerRef.current) {
+        clearTimeout(autoDownloadTimerRef.current);
+      }
+    };
+  }, [annotations]);
 
   const goBack = () => {
     setIsEditingMode(false);
@@ -774,16 +802,18 @@ export default function EditPdfPage() {
 
           {/* PDF Viewer with Overlay */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="pdf-viewer-container" style={{ position: "relative", height: "800px", border: "2px solid #dee2e6", borderRadius: "10px", overflow: "hidden" }}>
+            <div className="pdf-viewer-container" style={{ position: "relative", height: "800px", border: "2px solid #dee2e6", borderRadius: "10px", overflow: "auto", backgroundColor: "#f5f5f5" }}>
               <iframe
                 ref={pdfViewerRef}
-                src={`${pdfUrl}#view=FitH&toolbar=1&navpanes=0`}
+                src={`${pdfUrl}#view=FitH&toolbar=1&navpanes=0&zoom=page-fit`}
                 style={{
                   width: "100%",
-                  height: "100%",
+                  minHeight: "100%",
+                  height: "auto",
                   border: "none",
                 }}
                 title="PDF Viewer"
+                allow="fullscreen"
               />
               
               <div

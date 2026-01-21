@@ -8,6 +8,17 @@ export interface IUser extends Document {
   password?: string | null;
   termsAccepted?: boolean;
   provider?: "credentials" | "google" | "github";
+  subscriptionPlan?: "basic" | "premium";
+  subscriptionStatus?: "active" | "inactive" | "cancelled" | "expired";
+  subscriptionStartDate?: Date;
+  subscriptionEndDate?: Date;
+  razorpaySubscriptionId?: string;
+  razorpayCustomerId?: string;
+  isEmailVerified?: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
+  loginAttempts?: number;
+  lockUntil?: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -21,6 +32,7 @@ const userSchema = new Schema<IUser>(
       required: function (this: IUser) {
         return this.provider === "credentials";
       },
+      select: false,
     },
     termsAccepted: {
       type: Boolean,
@@ -33,6 +45,25 @@ const userSchema = new Schema<IUser>(
       enum: ["credentials", "google", "github"],
       default: "credentials",
     },
+    subscriptionPlan: {
+      type: String,
+      enum: ["basic", "premium"],
+      default: "basic",
+    },
+    subscriptionStatus: {
+      type: String,
+      enum: ["active", "inactive", "cancelled", "expired"],
+      default: "inactive",
+    },
+    subscriptionStartDate: { type: Date },
+    subscriptionEndDate: { type: Date },
+    razorpaySubscriptionId: { type: String },
+    razorpayCustomerId: { type: String },
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String },
+    emailVerificationExpires: { type: Date },
+    loginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date },
   },
   { timestamps: true }
 );

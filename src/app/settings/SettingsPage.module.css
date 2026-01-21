@@ -1,300 +1,528 @@
-/* SettingsPage.module.css */
+/* SettingsPage.module.css - Fixed Desktop Sidebar Layout */
 
-/* Main Layout */
+/* ==================== MAIN LAYOUT ==================== */
 .pageWrapper {
   display: flex;
-  font-family: "Georgia", serif;
+  flex-direction: row;
+  font-family: Georgia, "Times New Roman", serif;
   min-height: 100vh;
-  background-color: #fdf9f7;
+  background-color: #f9fafb;
 }
 
+/* ==================== SIDEBAR - DESKTOP ==================== */
 .sidebar {
-  width: 360px;
-  background-color: #f7f7f9;
-  border-right: 1px solid #ddd;
+  width: 260px;
+  min-width: 260px;
+  background-color: #1e2b50;
+  color: #ffffff;
   display: flex;
   flex-direction: column;
-  align-items: left;
-  padding: 4rem;
-  /* Ensure sidebar doesn't shrink */
+  align-items: flex-start;
+  padding: 2rem 1.5rem;
   flex-shrink: 0;
- 
+  min-height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
 }
 
-.mainContent {
-  flex-grow: 1;
-  padding: 3rem;
-  overflow-y: auto;
-}
-
-/* Sidebar Specifics */
 .brand {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 3rem;
-  color: #1e1e2f;
+  margin-bottom: 2rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
 }
 
 .profileAvatar {
-  width: 100px;
-  height: 100px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  background-color: #1e2b50;
-  color: #fff;
+  background-color: #ffffff;
+  color: #1e2b50;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 24px;
-  margin-bottom: 1rem;
-  font-weight: bold;
-  margin-left: 40px;
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
 }
 
 .displayName {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 500;
   margin-bottom: 2rem;
-  color: #1e1e2f;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .sidebarItem {
   width: 100%;
-  /* height: 30px; */  /* ✅ REMOVED THIS LINE */
-  padding: 1rem 2rem;
+  padding: 0.875rem 1rem;
   cursor: pointer;
-  font-weight: 600;
-  color: #1e1e1e;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
   background-color: transparent;
   border: none;
-  text-align: left; 
-  font-family: "Georgia", serif;
-  font-size: 16px;
-  border-left: 4px solid transparent;
-  transition: background-color 0.2s, border-left 0.2s;
-  box-sizing: border-box;
-  
-}
-
-.sidebarItem.active {
-  background-color: #e6e8f2;
-  border-left: 4px solid #1e2b50;
+  text-align: left;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.25rem;
 }
 
 .sidebarItem:hover:not(.active) {
-  background-color: #f0f1f6;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.sidebarItem.active {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
 }
 
 .logoutButton {
   margin-top: auto;
-  margin-bottom: 2rem;
-  width: 80%;
-  padding: 1rem 2rem;
-  background-color: #0E1C29;
-  color: #fff;
-  font-weight: 600;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
   cursor: pointer;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   text-align: center;
-  font-size: 16px;
-  font-family: "Georgia", serif;
-  transition: background-color 0.2s;
+  font-size: 0.9rem;
+  font-family: Georgia, "Times New Roman", serif;
+  transition: all 0.2s ease;
 }
 
 .logoutButton:hover {
-  background-color: #323D68;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #ffffff;
 }
 
-/* Main Content Specifics */
+/* ==================== MAIN CONTENT ==================== */
+.mainContent {
+  flex-grow: 1;
+  padding: 2.5rem 3rem;
+  margin-left: 260px;
+  background-color: #f9fafb;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  /* Ensure items stack at top */
+  align-items: flex-start;
+  max-width: 700px;
+  gap: 0;
+  /* Remove potential gap */
+}
+
+.mainContent>* {
+  width: 100%;
+  max-width: 500px;
+}
+
 .heading {
-  font-size: 32px;
-  font-weight: bold;
+  font-size: 1.5rem;
+  font-weight: 700;
   margin-bottom: 1.5rem;
+  color: #111827;
+  text-align: left;
 }
 
 .subheading {
-  font-size: 20px;
+  font-size: 1.125rem;
   font-weight: 600;
   margin-top: 2rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  color: #374151;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  text-align: left;
 }
 
-/* Forms */
+/* ==================== FORMS ==================== */
 .formContainer {
-  margin-bottom: 3rem;
+  margin-bottom: 1rem;
+  text-align: left;
 }
 
 .formSection {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  max-width: 400px;
+  margin-top: 1rem;
+  text-align: left;
 }
 
 .label {
+  display: block;
   font-weight: 600;
   margin-bottom: 0.5rem;
+  margin-top: 1rem;
+  color: #374151;
+  font-size: 0.9rem;
+  text-align: left;
 }
 
 .inputField {
-  padding: 15px 12px;
-  font-size: 14px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
   width: 100%;
-  box-sizing: border-box; /* Important for 100% width */
-  margin-bottom: 1rem;
-  font-family: "Georgia", serif;
+  max-width: 360px;
+  box-sizing: border-box;
+  font-family: Georgia, "Times New Roman", serif;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background-color: #ffffff;
+}
+
+.inputField:focus {
+  outline: none;
+  border-color: #1e2b50;
+  box-shadow: 0 0 0 3px rgba(30, 43, 80, 0.1);
+}
+
+.inputField::placeholder {
+  color: #9ca3af;
 }
 
 .passwordInputWrapper {
   position: relative;
+  max-width: 360px;
   margin-bottom: 1rem;
+}
+
+.passwordInputWrapper .inputField {
+  padding-right: 3rem;
+  max-width: 100%;
+  margin-bottom: 0;
 }
 
 .showPasswordButton {
   position: absolute;
-  right: 10px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
   background: none;
   border: none;
-  font-size: 20px; /* Make emoji clearer */
-  padding: 0 4px;
+  font-size: 1.125rem;
+  padding: 0;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.showPasswordButton:hover {
+  opacity: 1;
 }
 
 .submitButton {
   background-color: #1e2b50;
   color: #fff;
-  padding: 15px 20px;
-  font-size: 16px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  margin-top: 0.5rem;
-  font-family: "Georgia", serif;
+  margin-top: 1.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 600;
   transition: background-color 0.2s;
 }
 
 .submitButton:hover {
-  background-color: #3a4a78;
+  background-color: #323d68;
 }
 
 .submitButton:disabled {
-  background-color: #999;
+  background-color: #9ca3af;
   cursor: not-allowed;
 }
 
-/* Message Box */
+/* ==================== MESSAGES ==================== */
 .messageBox {
-  padding: 12px 20px;
-  border-radius: 6px;
-  margin-bottom: 20px;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  max-width: 360px;
 }
 
 .messageSuccess {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
 }
 
 .messageError {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
 }
 
-/* Other Tabs */
+/* ==================== CLICKABLE ELEMENTS ==================== */
 .clickableText {
-  color: #304ffe;
-  text-decoration: underline;
+  color: #1e2b50;
+  text-decoration: none;
   cursor: pointer;
   background: none;
   border: none;
   padding: 0;
-  font-size: 1em; /* Inherit font size */
-  font-family: "Georgia", serif;
+  font-size: 0.9rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s;
+}
+
+.clickableText:hover {
+  color: #323d68;
+  text-decoration: underline;
 }
 
 .dangerText {
-  color: #e63946;
+  color: #dc2626;
   cursor: pointer;
   background: none;
   border: none;
   padding: 0;
-  margin-top: 4px;
-  font-size: 1em; /* Inherit font size */
-  font-family: "Georgia", serif;
-  font-weight: 600;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  transition: color 0.2s;
 }
 
-.upgradeLink {
-  color: #304ffe;
+.dangerText:hover {
+  color: #b91c1c;
   text-decoration: underline;
+}
+
+/* ==================== SUBSCRIPTION TAB ==================== */
+.upgradeLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background-color: #fbbf24;
+  color: #1f2937;
   font-weight: 600;
-  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  text-decoration: none;
   cursor: pointer;
+  margin-bottom: 1.5rem;
+  transition: background-color 0.2s;
+  font-size: 0.95rem;
+}
+
+.upgradeLink:hover {
+  background-color: #f59e0b;
 }
 
 .featureItem {
   display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
-  font-size: 18px;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  color: #374151;
+  line-height: 1.5;
+  text-align: left;
 }
 
 .featureCheck {
-  color: green;
-  font-size: 20px;
-  margin-right: 10px;
+  color: #10b981;
+  font-size: 1rem;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
 }
 
+/* ==================== PREFERENCES TAB ==================== */
 .preferenceItem {
-  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.preferenceItem:last-child {
+  border-bottom: none;
 }
 
 .preferenceTitle {
   font-weight: 600;
-  font-size: 18px;
+  font-size: 0.95rem;
+  color: #111827;
+  margin-bottom: 0.1rem;
 }
 
 .preferenceText {
-  margin: 4px 0;
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.85rem;
+  line-height: 1.4;
 }
 
-/* Responsiveness */
+.toggleSwitch {
+  width: 44px;
+  height: 24px;
+  background-color: #d1d5db;
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.toggleSwitch.active {
+  background-color: #10b981;
+}
+
+.toggleKnob {
+  width: 20px;
+  height: 20px;
+  background-color: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.toggleSwitch.active .toggleKnob {
+  transform: translateX(20px);
+}
+
+.dangerZone {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dangerTitle {
+  font-weight: 600;
+  color: #dc2626;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.dangerButton {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid #dc2626;
+  border-radius: 6px;
+  background: #fff;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.dangerButton:hover {
+  background-color: #fee2e2;
+}
+
+.dangerButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==================== RESPONSIVE - MOBILE ==================== */
 @media (max-width: 768px) {
   .pageWrapper {
     flex-direction: column;
-    height: auto; /* Allow content to grow */
   }
 
   .sidebar {
     width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #ddd;
-    height: auto;
+    min-width: 100%;
+    min-height: auto;
+    position: relative;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+
+  .brand {
+    margin-bottom: 0;
+    flex: 0 0 auto;
+    font-size: 1.1rem;
+  }
+
+  .profileAvatar {
+    width: 36px;
+    height: 36px;
+    font-size: 0.875rem;
+    margin-bottom: 0;
+    margin-left: auto;
+    order: 10;
+  }
+
+  .displayName {
+    display: none;
+  }
+
+  .sidebarItem {
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.8rem;
+    min-width: 0;
+  }
+
+  .sidebarItem svg {
+    display: none;
   }
 
   .logoutButton {
-    margin-top: 2rem; /* Remove 'auto' margin */
+    margin-top: 0;
+    flex: 0 0 auto;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    order: 11;
   }
 
   .mainContent {
+    margin-left: 0;
     padding: 1.5rem;
-    overflow-y: visible;
+    min-height: auto;
+    max-width: 100%;
+    align-items: stretch;
+  }
+
+  .mainContent>* {
+    max-width: 100%;
   }
 
   .heading {
-    font-size: 28px;
+    font-size: 1.25rem;
+    text-align: center;
   }
 
-  .formSection {
-    max-width: 100%; /* Allow forms to fill width */
-  }
-
-  .featureItem {
+  .inputField {
+    max-width: 100%;
     font-size: 16px;
+  }
+
+  .messageBox,
+  .passwordInputWrapper {
+    max-width: 100%;
+  }
+
+  .submitButton {
+    width: 100%;
+    max-width: 100%;
   }
 }

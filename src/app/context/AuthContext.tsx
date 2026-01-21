@@ -8,6 +8,10 @@ interface User {
   firstName: string;
   lastName: string;
   email: string;
+  subscriptionPlan?: "basic" | "premium";
+  subscriptionStatus?: "active" | "inactive" | "cancelled" | "expired";
+  subscriptionStartDate?: string;
+  subscriptionEndDate?: string;
 }
 
 interface AuthContextType {
@@ -25,6 +29,8 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   isLoading: boolean;
+  isPremium: boolean;
+  refreshUserData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,6 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPremium, setIsPremium] = useState(false);
   const router = useRouter();
 
   // Load user session from cookie/localStorage
@@ -74,6 +81,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
+        setIsPremium(
+          data.user.subscriptionPlan === "premium" &&
+          data.user.subscriptionStatus === "active"
+        );
       } else {
         console.warn("Failed to fetch user profile (keeping token for now)");
       }
@@ -81,6 +92,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error fetching user profile:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Refresh user data (useful after subscription changes)
+  const refreshUserData = async () => {
+    if (token) {
+      await fetchUserProfile(token);
     }
   };
 
@@ -172,7 +190,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, signup, oauthLogin, logout, updateUser, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, signup, oauthLogin, logout, updateUser, isLoading, isPremium, refreshUserData }}>
       {children}
     </AuthContext.Provider>
   );

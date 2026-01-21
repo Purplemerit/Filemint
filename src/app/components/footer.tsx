@@ -73,6 +73,7 @@ export default function Footer() {
           zIndex: 2,
         }}
       >
+        <a href="/pricing" style={{ color: "#000000ff", textDecoration: "none" }}>Pricing</a>
         <a href="/about" style={{ color: "#000000ff", textDecoration: "none" }}>About</a>
         <a href="/blogs" style={{ color: "#000000ff", textDecoration: "none" }}>Blog Posts</a>
         <a href="/faq" style={{ color: "#000000ff", textDecoration: "none" }}>FAQ</a>

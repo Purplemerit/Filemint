@@ -1,19 +1,465 @@
-
-
-
-
 /* src/app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ==================== CRITICAL CSS ==================== */
+/* These styles load synchronously to prevent FOUC */
 
-html, body {
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
   padding: 0;
   margin: 0;
-  box-sizing: border-box;
-  font-family: system-ui, sans-serif;
+  overflow-x: hidden;
+  width: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #ffffff;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* ==================== NAVBAR CRITICAL STYLES ==================== */
+/* These override styled-jsx until it loads */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 24px;
+  background: #fff;
+  position: relative;
+  z-index: 1000;
+  gap: 36px;
+}
+
+.logo-container {
+  position: absolute;
+  left: 2rem;
+}
+
+.nav {
+  background-color: #f0f8ff;
+  padding: 1.1rem 2.5rem;
+  border-radius: 25px;
+  min-width: fit-content;
+  text-align: center;
+  margin: 0 auto;
+}
+
+.nav ul {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 1.1rem;
+  gap: 32px;
+}
+
+.nav a,
+.nav-link {
+  color: black;
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Active link bold */
+.nav a.active .nav-link {
+  font-weight: 700;
+}
+
+/* Link styles */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Login button */
+.login {
+  color: white;
+  background-color: #323D68;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* Profile circle */
+.profile-circle {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1e2b50;
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+  border: 2px solid #1d4ed8;
+}
+
+/* Desktop/Mobile visibility */
+.desktop-only {
+  display: flex;
+  align-items: center;
+}
+
+.mobile-only {
+  display: none;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: absolute;
+  right: 2rem;
+}
+
+/* Hamburger - hidden on desktop */
+.hamburger {
+  display: none;
+}
+
+/* Language dropdown */
+.lang-dropdown-wrapper {
+  margin-left: auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lang-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.world-icon {
+  width: 24px;
+  height: 24px;
+  margin-left: 40px;
+}
+
+/* ==================== HERO SECTION CRITICAL STYLES ==================== */
+
+.hero-buttons {
+  display: flex;
+  justify-content: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+.primary-btn {
+  padding: 1.25rem 3rem;
+  background: linear-gradient(103deg, #0e1c29 -19.6%, #323d68 129.35%);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  box-shadow: 0 5px 12px 0 rgba(46, 64, 128, 0.25), 0 4px 4px 0 rgba(184, 193, 230, 0.35) inset;
+}
+
+.secondary-btn {
+  padding: 1.25rem 3rem;
+  background: white;
+  color: #000000;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: 2px solid #6A89A5;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.svg-section {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.text-section {
+  flex: 1;
+  text-align: left;
+  margin-left: 6vw;
+  position: relative;
+  z-index: 2;
+}
+
+.floating {
+  position: absolute;
+  opacity: 0.9;
+  z-index: 1;
+}
+
+.floating-1 {
+  top: -40px;
+  left: 6%;
+  width: 750px;
+  z-index: 5;
+}
+
+.floating-2 {
+  top: 75%;
+  right: 70px;
+}
+
+.floating-3 {
+  bottom: -30px;
+  left: 10%;
+  top: 470px;
+}
+
+/* ==================== TOOLS SECTION CRITICAL STYLES ==================== */
+
+.tools-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.view-all-container {
+  text-align: right;
+  padding-top: 0.5rem;
+}
+
+.section-title {
+  font-size: 2.8rem;
+  font-weight: 500;
+  margin-bottom: 2.5rem;
+  text-align: center;
+  color: #222;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+/* ==================== RESPONSIVE STYLES ==================== */
+
+@media (max-width: 768px) {
+
+  /* Mobile hero section */
+  main {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 0;
+    min-height: auto;
+  }
+
+  h1 {
+    font-size: 2.5rem !important;
+    line-height: 1.2;
+    text-align: center;
+    padding: 0 1rem;
+  }
+
+  h2 {
+    font-size: 1.8rem !important;
+    text-align: center;
+  }
+
+  h3 {
+    font-size: 1.25rem !important;
+  }
+
+  p {
+    font-size: 1rem;
+    text-align: center;
+    padding: 0 1rem;
+  }
+
+  .text-section {
+    margin: 0 !important;
+    margin-left: 0 !important;
+    padding: 12vh 1rem !important;
+    text-align: center !important;
+    width: 100% !important;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    width: 100%;
+    padding: 0 1rem;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    width: 80%;
+    max-width: 280px;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+  }
+
+  .hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 26px;
+    height: 20px;
+    cursor: pointer;
+    position: absolute;
+    right: 1.5rem;
+  }
+
+  .hamburger span {
+    display: block;
+    height: 3px;
+    width: 100%;
+    background-color: black;
+    border-radius: 2px;
+  }
+
+  .logo-container {
+    position: static;
+  }
+
+  .nav {
+    position: absolute;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 88%;
+    padding: 1rem 0.8rem;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .nav.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .nav ul {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .mobile-only {
+    display: block;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  .floating {
+    display: none;
+  }
+
+  .svg-section {
+    position: absolute;
+    top: 10%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    opacity: 0.25;
+  }
+
+  .tools-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .view-all-container {
+    text-align: center;
+  }
+
+  .world-icon {
+    margin-left: 0;
+  }
+
+  section {
+    padding: 3rem 1rem;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .tools-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ==================== ADVANCED TOOLS SECTION ==================== */
+
+/* Container for advanced section */
+section {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Typography for sections */
+h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.8rem;
+  font-weight: 500;
+  color: #111;
+  text-align: center;
+}
+
+h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.8rem;
+  font-weight: 500;
+  color: #111;
+}
+
+p {
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.6;
+}
+
+/* Advanced section specific */
+main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 90vh;
+  gap: 0;
+  flex-wrap: wrap;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100vw;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+/* ==================== ANIMATIONS ==================== */
+
 .fadeIn path {
   opacity: 0;
   transform: translateY(20px);
@@ -21,13 +467,25 @@ html, body {
   display: inline-block;
 }
 
-/* Sequential animation delays */
-.fadeIn path:nth-child(1) { animation-delay: 0s; }
-.fadeIn path:nth-child(2) { animation-delay: 0.1s; }
-.fadeIn path:nth-child(3) { animation-delay: 0.2s; }
-.fadeIn path:nth-child(4) { animation-delay: 0.3s; }
-.fadeIn path:nth-child(5) { animation-delay: 0.4s; }
-/* Add more for all paths */
+.fadeIn path:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.fadeIn path:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.fadeIn path:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.fadeIn path:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.fadeIn path:nth-child(5) {
+  animation-delay: 0.4s;
+}
 
 @keyframes fadeInUp {
   to {
@@ -35,18 +493,20 @@ html, body {
     transform: translateY(0);
   }
 }
+
 .fadeIn path {
   animation-iteration-count: infinite;
   animation-direction: alternate;
 }
 
-* {
-          box-sizing: border-box;
-        }
-        
-        html, body {
-          overflow-x: hidden;
-          width: 100%;
-          margin: 0;
-          padding: 0;
-        }
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}

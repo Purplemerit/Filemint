@@ -16,7 +16,7 @@ export default function HomePage() {
       desc: "Our tool are designed for speed and simplicity, making file management easy.",
       btnText: "Explore",
       btnColor: "#F87C56",
-      link: "/convert"
+      link: "/all"
     },
     {
       img: "./feature2.svg",
@@ -25,7 +25,7 @@ export default function HomePage() {
       desc: "Experience seamless conversion that maintain the quality of your documents.",
       btnText: "Start",
       btnColor: "#00C46A",
-      link: "/convert-pdf"
+      link: "/all"
     },
     {
       img: "./feature1.svg",
@@ -34,7 +34,7 @@ export default function HomePage() {
       desc: "Combine your documents quickly while preserving their original formatting.",
       btnText: "Merge",
       btnColor: "#F5B623",
-      link: "/merge"
+      link: "/mergepdf"
     },
   ];
   const newtools =[
@@ -45,7 +45,7 @@ export default function HomePage() {
       desc: "Follow these easy steps to convert your file seamlessly.",
       btnText: "Explore",
       btnColor: "#95d1f3ff",
-      link: "/convert"
+      link: "/all"
     },
     {
       img: "./imagefianl5.svg",
@@ -54,7 +54,7 @@ export default function HomePage() {
       desc: "Our platform support various formats for your  convenience.",
       btnText: "Start",
       btnColor: "#f8a0a0ff",
-      link: "/convert-pdf"
+      link: "/all"
     },
     {
       img: "./imagefianl6.svg",
@@ -63,7 +63,7 @@ export default function HomePage() {
       desc: "Our file is ready for download: just click the button below.",
       btnText: "Merge",
       btnColor: "rgba(223, 145, 245, 1)",
-      link: "/merge"
+      link: "/all"
     },
   ];
     useEffect(() => {

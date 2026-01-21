@@ -39,6 +39,7 @@ export default function RotatePdfPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [rotatedBlob, setRotatedBlob] = useState<Blob | null>(null);
+  const autoDownloadTimerRef = useRef<NodeJS.Timeout | null>(null);
   const instructionData = toolData["rotate-pdf"];
 
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +71,14 @@ export default function RotatePdfPage() {
       setRotatedBlob(blob);
       const url = URL.createObjectURL(blob);
       setRotatedBlobUrl(url);
+
+      // Start auto-download timer
+      if (autoDownloadTimerRef.current) {
+        clearTimeout(autoDownloadTimerRef.current);
+      }
+      autoDownloadTimerRef.current = setTimeout(() => {
+        downloadRotatedPdf();
+      }, 7000);
     } catch (err) {
       setError('Failed to rotate PDF. Please try again.');
     } finally {
@@ -84,6 +93,12 @@ export default function RotatePdfPage() {
     a.href = rotatedBlobUrl;
     a.download = 'rotated.pdf';
     a.click();
+
+    // Clear auto-download timer if exists
+    if (autoDownloadTimerRef.current) {
+      clearTimeout(autoDownloadTimerRef.current);
+      autoDownloadTimerRef.current = null;
+    }
   };
 
   const { openPicker: openGoogleDrivePicker } = useGoogleDrivePicker({
@@ -502,9 +517,9 @@ export default function RotatePdfPage() {
                     cursor: "pointer",
                   }}
                 >
-                  <option value={90}>90°</option>
-                  <option value={180}>180°</option>
-                  <option value={270}>270°</option>
+                  <option value={90}><b> ↻ </b>90°</option>
+                  <option value={180}>↻180°</option>
+                  <option value={270}>↻270°</option>
                 </select>
               </div>
 

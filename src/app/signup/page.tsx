@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 
 const SignUpPage = () => {
@@ -13,7 +14,8 @@ const SignUpPage = () => {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signup } = useAuth();
+  const router = useRouter();
+  const { oauthLogin } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -22,7 +24,7 @@ const SignUpPage = () => {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
-   const { oauthLogin } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -41,13 +43,27 @@ const SignUpPage = () => {
     setLoading(true);
 
     try {
-      await signup(
-        formData.firstName,
-        formData.lastName,
-        formData.email,
-        formData.password,
-        formData.termsAccepted
-      );
+      // Call signup API directly (don't use AuthContext.signup)
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Check if email verification is required
+        if (data.requiresVerification) {
+          // Redirect to verification page
+          router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        } else {
+          // If no verification needed (shouldn't happen with credentials), redirect to login
+          router.push("/login");
+        }
+      } else {
+        setError(data.message || "Signup failed. Please try again.");
+      }
     } catch (err: any) {
       setError(err.message || "Signup failed. Please try again.");
     } finally {
@@ -73,6 +89,17 @@ const SignUpPage = () => {
             Create a <span style={{ color: "#1D4ED8" }}>FileMint</span> Account
           </h1>
 
+          <p
+            style={{
+              textAlign: "center",
+              color: "#666",
+              fontSize: "14px",
+              marginBottom: "20px",
+            }}
+          >
+            We'll send you a verification code to your email
+          </p>
+
           {error && (
             <div
               style={{
@@ -82,6 +109,7 @@ const SignUpPage = () => {
                 borderRadius: "5px",
                 marginBottom: "15px",
                 textAlign: "center",
+                fontSize: "14px",
               }}
             >
               {error}
@@ -123,7 +151,7 @@ const SignUpPage = () => {
               <input
                 type="email"
                 name="email"
-                placeholder="Email"
+                placeholder="Email (no temporary emails)"
                 value={formData.email}
                 onChange={handleChange}
                 style={{
@@ -157,7 +185,7 @@ const SignUpPage = () => {
                   marginTop: "5px",
                 }}
               >
-                Must be at least 8 characters
+                Must be 8+ characters with uppercase, lowercase, number, and special character
               </small>
             </div>
 
@@ -190,21 +218,52 @@ const SignUpPage = () => {
                   borderRadius: "5px",
                   width: "100%",
                   cursor: loading ? "not-allowed" : "pointer",
+                  fontSize: "16px",
+                  fontWeight: "600",
                 }}
               >
-                {loading ? "Signing up..." : "Sign Up"}
+                {loading ? "Creating account..." : "Sign Up"}
               </button>
             </div>
 
             <div style={{ textAlign: "center" }}>
-              <p>
+              <p style={{ color: "#666", fontSize: "14px" }}>
                 Already have an account?{" "}
-                <Link href="/login" style={{ color: "#1D4ED8" }}>
+                <Link href="/login" style={{ color: "#1D4ED8", fontWeight: "600" }}>
                   Log In
                 </Link>
               </p>
             </div>
           </form>
+
+          <div
+            style={{
+              margin: "20px 0",
+              textAlign: "center",
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                borderTop: "1px solid #ddd",
+                position: "relative",
+                margin: "20px 0",
+              }}
+            >
+              <span
+                style={{
+                  background: "#fff",
+                  padding: "0 10px",
+                  position: "relative",
+                  top: "-12px",
+                  color: "#666",
+                  fontSize: "14px",
+                }}
+              >
+                OR
+              </span>
+            </div>
+          </div>
 
           <div style={{ textAlign: "center" }}>
             <button
@@ -216,8 +275,11 @@ const SignUpPage = () => {
                 borderRadius: "5px",
                 width: "100%",
                 cursor: "pointer",
-                marginTop: "15px",
-              }} onClick={() => oauthLogin("google")}
+                marginTop: "10px",
+                fontSize: "14px",
+                fontWeight: "600",
+              }}
+              onClick={() => oauthLogin("google")}
             >
               Continue with Google
             </button>
@@ -231,7 +293,10 @@ const SignUpPage = () => {
                 width: "100%",
                 cursor: "pointer",
                 marginTop: "10px",
-              }} onClick={() => oauthLogin("github")}
+                fontSize: "14px",
+                fontWeight: "600",
+              }}
+              onClick={() => oauthLogin("github")}
             >
               Continue with Github
             </button>
@@ -243,4 +308,3 @@ const SignUpPage = () => {
 };
 
 export default SignUpPage;
-
