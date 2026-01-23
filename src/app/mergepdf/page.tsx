@@ -4,10 +4,10 @@ import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 import { TbShare3 } from "react-icons/tb";
-import { 
-  PiFiles, 
-  PiLink, 
-  PiClipboard, 
+import {
+  PiFiles,
+  PiLink,
+  PiClipboard,
   PiPlus,
   PiCaretDown,
   PiUploadSimple,
@@ -26,6 +26,129 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+// Sortable File Card Component
+function SortableFileCard({
+  file,
+  index,
+  onRemove,
+}: {
+  file: File;
+  index: number;
+  onRemove: (index: number) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: file.name + index }); // Use a composite ID to ensure uniqueness if names are same
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1000 : "auto",
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        ...style,
+        display: "flex",
+        alignItems: "center",
+        gap: "0.5rem",
+      }}
+      {...attributes}
+      {...listeners}
+    >
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "8px",
+          width: "120px",
+          height: "140px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          position: "relative",
+          cursor: "grab",
+        }}
+      >
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent drag start when clicking delete
+            onRemove(index);
+          }}
+          onPointerDown={(e) => e.stopPropagation()} // Prevent drag start
+          style={{
+            position: "absolute",
+            top: "4px",
+            right: "4px",
+            background: "rgba(255, 255, 255, 1)",
+            border: "none",
+            borderRadius: "50%",
+            width: "25px",
+            height: "25px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            color: "black",
+            zIndex: 10,
+          }}
+        >
+          <PiX size={20} />
+        </button>
+
+        <img
+          src="./pdf.svg"
+          alt="PDF Icon"
+          style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }}
+        />
+        <p
+          style={{
+            fontSize: "0.75rem",
+            color: "#333",
+            textAlign: "center",
+            padding: "0 5px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            width: "100%",
+            margin: 0,
+          }}
+        >
+          {file.name}
+        </p>
+      </div>
+
+      {/* Visual separator (optional, or effectively handled by gap) */}
+    </div>
+  );
+}
 
 export default function MergePdfPage() {
   const [files, setFiles] = useState<File[]>([]);
@@ -42,8 +165,28 @@ export default function MergePdfPage() {
   const addFileInputRef = useRef<HTMLInputElement>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [mergedFileBlob, setMergedFileBlob] = useState<Blob | null>(null);
-   const instructionData = toolData["merge-pdf"];
-   
+  const [isMerged, setIsMerged] = useState(false);
+  const instructionData = toolData["merge-pdf"];
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      setFiles((items) => {
+        const oldIndex = items.findIndex((item, idx) => (item.name + idx) === active.id);
+        const newIndex = items.findIndex((item, idx) => (item.name + idx) === over?.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
   // Close dropdown when clicking outside
   const { openPicker: openGoogleDrivePicker, isLoaded: isGoogleLoaded } = useGoogleDrivePicker({
     onFilePicked: (file) => {
@@ -52,7 +195,7 @@ export default function MergePdfPage() {
       setIsAddDropdownOpen(false);
     },
   });
-   const { openPicker: openDropboxPicker, isLoaded: isDropboxLoaded } = useDropboxPicker({
+  const { openPicker: openDropboxPicker, isLoaded: isDropboxLoaded } = useDropboxPicker({
     onFilePicked: (file) => {
       setFiles((prev) => [...prev, file]);
       setIsDropdownOpen(false);
@@ -71,6 +214,28 @@ export default function MergePdfPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Auto-download effect
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    if (isMerged && mergedFileBlob) {
+      timeoutId = setTimeout(() => {
+        const url = window.URL.createObjectURL(mergedFileBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "merged_documents.pdf";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 7000); // 7 seconds delay
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isMerged, mergedFileBlob]);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -107,17 +272,17 @@ export default function MergePdfPage() {
 
   const handleUrlSubmit = async () => {
     if (!urlInput.trim()) return;
-    
+
     try {
       setIsUploading(true);
       const response = await fetch(urlInput);
       const blob = await response.blob();
-      
+
       if (blob.type !== "application/pdf") {
         alert("URL must point to a PDF file");
         return;
       }
-      
+
       const fileName = urlInput.split("/").pop() || "downloaded.pdf";
       const file = new File([blob], fileName, { type: "application/pdf" });
       setFiles((prev) => [...prev, file]);
@@ -130,13 +295,13 @@ export default function MergePdfPage() {
     }
   };
 
- const handleGoogleDrive = () => {
+  const handleGoogleDrive = () => {
     openGoogleDrivePicker();
   };
 
-  
 
- const handleDropbox = () => {
+
+  const handleDropbox = () => {
     openDropboxPicker();
   };
 
@@ -167,6 +332,7 @@ export default function MergePdfPage() {
       return;
     }
 
+    setIsUploading(true); // Reuse uploading state for processing
     const formData = new FormData();
     files.forEach((file) => formData.append("files", file));
 
@@ -183,30 +349,54 @@ export default function MergePdfPage() {
 
       const blob = await response.blob();
       setMergedFileBlob(blob);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "merged.pdf";
-      a.click();
-      window.URL.revokeObjectURL(url);
+      setIsMerged(true); // Switch to success view
+
+      // Optional: Auto download
+      // const url = window.URL.createObjectURL(blob);
+      // const a = document.createElement("a");
+      // a.href = url;
+      // a.download = "merged.pdf";
+      // a.click();
+      // window.URL.revokeObjectURL(url);
     } catch (error) {
       alert("An error occurred during merge");
+    } finally {
+      setIsUploading(false);
     }
   };
 
+  const handleDownload = () => {
+    if (mergedFileBlob) {
+      const url = window.URL.createObjectURL(mergedFileBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "merged_documents.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleReset = () => {
+    setFiles([]);
+    setMergedFileBlob(null);
+    setIsMerged(false);
+  };
+
   const handleShare = () => {
-  if (!mergedFileBlob) {
-    alert("Please merge the files first before sharing");
-    return;
-  }
-  setShowShareModal(true);
-};
+    if (!mergedFileBlob) {
+      alert("Please merge the files first before sharing");
+      return;
+    }
+    setShowShareModal(true);
+  };
 
   const menuItems = [
     { icon: <PiUploadSimple size={18} />, label: "From Device", onClick: handleFromDevice, onClickAdd: handleAddFromDevice },
     { icon: <PiLink size={18} />, label: "Paste URL", onClick: handlePasteUrl, onClickAdd: handlePasteUrl },
     { icon: <FaGoogleDrive size={16} />, label: "Google Drive", onClick: handleGoogleDrive, onClickAdd: handleGoogleDrive },
-    
+
     { icon: <FaDropbox size={16} />, label: "Drop Box", onClick: handleDropbox, onClickAdd: handleDropbox },
     { icon: <PiClipboard size={18} />, label: "From Clipboard", onClick: handleFromClipboard, onClickAdd: handleFromClipboard },
   ];
@@ -228,310 +418,73 @@ export default function MergePdfPage() {
 
         {/* Main Content */}
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
-          <h1 style={{ 
-          fontSize: "2rem", 
-          fontWeight: "600",
-          marginBottom: "2rem",
-          textAlign: "left",
-          color: "#1a1a1a",
-          fontFamily: 'Georgia, "Times New Roman", serif',
-        }}>
-          Merge PDF Files
-        </h1>
-
-        {/* Drop Zone */}
-        <div
-          onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
-          style={{
-            border: "3px solid rgba(57, 185, 57, 0.4)",
-            backgroundColor: "rgba(144, 238, 144, 0.2)",
-            borderRadius: "12px",
-            padding: "2rem",
-            textAlign: "center",
+          <h1 style={{
+            fontSize: "2rem",
+            fontWeight: "600",
             marginBottom: "2rem",
-            position: "relative",
-            minHeight: "280px",
-          }}
-        >
-          {files.length === 0 ? (
-            /* Empty State - Show upload UI */
-            <div style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "300px",
-              minHeight: "220px",
-            }}>
-              {/* Cloud Upload Icon */}
-              <div style={{ marginBottom: "1.5rem" }}>
-                <img src="./upload.svg" alt="Upload Icon"></img>
-                
-              </div>
+            textAlign: "left",
+            color: "#1a1a1a",
+            fontFamily: 'Georgia, "Times New Roman", serif',
+          }}>
+            Merge PDF Files
+          </h1>
 
-              {/* Dropdown Button */}
-              <div ref={dropdownRef} style={{ position: "relative" }}>
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  style={{
-                    backgroundColor: "white",
-                    padding: "0.6rem 1rem",
-                    border: "1px solid #e0e0e0",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.9rem",
-                    fontWeight: "500",
-                    color: "#333",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <PiFiles size={18} />
-                  Select Files
-                  <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
-                </button>
-
-                {/* Dropdown Menu */}
-                {isDropdownOpen && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 4px)",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      backgroundColor: "white",
-                      border: "1px solid #e0e0e0",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      zIndex: 1000,
-                      minWidth: "180px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {menuItems.map((item, index) => (
-                      <button
-                        key={index}
-                        onClick={item.onClick}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.75rem",
-                          padding: "0.7rem 1rem",
-                          width: "100%",
-                          border: "none",
-                          backgroundColor: "transparent",
-                          cursor: "pointer",
-                          fontSize: "0.85rem",
-                          color: "#333",
-                          textAlign: "left",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f5f5f5";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }}
-                      >
-                        <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
-                          {item.icon}
-                        </span>
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Hidden file input */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/pdf"
-                  multiple
-                  onChange={handleFileChange}
-                  style={{ display: "none" }}
-                />
-              </div>
-            </div>
-          ) : (
-            /* Files Uploaded State - Show file cards */
-            <div>
-              {/* Download and Share buttons */}
+          {/* Drop Zone */}
+          <div
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+            style={{
+              border: "3px solid rgba(57, 185, 57, 0.4)",
+              backgroundColor: "rgba(144, 238, 144, 0.2)",
+              borderRadius: "12px",
+              padding: "2rem",
+              textAlign: "center",
+              marginBottom: "2rem",
+              position: "relative",
+              minHeight: "280px",
+            }}
+          >
+            {files.length === 0 ? (
+              /* Empty State - Show upload UI */
               <div style={{
                 display: "flex",
-                justifyContent: "flex-end",
-                gap: "0.5rem",
-                marginBottom: "1.5rem",
-              }}>
-                <button
-                  onClick={handleMerge}
-                  style={{
-                    backgroundColor: "#ffffffff",
-                    color: "Black",
-                    border: "none",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.85rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  Download
-                  {/* <PiCaretDown size={14} /> */}
-                </button>
-                <button
-                  onClick={handleShare}
-                  style={{
-                    backgroundColor: "white",
-                    color: "#333",
-                    border: "1px solid #e0e0e0",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.85rem",
-                    fontWeight: "500",
-                  }}
-                ><TbShare3 />
-                  {/* <PiShareNetwork size={16} /> */}
-                  Share
-                </button>
-              </div>
-
-              {/* File Cards Container */}
-              <div style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "0.5rem",
-                flexWrap: "wrap",
+                flexDirection: "column",
+                alignItems: "center",
                 justifyContent: "center",
+                height: "300px",
+                minHeight: "220px",
               }}>
-                {/* File Cards */}
-                {files.map((file, index) => (
-                  <div
-                    key={index}
+                {/* Cloud Upload Icon */}
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <img src="./upload.svg" alt="Upload Icon"></img>
+                </div>
+
+                {/* Dropdown Button */}
+                <div ref={dropdownRef} style={{ position: "relative" }}>
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     style={{
+                      backgroundColor: "white",
+                      padding: "0.6rem 1rem",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: "6px",
+                      cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
+                      fontSize: "0.9rem",
+                      fontWeight: "500",
+                      color: "#333",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                     }}
                   >
-                    {/* File Card */}
-                    <div
-                      style={{
-                        backgroundColor: "white",
-                        borderRadius: "8px",
-                        width: "120px",
-                        height: "140px",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                        position: "relative",
-                      }}
-                    >
-                      {/* Remove button */}
-                      <button
-                        onClick={() => removeFile(index)}
-                        style={{
-                          position: "absolute",
-                          top: "4px",
-                          right: "4px",
-                          background: "rgba(255, 255, 255, 1)",
-                          border: "none",
-                          borderRadius: "50%",
-                          width: "25px",
-                          height: "25px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                          color: "black",
-                        }}
-                      >
-                        <PiX size={35} />
-                      </button>
-                      
-                     
-                      <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
-                    </div>
-                    
-                    {/* Plus sign between cards */}
-                    {index < files.length - 1 && (
-                      <span
-                        style={{
-                          fontSize: "1.5rem",
-                          color: "#666",
-                          fontWeight: "300",
-                        }}
-                      >
-                        +
-                      </span>
-                    )}
-                  </div>
-                ))}
+                    <PiFiles size={18} />
+                    Select Files
+                    <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
+                  </button>
 
-                {/* Add Files Card */}
-                <div ref={addDropdownRef} style={{ position: "relative" }}>
-                  <div
-                    onClick={() => setIsAddDropdownOpen(!isAddDropdownOpen)}
-                    style={{
-                      backgroundColor: "white",
-                      borderRadius: "8px",
-                      width: "120px",
-                      height: "140px",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                      cursor: "pointer",
-                      border: "2px dashed #ccc",
-                      padding: "0.5rem",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        border: "2px dashed #3b82f6",
-                        borderRadius: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginBottom: "0.5rem",
-                      }}
-                    >
-                      <PiPlus size={20} style={{ color: "#3b82f6" }} />
-                      {/* <span style={{ fontSize: "0.35rem", color: "#3b82f6", fontWeight: "500" }}>
-                      Add Files
-                    </span> */}
-                    </div>
-                    <p style={{
-                    fontSize: "0.55rem",
-                    color: "#000000ff",
-                    marginTop: "0.5rem",
-                    textAlign: "left",
-                    maxWidth: "120px",
-                  }}>
-                    PDF, Image, Word, Excel and PowerPoint.
-                  </p>
-                  </div>
-                  
-                  {/* File type hint */}
-                  
-
-                  {/* Add Files Dropdown */}
-                  {isAddDropdownOpen && (
+                  {/* Dropdown Menu */}
+                  {isDropdownOpen && (
                     <div
                       style={{
                         position: "absolute",
@@ -550,7 +503,7 @@ export default function MergePdfPage() {
                       {menuItems.map((item, index) => (
                         <button
                           key={index}
-                          onClick={item.onClickAdd}
+                          onClick={item.onClick}
                           style={{
                             display: "flex",
                             alignItems: "center",
@@ -581,9 +534,9 @@ export default function MergePdfPage() {
                     </div>
                   )}
 
-                  {/* Hidden file input for Add Files */}
+                  {/* Hidden file input */}
                   <input
-                    ref={addFileInputRef}
+                    ref={fileInputRef}
                     type="file"
                     accept="application/pdf"
                     multiple
@@ -592,105 +545,330 @@ export default function MergePdfPage() {
                   />
                 </div>
               </div>
+            ) : isMerged ? (
+              /* Success State - Download */
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+                padding: "2rem",
+                gap: "1.5rem"
+              }}>
+                <div style={{
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  background: "#e8f5e9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#2e7d32",
+                  marginBottom: "0.5rem"
+                }}>
+                  <PiCheckCircle size={48} />
+                </div>
+                <h2 style={{ fontSize: "1.5rem", color: "#333", margin: 0 }}>
+                  PDFs Merged Successfully!
+                </h2>
 
-              {/* Quick action icons */}
+                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                  <button
+                    onClick={handleDownload}
+                    style={{
+                      backgroundColor: "#e11d48", // iLovePDF-like red/brand color or theme color
+                      color: "white",
+                      padding: "1rem 2rem",
+                      borderRadius: "8px",
+                      fontSize: "1.1rem",
+                      fontWeight: "600",
+                      border: "none",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)"
+                    }}
+                  >
+                    Download Merged PDF
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", gap: "1rem" }}>
+                  <button
+                    onClick={handleShare}
+                    style={{
+                      background: "transparent",
+                      color: "#666",
+                      border: "1px solid #ccc",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem"
+                    }}
+                  >
+                    <TbShare3 /> Share
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    style={{
+                      background: "transparent",
+                      color: "#666",
+                      border: "1px solid #ccc",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Merge More Files
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Files Uploaded State - Sortable List */
+              <div style={{ textAlign: "center", paddingBottom: "4rem" }}>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={files.map((f, i) => f.name + i)}
+                    strategy={rectSortingStrategy}
+                  >
+                    <div style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "1rem",
+                      flexWrap: "wrap",
+                      justifyContent: "center",
+                      marginBottom: "2rem"
+                    }}>
+                      {files.map((file, index) => (
+                        <SortableFileCard
+                          key={file.name + index}
+                          file={file}
+                          index={index}
+                          onRemove={removeFile}
+                        />
+                      ))}
+
+                      {/* Add Files Card (Fixed, not sortable) */}
+                      <div ref={addDropdownRef} style={{ position: "relative" }}>
+                        <div
+                          onClick={() => setIsAddDropdownOpen(!isAddDropdownOpen)}
+                          style={{
+                            backgroundColor: "white",
+                            borderRadius: "8px",
+                            width: "120px",
+                            height: "140px",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                            cursor: "pointer",
+                            border: "2px dashed #ccc",
+                            padding: "0.5rem",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "40px",
+                              height: "40px",
+                              border: "2px dashed #3b82f6",
+                              borderRadius: "8px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginBottom: "0.5rem",
+                            }}
+                          >
+                            <PiPlus size={20} style={{ color: "#3b82f6" }} />
+                          </div>
+                          <p style={{
+                            fontSize: "0.55rem",
+                            color: "#000000ff",
+                            marginTop: "0.5rem",
+                            textAlign: "center",
+                          }}>
+                            Add more files
+                          </p>
+                        </div>
+
+                        {/* Add Files Dropdown */}
+                        {isAddDropdownOpen && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "calc(100% + 4px)",
+                              left: "50%",
+                              transform: "translateX(-50%)",
+                              backgroundColor: "white",
+                              border: "1px solid #e0e0e0",
+                              borderRadius: "8px",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                              zIndex: 1000,
+                              minWidth: "180px",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {menuItems.map((item, index) => (
+                              <button
+                                key={index}
+                                onClick={item.onClickAdd}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.75rem",
+                                  padding: "0.7rem 1rem",
+                                  width: "100%",
+                                  border: "none",
+                                  backgroundColor: "transparent",
+                                  cursor: "pointer",
+                                  fontSize: "0.85rem",
+                                  color: "#333",
+                                  textAlign: "left",
+                                  transition: "background-color 0.2s",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = "#f5f5f5";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = "transparent";
+                                }}
+                              >
+                                <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
+                                  {item.icon}
+                                </span>
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Hidden file input for Add Files */}
+                        <input
+                          ref={addFileInputRef}
+                          type="file"
+                          accept="application/pdf"
+                          multiple
+                          onChange={handleFileChange}
+                          style={{ display: "none" }}
+                        />
+                      </div>
+                    </div>
+                  </SortableContext>
+                </DndContext>
+
+                {/* Big Action Button */}
+                <button
+                  onClick={handleMerge}
+                  disabled={isUploading}
+                  style={{
+                    backgroundColor: "#e11d48", // Brand color red
+                    color: "white",
+                    border: "none",
+                    padding: "1rem 3rem",
+                    borderRadius: "50px",
+                    cursor: isUploading ? "wait" : "pointer",
+                    fontSize: "1.2rem",
+                    fontWeight: "600",
+                    boxShadow: "0 4px 14px rgba(225, 29, 72, 0.4)",
+                    transition: "all 0.2s",
+                    opacity: isUploading ? 0.7 : 1,
+                    transform: isUploading ? "scale(0.98)" : "scale(1)"
+                  }}
+                  onMouseEnter={e => !isUploading && (e.currentTarget.style.transform = "scale(1.05)")}
+                  onMouseLeave={e => !isUploading && (e.currentTarget.style.transform = "scale(1)")}
+                >
+                  {isUploading ? "Merging PDFs..." : "Merge PDF →"}
+                </button>
+
+              </div>
+            )}
+
+            {/* Quick action icons for empty state */}
+            {files.length === 0 && (
               <div
                 style={{
+                  position: "absolute",
+                  right: "1rem",
+                  top: "90%",
+                  transform: "translateY(-50%)",
                   display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "0.75rem",
-                  marginTop: "1.5rem",
+                  gap: "0.5rem",
                   opacity: 0.4,
                 }}
               >
-                <PiUploadSimple size={18} />
-                <PiLink size={18} />
-                <FaGoogleDrive size={16} />
-               
-                <FaDropbox size={16} />
-                <PiClipboard size={18} />
+                <PiUploadSimple size={20} />
+                <PiLink size={20} />
+                <FaGoogleDrive size={18} />
+
+                <FaDropbox size={18} />
+                <PiClipboard size={20} />
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Quick action icons for empty state */}
-          {files.length === 0 && (
-            <div
-              style={{
-                position: "absolute",
-                right: "1rem",
-                top: "90%",
-                transform: "translateY(-50%)",
-                display: "flex",
-                gap: "0.5rem",
-                opacity: 0.4,
-              }}
-            >
-              <PiUploadSimple size={20} />
-              <PiLink size={20} />
-              <FaGoogleDrive size={18} />
-           
-              <FaDropbox size={18} />
-              <PiClipboard size={20} />
-            </div>
-          )}
-        </div>
+          {/* Info Section */}
+          <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif', }}>
+            <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
+              Easily switch between PDFs, Word, Excel, PPT, and more with our seamless online tool.
+            </p>
+            <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
+              {[
+                "Convert files in seconds with drag-and-drop simplicity",
+                "Works on any device — desktop, tablet, or mobile",
+                "Trusted by users worldwide for secure and fast conversion"
+              ].map((text, index) => (
+                <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                  <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
+                  {text}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        {/* Info Section */}
-        <div style={{ marginTop: "3rem",fontFamily: 'Georgia, "Times New Roman", serif', }}>
-          <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
-            Easily switch between PDFs, Word, Excel, PPT, and more with our seamless online tool.
-          </p>
-          <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
-            {[
-              "Convert files in seconds with drag-and-drop simplicity",
-              "Works on any device — desktop, tablet, or mobile",
-              "Trusted by users worldwide for secure and fast conversion"
-            ].map((text, index) => (
-              <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
-                {text}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Security Section */}
-        <div
-          style={{
-            marginTop: "3rem",
-            padding: "1.5rem",
-            backgroundColor: "#f0f9ff",
-            border: "1px solid #cce5ff",
-            borderRadius: "10px",
-            fontSize: "0.95rem",
-            fontFamily: 'Georgia, "Times New Roman", serif',
-          }}
-        >
-          <strong>Protected. Encrypted. Automatically Deleted.</strong>
-          <p style={{ marginTop: "0.5rem", color: "#555" }}>
-            For years, our platform has helped users convert and manage files
-            securely—with no file tracking, no storage, and full privacy. Every
-            document you upload is encrypted and automatically deleted after 2
-            hours. Your data stays yours—always.
-          </p>
+          {/* Security Section */}
           <div
             style={{
-              marginTop: "1rem",
-              display: "flex",
-              justifyContent: "space-around",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "1rem",
-              filter: "grayscale(100%)",
+              marginTop: "3rem",
+              padding: "1.5rem",
+              backgroundColor: "#f0f9ff",
+              border: "1px solid #cce5ff",
+              borderRadius: "10px",
+              fontSize: "0.95rem",
+              fontFamily: 'Georgia, "Times New Roman", serif',
             }}
           >
-            <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
-            <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
-            <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
-            <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />
+            <strong>Protected. Encrypted. Automatically Deleted.</strong>
+            <p style={{ marginTop: "0.5rem", color: "#555" }}>
+              For years, our platform has helped users convert and manage files
+              securely—with no file tracking, no storage, and full privacy. Every
+              document you upload is encrypted and automatically deleted after 2
+              hours. Your data stays yours—always.
+            </p>
+            <div
+              style={{
+                marginTop: "1rem",
+                display: "flex",
+                justifyContent: "space-around",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "1rem",
+                filter: "grayscale(100%)",
+              }}
+            >
+              <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
+              <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
+              <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
+              <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />
+            </div>
           </div>
-        </div>
         </div>
 
         {/* Right Ad */}
@@ -770,24 +948,24 @@ export default function MergePdfPage() {
               </button>
             </div>
           </div>
-          
+
         </div>
       )}
-      <ToolInstructions 
-        title={instructionData.title} 
-        steps={instructionData.steps} 
+      <ToolInstructions
+        title={instructionData.title}
+        steps={instructionData.steps}
       />
-      <Testimonials 
+      <Testimonials
         title="What Our Users Say"
         testimonials={testimonialData.testimonials}
-        autoScrollInterval={3000} 
+        autoScrollInterval={3000}
       />
       <ShareModal
-  isOpen={showShareModal}
-  onClose={() => setShowShareModal(false)}
-  fileBlob={mergedFileBlob}
-  fileName="merged.pdf"
-/><Footer/>
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        fileBlob={mergedFileBlob}
+        fileName="merged.pdf"
+      /><Footer />
     </div>
   );
 }

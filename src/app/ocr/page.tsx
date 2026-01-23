@@ -1,21 +1,24 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import Tesseract from "tesseract.js";
 import Image from "next/image";
 import { jsPDF } from "jspdf";
 import Navbar from "../components/Navbar";
-import { TbShare3 } from "react-icons/tb";
-import { 
-  PiFiles, 
-  PiLink, 
-  PiClipboard, 
+import {
+  PiFiles,
+  PiLink,
+  PiClipboard,
   PiCaretDown,
   PiUploadSimple,
   PiCheckCircle,
-  PiX
+  PiX,
+  PiTextT,
+  PiSpinner
 } from "react-icons/pi";
+import { TbShare3 } from "react-icons/tb";
 import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import ShareModal from "../components/ShareModal";
 import { useGoogleDrivePicker } from "../hooks/useGoogleDrivePicker";
@@ -27,710 +30,288 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+
 export default function ImageTextExtractor() {
-  const { token, isLoading } = useAuth();
+  const { token } = useAuth();
   const router = useRouter();
 
+  // State
   const [image, setImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [extractedText, setExtractedText] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
+  const [progress, setProgress] = useState(0); // For progress bar
+  const [isDone, setIsDone] = useState(false); // Success state
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+
+  // Upload States
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
   const instructionData = toolData["extract-text-from-image"];
 
-  const { openPicker: openGoogleDrivePicker } = useGoogleDrivePicker({
-    onFilePicked: (file) => {
-      if (file.type.startsWith("image/")) {
-        setImage(file);
-        setPreviewUrl(URL.createObjectURL(file));
-        setError(null);
-        setExtractedText("");
-      }
-      setIsDropdownOpen(false);
-    },
-  });
-
-  const { openPicker: openDropboxPicker } = useDropboxPicker({
-    onFilePicked: (file) => {
-      if (file.type.startsWith("image/")) {
-        setImage(file);
-        setPreviewUrl(URL.createObjectURL(file));
-        setError(null);
-        setExtractedText("");
-      }
-      setIsDropdownOpen(false);
-    },
-  });
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type.startsWith("image/")) {
-      setImage(droppedFile);
-      setPreviewUrl(URL.createObjectURL(droppedFile));
-      setError(null);
-      setExtractedText("");
-    } else {
-      setError("Only image files are supported.");
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    if (selected && selected.type.startsWith("image/")) {
-      setImage(selected);
-      setPreviewUrl(URL.createObjectURL(selected));
-      setError(null);
-      setExtractedText("");
-    } else {
-      setError("Only image files are supported.");
-    }
-    setIsDropdownOpen(false);
-  };
-
-  const handleFromDevice = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handlePasteUrl = () => {
-    setShowUrlModal(true);
-    setIsDropdownOpen(false);
-  };
-
-  const handleUrlSubmit = async () => {
-    if (!urlInput.trim()) return;
-    
-    try {
-      setIsUploading(true);
-      const response = await fetch(urlInput);
-      const blob = await response.blob();
-      
-      if (!blob.type.startsWith("image/")) {
-        alert("URL must point to an image file");
-        return;
-      }
-      
-      const fileName = urlInput.split("/").pop() || "downloaded.jpg";
-      const file = new File([blob], fileName, { type: blob.type });
-      setImage(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      setError(null);
-      setExtractedText("");
-      setUrlInput("");
-      setShowUrlModal(false);
-    } catch (error) {
-      alert("Failed to fetch image from URL");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleFromClipboard = async () => {
-    try {
-      const clipboardItems = await navigator.clipboard.read();
-      for (const item of clipboardItems) {
-        for (const type of item.types) {
-          if (type.startsWith("image/")) {
-            const blob = await item.getType(type);
-            const file = new File([blob], "clipboard.png", { type });
-            setImage(file);
-            setPreviewUrl(URL.createObjectURL(file));
-            setError(null);
-            setExtractedText("");
-            break;
-          }
-        }
-      }
-    } catch (error) {
-      alert("No image found in clipboard or clipboard access denied");
-    }
-    setIsDropdownOpen(false);
-  };
-
-  const removeFile = () => {
-    setImage(null);
-    setPreviewUrl(null);
-    setExtractedText("");
-    setPdfBlob(null);
-    setError(null);
-  };
-
-  const extractText = async () => {
-    if (!image) {
-      setError("Please upload an image first");
-      return;
-    }
-
+  // --- Handlers ---
+  const handleExtractText = async () => {
+    if (!image) return;
     setIsProcessing(true);
-    setError(null);
+    setExtractedText("");
+    setIsDone(false);
+    setProgress(0);
 
     try {
       const result = await Tesseract.recognize(image, "eng", {
-        logger: (m) => console.log(m),
+        logger: (m) => {
+          if (m.status === "recognizing text") {
+            setProgress(Math.floor(m.progress * 100));
+          }
+        },
       });
       setExtractedText(result.data.text);
+      setIsDone(true);
+      generatePDFBlob(result.data.text);
     } catch (err) {
       console.error(err);
-      setError("Error processing image. Please try again.");
+      alert("Error processing image.");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const generatePDF = () => {
-    if (!extractedText) {
-      setError("No text to generate PDF from.");
-      return;
-    }
-
+  const generatePDFBlob = (text: string) => {
     const doc = new jsPDF();
     doc.setFont("helvetica");
     doc.setFontSize(12);
-
-    const lines = doc.splitTextToSize(extractedText, 180);
-    doc.text("Extracted Text from Image", 15, 15);
-    doc.text(lines, 15, 25);
-
-    doc.setFontSize(10);
-    doc.text("Generated by ImageTextExtractor", 15, doc.internal.pageSize.height - 10);
-    
-    const pdfBlob = doc.output("blob");
-    setPdfBlob(pdfBlob);
-    doc.save("extracted-text.pdf");
+    const lines = doc.splitTextToSize(text, 180);
+    doc.text(lines, 15, 15);
+    const blob = doc.output("blob");
+    setPdfBlob(blob);
   };
 
-  const handleShare = () => {
-    if (!pdfBlob) {
-      alert("Please generate the PDF first before sharing");
-      return;
+  const handleDownloadPDF = () => {
+    if (!pdfBlob) return;
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "extracted_text.pdf";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadText = () => {
+    if (!extractedText) return;
+    const blob = new Blob([extractedText], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "extracted_text.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const reset = () => {
+    setImage(null);
+    setPreviewUrl(null);
+    setExtractedText("");
+    setIsDone(false);
+    setPdfBlob(null);
+    setProgress(0);
+  };
+
+  // --- Upload Helpers ---
+  const processFile = (file: File) => {
+    if (file.type.startsWith("image/")) {
+      setImage(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setExtractedText("");
+      setIsDone(false);
+    } else {
+      alert("Only image files are supported.");
     }
-    setShowShareModal(true);
   };
 
-  const menuItems = [
-    { icon: <PiUploadSimple size={18} />, label: "From Device", onClick: handleFromDevice },
-    { icon: <PiLink size={18} />, label: "Paste URL", onClick: handlePasteUrl },
-    { icon: <FaGoogleDrive size={16} />, label: "Google Drive", onClick: openGoogleDrivePicker },
-    { icon: <FaDropbox size={16} />, label: "Drop Box", onClick: openDropboxPicker },
-    { icon: <PiClipboard size={18} />, label: "From Clipboard", onClick: handleFromClipboard },
-  ];
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if (f) processFile(f);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) processFile(f);
+    setIsDropdownOpen(false);
+  };
+
+  const handleUrlSubmit = async () => {
+    if (!urlInput.trim()) return;
+    setIsUploading(true);
+    try {
+      const res = await fetch(urlInput);
+      const blob = await res.blob();
+      if (!blob.type.startsWith("image/")) return alert("Not an image");
+      const f = new File([blob], "downloaded_image", { type: blob.type });
+      processFile(f);
+      setShowUrlModal(false);
+    } catch { alert("Failed to fetch image"); } finally { setIsUploading(false); }
+  };
+
+  const { openPicker: openGoogleDrivePicker } = useGoogleDrivePicker({ onFilePicked: (f) => { processFile(f); setIsDropdownOpen(false); } });
+  const { openPicker: openDropboxPicker } = useDropboxPicker({ onFilePicked: (f) => { processFile(f); setIsDropdownOpen(false); } });
+
 
   return (
     <div>
       <Navbar />
+      <style>{`
+        @media (max-width: 768px) {
+            .work-area { flex-direction: column !important; }
+            .preview-pane, .result-pane { width: 100% !important; margin-bottom: 1rem; }
+        }
+      `}</style>
 
-      <div style={{
-        display: "flex",
-        maxWidth: "1400px",
-        margin: "4rem auto",
-        padding: "0 2rem",
-        gap: "2rem",
-        alignItems: "flex-start"
-      }}>
-        {/* Left Ad */}
+      <div style={{ display: "flex", maxWidth: "1400px", margin: "4rem auto", padding: "0 2rem", gap: "2rem", alignItems: "flex-start" }}>
         <VerticalAdLeft />
 
-        {/* Main Content */}
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
-        <h1 style={{ 
-          fontSize: "2rem", 
-          fontWeight: "600",
-          marginBottom: "2rem",
-          textAlign: "left",
-          color: "#1a1a1a",
-          fontFamily: 'Georgia, "Times New Roman", serif',
-        }}>
-          Extract Text from Image
-        </h1>
+          <h1 style={{ fontSize: "2rem", fontWeight: "600", marginBottom: "2rem", display: "flex", alignItems: "center", gap: "0.5rem", color: "#1a1a1a", fontFamily: 'Georgia, "Times New Roman", serif' }}>
+            <PiTextT size={32} style={{ color: "#007bff" }} /> Extract Text from Image (OCR)
+          </h1>
 
-        {/* Drop Zone */}
-        <div
-          onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
-          style={{
-            border: "3px solid rgba(0, 123, 255, 0.4)",
-            backgroundColor: "rgba(0, 123, 255, 0.1)",
-            borderRadius: "12px",
-            padding: "2rem",
-            textAlign: "center",
-            marginBottom: "2rem",
-            position: "relative",
-            minHeight: "280px",
-          }}
-        >
-          {!image ? (
-            /* Empty State */
-            <div style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "300px",
-              minHeight: "220px",
-            }}>
-              <div style={{ marginBottom: "1.5rem" }}>
-                <img src="./upload.svg" alt="Upload Icon" />
-              </div>
-
-              <div ref={dropdownRef} style={{ position: "relative" }}>
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  style={{
-                    backgroundColor: "white",
-                    padding: "0.6rem 1rem",
-                    border: "1px solid #e0e0e0",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.9rem",
-                    fontWeight: "500",
-                    color: "#333",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <PiFiles size={18} />
-                  Select Image
-                  <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
-                </button>
-
-                {isDropdownOpen && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 4px)",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      backgroundColor: "white",
-                      border: "1px solid #e0e0e0",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      zIndex: 1000,
-                      minWidth: "180px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {menuItems.map((item, index) => (
-                      <button
-                        key={index}
-                        onClick={item.onClick}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.75rem",
-                          padding: "0.7rem 1rem",
-                          width: "100%",
-                          border: "none",
-                          backgroundColor: "transparent",
-                          cursor: "pointer",
-                          fontSize: "0.85rem",
-                          color: "#333",
-                          textAlign: "left",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f5f5f5";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }}
-                      >
-                        <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
-                          {item.icon}
-                        </span>
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  style={{ display: "none" }}
-                />
-              </div>
-            </div>
-          ) : (
-            /* File Uploaded State */
-            <div>
-              <div style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "0.5rem",
-                marginBottom: "1.5rem",
-              }}>
-                <button
-                  onClick={extractText}
-                  disabled={isProcessing}
-                  style={{
-                    backgroundColor: isProcessing ? "#ccc" : "#9c27b0",
-                    color: "white",
-                    border: "none",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    cursor: isProcessing ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.85rem",
-                    fontWeight: "500",
-                    opacity: isProcessing ? 0.7 : 1,
-                  }}
-                >
-                  {isProcessing ? "Processing..." : "Extract Text"}
-                </button>
-                <button
-                  onClick={generatePDF}
-                  disabled={!extractedText}
-                  style={{
-                    backgroundColor: extractedText ? "#28a745" : "#ccc",
-                    color: "white",
-                    border: "none",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    cursor: extractedText ? "pointer" : "not-allowed",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.85rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  Download PDF
-                </button>
-                <button
-                  onClick={handleShare}
-                  style={{
-                    backgroundColor: "white",
-                    color: "#333",
-                    border: "1px solid #e0e0e0",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.85rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  <TbShare3 />
-                  Share
-                </button>
-              </div>
-
-              {/* Preview Section */}
-              <div style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-              }}>
-                {previewUrl && (
-                  <div style={{ 
-                    position: "relative", 
-                    marginBottom: "1rem",
-                    maxWidth: "400px",
-                    width: "100%"
-                  }}>
-                    <button
-                      onClick={removeFile}
-                      style={{
-                        position: "absolute",
-                        top: "8px",
-                        right: "8px",
-                        background: "rgba(255, 255, 255, 0.9)",
-                        border: "none",
-                        borderRadius: "50%",
-                        width: "30px",
-                        height: "30px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        color: "black",
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                        zIndex: 10,
-                      }}
-                    >
-                      <PiX size={20} />
-                    </button>
-                    <Image
-                      src={previewUrl}
-                      alt="Image preview"
-                      width={400}
-                      height={300}
-                      style={{ 
-                        objectFit: "contain", 
-                        borderRadius: "8px",
-                        width: "100%",
-                        height: "auto",
-                        maxHeight: "300px"
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Error message */}
-              {error && (
-                <p style={{ 
-                  color: "#dc2626", 
-                  fontSize: "0.85rem", 
-                  marginTop: "1rem",
-                  textAlign: "center"
-                }}>
-                  {error}
-                </p>
-              )}
-
-              {/* Quick action icons */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "0.75rem",
-                  marginTop: "1.5rem",
-                  opacity: 0.4,
-                }}
-              >
-                <PiUploadSimple size={18} />
-                <PiLink size={18} />
-                <FaGoogleDrive size={16} />
-                <FaDropbox size={16} />
-                <PiClipboard size={18} />
-              </div>
-            </div>
-          )}
-
-          {!image && (
-            <div
-              style={{
-                position: "absolute",
-                right: "1rem",
-                top: "90%",
-                transform: "translateY(-50%)",
-                display: "flex",
-                gap: "0.5rem",
-                opacity: 0.4,
-              }}
-            >
-              <PiUploadSimple size={20} />
-              <PiLink size={20} />
-              <FaGoogleDrive size={18} />
-              <FaDropbox size={18} />
-              <PiClipboard size={20} />
-            </div>
-          )}
-        </div>
-
-        {/* Extracted Text Display */}
-        {extractedText && (
           <div
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
             style={{
-              backgroundColor: "#f8f9fa",
-              padding: "1.5rem",
-              borderRadius: "10px",
+              border: "3px solid rgba(57, 185, 57, 0.4)",
+              backgroundColor: "rgba(144, 238, 144, 0.2)",
+              borderRadius: "12px",
+              padding: "2rem",
+              textAlign: "center",
               marginBottom: "2rem",
-              border: "1px solid #e0e0e0",
+              position: "relative",
+              minHeight: "280px",
             }}
           >
-            <h2 style={{ 
-              fontSize: "1.2rem", 
-              marginBottom: "1rem",
-              fontFamily: 'Georgia, "Times New Roman", serif',
-              fontWeight: "600"
-            }}>
-              Extracted Text:
-            </h2>
-            <pre style={{
-              whiteSpace: "pre-wrap",
-              wordWrap: "break-word",
-              fontFamily: "monospace",
-              fontSize: "0.9rem",
-              lineHeight: "1.6",
-              margin: 0,
-            }}>
-              {extractedText}
-            </pre>
+            {isDone ? (
+              /* Success State */
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "1.5rem", padding: "2rem 0" }}>
+                <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: "#e8f5e9", display: "flex", alignItems: "center", justifyContent: "center", color: "#2e7d32", marginBottom: "0.5rem" }}>
+                  <PiCheckCircle size={48} />
+                </div>
+                <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0 }}>Text Extracted Successfully!</h2>
+
+                <div className="work-area" style={{ display: "flex", width: "100%", gap: "2rem", textAlign: "left", marginTop: "1rem" }}>
+                  <div className="result-pane" style={{ flex: 1, background: "white", padding: "1rem", borderRadius: "8px", maxHeight: "300px", overflowY: "auto", border: "1px solid #ddd" }}>
+                    <pre style={{ whiteSpace: "pre-wrap", fontFamily: "monospace", margin: 0, fontSize: "0.9rem" }}>{extractedText}</pre>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem", flexWrap: "wrap", justifyContent: "center" }}>
+                  <button onClick={handleDownloadPDF} style={{ backgroundColor: "#e11d48", color: "white", padding: "0.8rem 1.5rem", borderRadius: "6px", fontWeight: "600", border: "none", cursor: "pointer" }}>Download PDF</button>
+                  <button onClick={handleDownloadText} style={{ backgroundColor: "#007bff", color: "white", padding: "0.8rem 1.5rem", borderRadius: "6px", fontWeight: "600", border: "none", cursor: "pointer" }}>Download Text</button>
+                </div>
+
+                <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+                  <button onClick={() => setShowShareModal(true)} style={{ background: "transparent", border: "1px solid #ccc", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}> <TbShare3 /> Share </button>
+                  <button onClick={reset} style={{ background: "transparent", border: "1px solid #ccc", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer" }}> Extract Another Image </button>
+                </div>
+              </div>
+            ) : image ? (
+              /* Preview & Extract State */
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginBottom: "1rem", alignItems: "center" }}>
+                  <h3 style={{ margin: 0 }}>Preview</h3>
+                  <button onClick={reset} style={{ color: "red", background: "none", border: "none", cursor: "pointer" }}>Remove Image</button>
+                </div>
+
+                {previewUrl && (
+                  <div style={{ maxWidth: "100%", maxHeight: "400px", overflow: "hidden", borderRadius: "8px", border: "1px solid #ddd", marginBottom: "1.5rem" }}>
+                    <img src={previewUrl} style={{ maxWidth: "100%", height: "auto", display: "block" }} />
+                  </div>
+                )}
+
+                {!isProcessing ? (
+                  <button
+                    onClick={handleExtractText}
+                    style={{ padding: "1rem 2rem", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}
+                  >
+                    Start Extraction <PiTextT size={20} />
+                  </button>
+                ) : (
+                  <div style={{ textAlign: "center", width: "100%" }}>
+                    <div style={{ marginBottom: "0.5rem", fontWeight: "bold", color: "#007bff" }}>
+                      Extracting Text... {progress}%
+                    </div>
+                    <div style={{ width: "100%", height: "10px", backgroundColor: "#eee", borderRadius: "5px", overflow: "hidden" }}>
+                      <div style={{ width: `${progress}%`, height: "100%", backgroundColor: "#007bff", transition: "width 0.3s" }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Upload State */
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "300px", minHeight: "220px" }}>
+                <div style={{ marginBottom: "1.5rem" }}><img src="./upload.svg" alt="Upload Icon" /></div>
+                <div ref={dropdownRef} style={{ position: "relative" }}>
+                  <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ backgroundColor: "white", padding: "0.6rem 1rem", border: "1px solid #e0e0e0", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", fontWeight: "500", color: "#333", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+                    <PiFiles size={18} /> Select Image <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
+                  </button>
+                  {isDropdownOpen && (
+                    <div style={{ position: "absolute", top: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", backgroundColor: "white", border: "1px solid #e0e0e0", borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", zIndex: 1000, minWidth: "180px", overflow: "hidden" }}>
+                      {[{ icon: <PiUploadSimple size={18} />, label: "From Device", onClick: () => fileInputRef.current?.click() },
+                      { icon: <PiLink size={18} />, label: "Paste URL", onClick: () => { setShowUrlModal(true); setIsDropdownOpen(false); } },
+                      { icon: <FaGoogleDrive size={16} />, label: "Google Drive", onClick: openGoogleDrivePicker },
+                      { icon: <FaDropbox size={16} />, label: "Drop Box", onClick: openDropboxPicker }
+                      ].map((item, i) => (
+                        <button key={i} onClick={item.onClick} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.7rem 1rem", width: "100%", border: "none", backgroundColor: "transparent", cursor: "pointer", fontSize: "0.85rem", color: "#333", textAlign: "left" }}>
+                          <span style={{ color: "#666", display: "flex", alignItems: "center" }}>{item.icon}</span> {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
+                </div>
+              </div>
+            )}
           </div>
-        )}
 
-        {/* Info Section */}
-        <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
-          <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
-            Extract text from images using advanced OCR technology. Perfect for digitizing documents, receipts, and handwritten notes.
-          </p>
-          <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
-            {[
-              "Supports all major image formats (JPG, PNG, WEBP)",
-              "Extract text in seconds with high accuracy",
-              "Download extracted text as PDF"
-            ].map((text, index) => (
-              <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
-                {text}
-              </li>
-            ))}
-          </ul>
-        </div>
+          {/* Info & Footer */}
+          <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
+            <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}> Extract text from images instantly.</p>
+            <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
+              {["Supports JPG, PNG, WEBP", "High accuracy OCR", "Download as Text or PDF"].map((text, i) => (
+                <li key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}><PiCheckCircle size={18} style={{ color: "green" }} /> {text}</li>
+              ))}
+            </ul>
+          </div>
 
-        {/* Security Section */}
-        <div
-          style={{
-            marginTop: "3rem",
-            padding: "1.5rem",
-            backgroundColor: "#f0f9ff",
-            border: "1px solid #cce5ff",
-            borderRadius: "10px",
-            fontSize: "0.95rem",
-            fontFamily: 'Georgia, "Times New Roman", serif',
-          }}
-        >
-          <strong>Protected. Encrypted. Automatically Deleted.</strong>
-          <p style={{ marginTop: "0.5rem", color: "#555" }}>
-            For years, our platform has helped users convert and manage files
-            securely—with no file tracking, no storage, and full privacy. Every
-            document you upload is encrypted and automatically deleted after 2
-            hours. Your data stays yours—always.
-          </p>
-          <div
-            style={{
-              marginTop: "1rem",
-              display: "flex",
-              justifyContent: "space-around",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "1rem",
-              filter: "grayscale(100%)",
-            }}
-          >
-            <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
-            <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
-            <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
-            <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />          </div>
+          <div style={{ marginTop: "3rem", padding: "1.5rem", backgroundColor: "#f0f9ff", border: "1px solid #cce5ff", borderRadius: "10px", fontSize: "0.95rem" }}>
+            <strong>Protected. Encrypted.</strong> <p style={{ marginTop: "0.5rem", color: "#555" }}>Your files are processed in the browser and not stored.</p>
+          </div>
         </div>
-        </div>
-
-        {/* Right Ad */}
         <VerticalAdRight />
       </div>
 
-      {/* URL Input Modal */}
+      {/* URL Modal */}
       {showUrlModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2000,
-          }}
-          onClick={() => setShowUrlModal(false)}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "2rem",
-              borderRadius: "10px",
-              width: "90%",
-              maxWidth: "500px",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }} onClick={() => setShowUrlModal(false)}>
+          <div style={{ backgroundColor: "white", padding: "2rem", borderRadius: "10px", width: "90%", maxWidth: "500px" }} onClick={e => e.stopPropagation()}>
             <h3 style={{ marginBottom: "1rem" }}>Paste Image URL</h3>
-            <input
-              type="url"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="https://example.com/image.jpg"
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #ccc",
-                borderRadius: "6px",
-                fontSize: "0.9rem",
-                marginBottom: "1rem",
-                boxSizing: "border-box",
-              }}
-            />
+            <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-              <button
-                onClick={() => setShowUrlModal(false)}
-                style={{
-                  padding: "0.5rem 1rem",
-                  border: "1px solid #ccc",
-                  borderRadius: "6px",
-                  backgroundColor: "white",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUrlSubmit}
-                disabled={isUploading}
-                style={{
-                  padding: "0.5rem 1rem",
-                  border: "none",
-                  borderRadius: "6px",
-                  backgroundColor: "#007bff",
-                  color: "white",
-                  cursor: isUploading ? "not-allowed" : "pointer",
-                  opacity: isUploading ? 0.7 : 1,
-                }}
-              >
-                {isUploading ? "Loading..." : "Add Image"}
-              </button>
+              <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
+              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#007bff", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add Image"}</button>
             </div>
           </div>
         </div>
       )}
 
-      <ToolInstructions 
-        title={instructionData.title} 
-        steps={instructionData.steps} 
-      />
-      <Testimonials 
-        title="What Our Users Say"
-        testimonials={testimonialData.testimonials}
-        autoScrollInterval={3000} 
-      />
-      <ShareModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        fileBlob={pdfBlob}
-        fileName="extracted-text.pdf"
-      />
+      <ToolInstructions title={instructionData.title} steps={instructionData.steps as any} />
+      <Testimonials title="What Our Users Say" testimonials={testimonialData.testimonials} autoScrollInterval={3000} />
+      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} fileBlob={pdfBlob} fileName="extracted.pdf" />
       <Footer />
     </div>
   );
