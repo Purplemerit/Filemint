@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
 
   // Optimize CSS loading to prevent FOUC
   experimental: {
-    optimizeCss: true, // Enable CSS optimization
+    optimizeCss: false,
   },
 
   // Ensure CSS is loaded synchronously

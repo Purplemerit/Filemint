@@ -5,10 +5,10 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { TbShare3 } from "react-icons/tb";
-import { 
-  PiFiles, 
-  PiLink, 
-  PiClipboard, 
+import {
+  PiFiles,
+  PiLink,
+  PiClipboard,
   PiCaretDown,
   PiUploadSimple,
   PiCheckCircle,
@@ -26,6 +26,7 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import JSZip from "jszip";
 
 export default function SplitPdfPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -39,7 +40,7 @@ export default function SplitPdfPage() {
   const [selectMode, setSelectMode] = useState<"individual" | "range">("individual");
   const [rangeStart, setRangeStart] = useState<number | null>(null);
   const [rangeEnd, setRangeEnd] = useState<number | null>(null);
-  
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [urlInput, setUrlInput] = useState("");
@@ -50,11 +51,13 @@ export default function SplitPdfPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [splitBlobs, setSplitBlobs] = useState<Blob[]>([]);
-  const instructionData = toolData["split-pdf"] ;
+  const instructionData = toolData["split-pdf"];
 
   const [error, setError] = useState<string | null>(null);
   const [splitMode, setSplitMode] = useState<"extract" | "ranges" | "fixed">("extract");
+
   const [fixedPageCount, setFixedPageCount] = useState<number>(1);
+  const [isSplit, setIsSplit] = useState(false);
 
   // Load PDF.js
   useEffect(() => {
@@ -147,17 +150,17 @@ export default function SplitPdfPage() {
 
   const handleUrlSubmit = async () => {
     if (!urlInput.trim()) return;
-    
+
     try {
       setIsUploading(true);
       const response = await fetch(urlInput);
       const blob = await response.blob();
-      
+
       if (blob.type !== "application/pdf") {
         alert("URL must point to a PDF file");
         return;
       }
-      
+
       const fileName = urlInput.split("/").pop() || "downloaded.pdf";
       const file = new File([blob], fileName, { type: "application/pdf" });
       setPdfFile(file);
@@ -276,6 +279,61 @@ export default function SplitPdfPage() {
     setSelectedPages(new Set());
   };
 
+  const handleDownload = async () => {
+    if (splitBlobs.length === 0) return;
+
+    if (splitBlobs.length === 1) {
+      // Single file download
+      const url = URL.createObjectURL(splitBlobs[0]);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `split_document_${pdfFile?.name || "file.pdf"}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      // Multiple files - ZIP them
+      const zip = new JSZip();
+      splitBlobs.forEach((blob, index) => {
+        zip.file(`split_${index + 1}.pdf`, blob);
+      });
+
+      const zipContent = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipContent);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `split_documents_${pdfFile?.name?.replace(".pdf", "") || "files"}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  // Auto-download effect
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    if (isSplit && splitBlobs.length > 0) {
+      timeoutId = setTimeout(() => {
+        handleDownload();
+      }, 7000); // 7 seconds delay
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isSplit, splitBlobs]); // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  const handleReset = () => {
+    setSplitBlobs([]);
+    setIsSplit(false);
+    // Optional: reset other states or stay in editing mode?
+    // User probably wants to split the SAME file differently or go back.
+    // Let's keep the file loaded but reset split state.
+  };
+
   const splitPdf = async () => {
     if (!pdfDoc) {
       alert("Please load a PDF file first.");
@@ -324,21 +382,12 @@ export default function SplitPdfPage() {
         const blob = new Blob([pdfBytes], { type: "application/pdf" });
         blobs.push(blob);
 
-        // Download immediately
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `extracted_pages_${pdfFile!.name}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        alert(`Extracted ${selectedPages.size} pages successfully!`);
+        // Download immediate code removed
+        // alert(`Extracted ${selectedPages.size} pages successfully!`); 
       } else if (splitMode === "ranges") {
         // Split based on selected page ranges (each selection becomes a separate PDF)
         const selectedPagesArray = Array.from(selectedPages).sort((a, b) => a - b);
-        
+
         if (selectedPagesArray.length === 0) {
           alert("Please select pages to define split ranges.");
           setIsProcessing(false);
@@ -369,19 +418,9 @@ export default function SplitPdfPage() {
           const pdfBytes = await newPdf.save();
           const blob = new Blob([pdfBytes], { type: "application/pdf" });
           blobs.push(blob);
-
-          // Download each split
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `split_${i + 1}_pages_${ranges[i][0]}-${ranges[i][ranges[i].length - 1]}_${pdfFile!.name}`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
         }
 
-        alert(`Created ${ranges.length} split PDFs successfully!`);
+        // alert(`Created ${ranges.length} split PDFs successfully!`);
       } else if (splitMode === "fixed") {
         // Split into fixed page counts
         const pageCount = fixedPageCount;
@@ -399,22 +438,13 @@ export default function SplitPdfPage() {
           const pdfBytes = await newPdf.save();
           const blob = new Blob([pdfBytes], { type: "application/pdf" });
           blobs.push(blob);
-
-          // Download each split
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `split_${i + 1}_${pdfFile!.name}`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
         }
 
-        alert(`Created ${numSplits} split PDFs successfully!`);
+        // alert(`Created ${numSplits} split PDFs successfully!`);
       }
 
       setSplitBlobs(blobs);
+      setIsSplit(true); // Enable Success View
       setIsProcessing(false);
     } catch (error) {
       console.error("Error splitting PDF:", error);
@@ -433,6 +463,7 @@ export default function SplitPdfPage() {
 
   const goBack = () => {
     setIsEditingMode(false);
+    setIsSplit(false);
     setSelectedPages(new Set());
     setPageImages([]);
     setPdfDoc(null);
@@ -483,7 +514,7 @@ export default function SplitPdfPage() {
             }
           }
         `}</style>
-        
+
         <div
           className="header-controls"
           style={{
@@ -515,448 +546,526 @@ export default function SplitPdfPage() {
             Split PDF
           </h1>
           <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button
-              onClick={splitPdf}
-              disabled={isProcessing || (splitMode === "extract" && selectedPages.size === 0)}
-              style={{
-                backgroundColor: isProcessing || (splitMode === "extract" && selectedPages.size === 0) ? "#6c757d" : "#007bff",
-                color: "white",
-                border: "none",
-                padding: "0.6rem 1.2rem",
-                borderRadius: "5px",
-                cursor: isProcessing || (splitMode === "extract" && selectedPages.size === 0) ? "not-allowed" : "pointer",
-                fontSize: "1rem",
-                minWidth: "120px",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-            >
-              <PiScissors size={18} />
-              {isProcessing ? "Processing..." : "Split PDF"}
-            </button>
-            {splitBlobs.length > 0 && (
+            {isSplit ? (
+              // Success State Logic handled in main view, but if we wanted header buttons, we could put them here.
+              // For now, let's keep the header clean or maybe just "Share"
+              <></>
+            ) : (
               <button
-                onClick={handleShare}
+                onClick={splitPdf}
+                disabled={isProcessing || (splitMode === "extract" && selectedPages.size === 0)}
                 style={{
-                  backgroundColor: "white",
-                  color: "#333",
-                  border: "1px solid #e0e0e0",
+                  backgroundColor: isProcessing || (splitMode === "extract" && selectedPages.size === 0) ? "#6c757d" : "#e11d48", // Brand Red
+                  color: "white",
+                  border: "none",
                   padding: "0.6rem 1.2rem",
                   borderRadius: "5px",
-                  cursor: "pointer",
+                  cursor: isProcessing || (splitMode === "extract" && selectedPages.size === 0) ? "not-allowed" : "pointer",
+                  fontSize: "1rem",
+                  minWidth: "120px",
                   display: "flex",
                   alignItems: "center",
                   gap: "0.5rem",
-                  fontSize: "1rem",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
                 }}
               >
-                <TbShare3 />
-                Share
+                <PiScissors size={18} />
+                {isProcessing ? "Processing..." : "Split PDF"}
               </button>
             )}
           </div>
         </div>
 
-        <div className="main-container" style={{ display: "flex", gap: "2rem" }}>
-          {/* Control Panel */}
-          <div
-            className="control-panel"
-            style={{
-              width: "320px",
-              backgroundColor: "#f8f9fa",
-              padding: "1.5rem",
-              borderRadius: "10px",
-              height: "fit-content",
-              position: "sticky",
-              top: "2rem",
-            }}
-          >
-            <h3 style={{ marginTop: 0, marginBottom: "1.5rem", fontSize: "clamp(1rem, 3vw, 1.17rem)" }}>
-              Split Options
-            </h3>
-
-            {/* Split Mode */}
-            <div style={{ marginBottom: "1.5rem" }}>
-              <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Split Mode</h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                <button
-                  onClick={() => setSplitMode("extract")}
-                  style={{
-                    backgroundColor: splitMode === "extract" ? "#007bff" : "white",
-                    color: splitMode === "extract" ? "white" : "#007bff",
-                    border: "1px solid #007bff",
-                    padding: "0.5rem 0.8rem",
-                    borderRadius: "3px",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    textAlign: "left",
-                  }}
-                >
-                  Extract Selected Pages
-                </button>
-                <button
-                  onClick={() => setSplitMode("ranges")}
-                  style={{
-                    backgroundColor: splitMode === "ranges" ? "#007bff" : "white",
-                    color: splitMode === "ranges" ? "white" : "#007bff",
-                    border: "1px solid #007bff",
-                    padding: "0.5rem 0.8rem",
-                    borderRadius: "3px",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    textAlign: "left",
-                  }}
-                >
-                  Split by Ranges
-                </button>
-                <button
-                  onClick={() => setSplitMode("fixed")}
-                  style={{
-                    backgroundColor: splitMode === "fixed" ? "#007bff" : "white",
-                    color: splitMode === "fixed" ? "white" : "#007bff",
-                    border: "1px solid #007bff",
-                    padding: "0.5rem 0.8rem",
-                    borderRadius: "3px",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    textAlign: "left",
-                  }}
-                >
-                  Fixed Page Count
-                </button>
-              </div>
+        {isSplit ? (
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "4rem 2rem",
+            gap: "1.5rem",
+            backgroundColor: "#fff",
+            borderRadius: "12px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+            marginTop: "2rem",
+            maxWidth: "600px",
+            margin: "2rem auto"
+          }}>
+            <div style={{
+              width: "80px",
+              height: "80px",
+              borderRadius: "50%",
+              background: "#e8f5e9",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#2e7d32",
+              marginBottom: "0.5rem"
+            }}>
+              <PiCheckCircle size={48} />
             </div>
+            <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0, textAlign: "center" }}>
+              PDF Split Successfully!
+            </h2>
+            <p style={{ color: "#666", textAlign: "center", maxWidth: "400px" }}>
+              Your PDF has been split. {splitBlobs.length > 1 ? "Download the files below." : "Download your file below."}
+            </p>
 
-            {/* Fixed Page Count Input */}
-            {splitMode === "fixed" && (
-              <div style={{ marginBottom: "1.5rem" }}>
-                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Pages per Split</h4>
-                <input
-                  type="number"
-                  min="1"
-                  max={totalPages}
-                  value={fixedPageCount}
-                  onChange={(e) => setFixedPageCount(parseInt(e.target.value) || 1)}
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    border: "1px solid #ccc",
-                    borderRadius: "3px",
-                    fontSize: "0.9rem",
-                    boxSizing: "border-box",
-                  }}
-                />
-                <p style={{ fontSize: "0.8rem", color: "#666", marginTop: "0.5rem" }}>
-                  This will create {Math.ceil(totalPages / fixedPageCount)} PDF files
-                </p>
-              </div>
-            )}
-
-            {/* Page Selection (only for extract and ranges modes) */}
-            {(splitMode === "extract" || splitMode === "ranges") && (
-              <>
-                <div style={{ marginBottom: "1.5rem" }}>
-                  <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Selection Mode</h4>
-                  <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
-                    <button
-                      onClick={() => setSelectMode("individual")}
-                      style={{
-                        backgroundColor: selectMode === "individual" ? "#007bff" : "white",
-                        color: selectMode === "individual" ? "white" : "#007bff",
-                        border: "1px solid #007bff",
-                        padding: "0.4rem 0.8rem",
-                        borderRadius: "3px",
-                        cursor: "pointer",
-                        fontSize: "0.9rem",
-                        flex: 1,
-                      }}
-                    >
-                      Individual
-                    </button>
-                    <button
-                      onClick={() => setSelectMode("range")}
-                      style={{
-                        backgroundColor: selectMode === "range" ? "#007bff" : "white",
-                        color: selectMode === "range" ? "white" : "#007bff",
-                        border: "1px solid #007bff",
-                        padding: "0.4rem 0.8rem",
-                        borderRadius: "3px",
-                        cursor: "pointer",
-                        fontSize: "0.9rem",
-                        flex: 1,
-                      }}
-                    >
-                      Range
-                    </button>
-                  </div>
-                </div>
-
-                {/* Range Selection */}
-                {selectMode === "range" && (
-                  <div style={{ marginBottom: "1.5rem" }}>
-                    <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Select Page Range</h4>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "0.5rem",
-                        alignItems: "center",
-                        marginBottom: "0.5rem",
-                      }}
-                    >
-                      <input
-                        type="number"
-                        placeholder="From"
-                        min="1"
-                        max={totalPages}
-                        value={rangeStart || ""}
-                        onChange={(e) => setRangeStart(parseInt(e.target.value) || null)}
-                        style={{
-                          width: "60px",
-                          padding: "0.3rem",
-                          border: "1px solid #ccc",
-                          borderRadius: "3px",
-                          fontSize: "0.9rem",
-                        }}
-                      />
-                      <span>to</span>
-                      <input
-                        type="number"
-                        placeholder="To"
-                        min="1"
-                        max={totalPages}
-                        value={rangeEnd || ""}
-                        onChange={(e) => setRangeEnd(parseInt(e.target.value) || null)}
-                        style={{
-                          width: "60px",
-                          padding: "0.3rem",
-                          border: "1px solid #ccc",
-                          borderRadius: "3px",
-                          fontSize: "0.9rem",
-                        }}
-                      />
-                    </div>
-                    <button
-                      onClick={selectPageRange}
-                      disabled={!rangeStart || !rangeEnd || rangeStart > rangeEnd}
-                      style={{
-                        backgroundColor: rangeStart && rangeEnd && rangeStart <= rangeEnd ? "#28a745" : "#6c757d",
-                        color: "white",
-                        border: "none",
-                        padding: "0.4rem 0.8rem",
-                        borderRadius: "3px",
-                        cursor: rangeStart && rangeEnd && rangeStart <= rangeEnd ? "pointer" : "not-allowed",
-                        fontSize: "0.9rem",
-                        width: "100%",
-                      }}
-                    >
-                      Select Range
-                    </button>
-                  </div>
-                )}
-
-                {/* Quick Actions */}
-                <div style={{ marginBottom: "1.5rem" }}>
-                  <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Quick Actions</h4>
-                  <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                    <button
-                      onClick={selectAllPages}
-                      style={{
-                        backgroundColor: "#ffc107",
-                        color: "#212529",
-                        border: "none",
-                        padding: "0.4rem 0.8rem",
-                        borderRadius: "3px",
-                        cursor: "pointer",
-                        fontSize: "0.9rem",
-                        flex: 1,
-                      }}
-                    >
-                      Select All
-                    </button>
-                    <button
-                      onClick={clearSelection}
-                      style={{
-                        backgroundColor: "#6c757d",
-                        color: "white",
-                        border: "none",
-                        padding: "0.4rem 0.8rem",
-                        borderRadius: "3px",
-                        cursor: "pointer",
-                        fontSize: "0.9rem",
-                        flex: 1,
-                      }}
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Selection Summary */}
-            <div
-              style={{
-                backgroundColor: "#e3f2fd",
-                padding: "1rem",
-                borderRadius: "5px",
-                marginBottom: "1rem",
-              }}
-            >
-              <div style={{ fontSize: "0.9rem", marginBottom: "0.5rem" }}>
-                <strong>Total Pages:</strong> {totalPages}
-              </div>
-              {(splitMode === "extract" || splitMode === "ranges") && (
-                <div style={{ fontSize: "0.9rem", color: "#007bff" }}>
-                  <strong>Selected Pages:</strong> {selectedPages.size}
-                </div>
-              )}
-              {splitMode === "fixed" && (
-                <div style={{ fontSize: "0.9rem", color: "#007bff" }}>
-                  <strong>Will create:</strong> {Math.ceil(totalPages / fixedPageCount)} PDFs
-                </div>
-              )}
-            </div>
-
-            {/* Instructions */}
-            <div
-              style={{
-                backgroundColor: "#fff3cd",
-                padding: "1rem",
-                borderRadius: "5px",
-                fontSize: "0.85rem",
-                border: "1px solid #ffeaa7",
-              }}
-            >
-              <strong>How to use:</strong>
-              <br />
-              {splitMode === "extract" && (
-                <>
-                  1. Select pages to extract
-                  <br />
-                  2. Click "Split PDF" to create new PDF
-                  <br />
-                  3. Downloads automatically
-                </>
-              )}
-              {splitMode === "ranges" && (
-                <>
-                  1. Select page ranges
-                  <br />
-                  2. Each consecutive range becomes a PDF
-                  <br />
-                  3. Multiple files will download
-                </>
-              )}
-              {splitMode === "fixed" && (
-                <>
-                  1. Set pages per split
-                  <br />
-                  2. Click "Split PDF"
-                  <br />
-                  3. Multiple files will download
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* PDF Pages Grid */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {isProcessing ? (
-              <div
+            <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+              <button
+                onClick={handleDownload}
                 style={{
+                  backgroundColor: "#e11d48",
+                  color: "white",
+                  padding: "1rem 2.5rem",
+                  borderRadius: "8px",
+                  fontSize: "1.1rem",
+                  fontWeight: "600",
+                  border: "none",
+                  cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  height: "400px",
-                  fontSize: "clamp(1rem, 3vw, 1.2rem)",
-                  color: "#666",
+                  gap: "0.5rem",
+                  boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)"
                 }}
               >
-                Loading PDF pages...
-              </div>
-            ) : (
-              <div
-                className="page-grid"
+                {splitBlobs.length > 1 ? "Download Split PDFs (ZIP)" : "Download Split PDF"}
+              </button>
+            </div>
+
+            <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+              <button
+                onClick={handleShare}
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                  gap: "1rem",
-                  padding: "1rem",
+                  background: "transparent",
+                  color: "#666",
+                  border: "1px solid #ccc",
+                  padding: "0.5rem 1rem",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem"
                 }}
               >
-                {pageImages.map((imageUrl, index) => {
-                  const pageNum = index + 1;
-                  const isSelected = selectedPages.has(pageNum);
-                  const isClickable = splitMode !== "fixed" && selectMode === "individual";
-                  
-                  return (
-                    <div
-                      key={pageNum}
-                      onClick={() => isClickable && togglePageSelection(pageNum)}
-                      style={{
-                        border: isSelected ? "3px solid #007bff" : "2px solid #dee2e6",
-                        borderRadius: "8px",
-                        padding: "0.5rem",
-                        backgroundColor: isSelected ? "#e3f2fd" : "white",
-                        cursor: isClickable ? "pointer" : "default",
-                        position: "relative",
-                        boxShadow: isSelected ? "0 4px 12px rgba(0, 123, 255, 0.3)" : "0 2px 4px rgba(0,0,0,0.1)",
-                        transition: "all 0.2s ease",
-                        opacity: splitMode === "fixed" ? 0.7 : 1,
-                      }}
-                    >
-                      <img
-                        src={imageUrl}
-                        alt={`Page ${pageNum}`}
+                <TbShare3 /> Share
+              </button>
+              <button
+                onClick={handleReset}
+                style={{
+                  background: "transparent",
+                  color: "#666",
+                  border: "1px solid #ccc",
+                  padding: "0.5rem 1rem",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                }}
+              >
+                Split Another PDF
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="main-container" style={{ display: "flex", gap: "2rem" }}>
+            {/* Control Panel */}
+            <div
+              className="control-panel"
+              style={{
+                width: "320px",
+                backgroundColor: "#f8f9fa",
+                padding: "1.5rem",
+                borderRadius: "10px",
+                height: "fit-content",
+                position: "sticky",
+                top: "2rem",
+              }}
+            >
+              <h3 style={{ marginTop: 0, marginBottom: "1.5rem", fontSize: "clamp(1rem, 3vw, 1.17rem)" }}>
+                Split Options
+              </h3>
+
+              {/* Split Mode */}
+              <div style={{ marginBottom: "1.5rem" }}>
+                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Split Mode</h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  <button
+                    onClick={() => setSplitMode("extract")}
+                    style={{
+                      backgroundColor: splitMode === "extract" ? "#007bff" : "white",
+                      color: splitMode === "extract" ? "white" : "#007bff",
+                      border: "1px solid #007bff",
+                      padding: "0.5rem 0.8rem",
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      textAlign: "left",
+                    }}
+                  >
+                    Extract Selected Pages
+                  </button>
+                  <button
+                    onClick={() => setSplitMode("ranges")}
+                    style={{
+                      backgroundColor: splitMode === "ranges" ? "#007bff" : "white",
+                      color: splitMode === "ranges" ? "white" : "#007bff",
+                      border: "1px solid #007bff",
+                      padding: "0.5rem 0.8rem",
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      textAlign: "left",
+                    }}
+                  >
+                    Split by Ranges
+                  </button>
+                  <button
+                    onClick={() => setSplitMode("fixed")}
+                    style={{
+                      backgroundColor: splitMode === "fixed" ? "#007bff" : "white",
+                      color: splitMode === "fixed" ? "white" : "#007bff",
+                      border: "1px solid #007bff",
+                      padding: "0.5rem 0.8rem",
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      textAlign: "left",
+                    }}
+                  >
+                    Fixed Page Count
+                  </button>
+                </div>
+              </div>
+
+              {/* Fixed Page Count Input */}
+              {splitMode === "fixed" && (
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Pages per Split</h4>
+                  <input
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    value={fixedPageCount}
+                    onChange={(e) => setFixedPageCount(parseInt(e.target.value) || 1)}
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem",
+                      border: "1px solid #ccc",
+                      borderRadius: "3px",
+                      fontSize: "0.9rem",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <p style={{ fontSize: "0.8rem", color: "#666", marginTop: "0.5rem" }}>
+                    This will create {Math.ceil(totalPages / fixedPageCount)} PDF files
+                  </p>
+                </div>
+              )}
+
+              {/* Page Selection (only for extract and ranges modes) */}
+              {(splitMode === "extract" || splitMode === "ranges") && (
+                <>
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Selection Mode</h4>
+                    <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+                      <button
+                        onClick={() => setSelectMode("individual")}
                         style={{
-                          width: "100%",
-                          height: "auto",
-                          display: "block",
-                          borderRadius: "4px",
-                          opacity: isSelected ? 0.8 : 1,
-                        }}
-                      />
-                      <div
-                        style={{
-                          textAlign: "center",
-                          marginTop: "0.5rem",
+                          backgroundColor: selectMode === "individual" ? "#007bff" : "white",
+                          color: selectMode === "individual" ? "white" : "#007bff",
+                          border: "1px solid #007bff",
+                          padding: "0.4rem 0.8rem",
+                          borderRadius: "3px",
+                          cursor: "pointer",
                           fontSize: "0.9rem",
-                          fontWeight: "bold",
-                          color: isSelected ? "#007bff" : "#495057",
+                          flex: 1,
                         }}
                       >
-                        Page {pageNum}
+                        Individual
+                      </button>
+                      <button
+                        onClick={() => setSelectMode("range")}
+                        style={{
+                          backgroundColor: selectMode === "range" ? "#007bff" : "white",
+                          color: selectMode === "range" ? "white" : "#007bff",
+                          border: "1px solid #007bff",
+                          padding: "0.4rem 0.8rem",
+                          borderRadius: "3px",
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                          flex: 1,
+                        }}
+                      >
+                        Range
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Range Selection */}
+                  {selectMode === "range" && (
+                    <div style={{ marginBottom: "1.5rem" }}>
+                      <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Select Page Range</h4>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "0.5rem",
+                          alignItems: "center",
+                          marginBottom: "0.5rem",
+                        }}
+                      >
+                        <input
+                          type="number"
+                          placeholder="From"
+                          min="1"
+                          max={totalPages}
+                          value={rangeStart || ""}
+                          onChange={(e) => setRangeStart(parseInt(e.target.value) || null)}
+                          style={{
+                            width: "60px",
+                            padding: "0.3rem",
+                            border: "1px solid #ccc",
+                            borderRadius: "3px",
+                            fontSize: "0.9rem",
+                          }}
+                        />
+                        <span>to</span>
+                        <input
+                          type="number"
+                          placeholder="To"
+                          min="1"
+                          max={totalPages}
+                          value={rangeEnd || ""}
+                          onChange={(e) => setRangeEnd(parseInt(e.target.value) || null)}
+                          style={{
+                            width: "60px",
+                            padding: "0.3rem",
+                            border: "1px solid #ccc",
+                            borderRadius: "3px",
+                            fontSize: "0.9rem",
+                          }}
+                        />
                       </div>
-                      {isSelected && (splitMode === "extract" || splitMode === "ranges") && (
+                      <button
+                        onClick={selectPageRange}
+                        disabled={!rangeStart || !rangeEnd || rangeStart > rangeEnd}
+                        style={{
+                          backgroundColor: rangeStart && rangeEnd && rangeStart <= rangeEnd ? "#28a745" : "#6c757d",
+                          color: "white",
+                          border: "none",
+                          padding: "0.4rem 0.8rem",
+                          borderRadius: "3px",
+                          cursor: rangeStart && rangeEnd && rangeStart <= rangeEnd ? "pointer" : "not-allowed",
+                          fontSize: "0.9rem",
+                          width: "100%",
+                        }}
+                      >
+                        Select Range
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Quick Actions */}
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Quick Actions</h4>
+                    <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                      <button
+                        onClick={selectAllPages}
+                        style={{
+                          backgroundColor: "#ffc107",
+                          color: "#212529",
+                          border: "none",
+                          padding: "0.4rem 0.8rem",
+                          borderRadius: "3px",
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                          flex: 1,
+                        }}
+                      >
+                        Select All
+                      </button>
+                      <button
+                        onClick={clearSelection}
+                        style={{
+                          backgroundColor: "#6c757d",
+                          color: "white",
+                          border: "none",
+                          padding: "0.4rem 0.8rem",
+                          borderRadius: "3px",
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                          flex: 1,
+                        }}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Selection Summary */}
+              <div
+                style={{
+                  backgroundColor: "#e3f2fd",
+                  padding: "1rem",
+                  borderRadius: "5px",
+                  marginBottom: "1rem",
+                }}
+              >
+                <div style={{ fontSize: "0.9rem", marginBottom: "0.5rem" }}>
+                  <strong>Total Pages:</strong> {totalPages}
+                </div>
+                {(splitMode === "extract" || splitMode === "ranges") && (
+                  <div style={{ fontSize: "0.9rem", color: "#007bff" }}>
+                    <strong>Selected Pages:</strong> {selectedPages.size}
+                  </div>
+                )}
+                {splitMode === "fixed" && (
+                  <div style={{ fontSize: "0.9rem", color: "#007bff" }}>
+                    <strong>Will create:</strong> {Math.ceil(totalPages / fixedPageCount)} PDFs
+                  </div>
+                )}
+              </div>
+
+              {/* Instructions */}
+              <div
+                style={{
+                  backgroundColor: "#fff3cd",
+                  padding: "1rem",
+                  borderRadius: "5px",
+                  fontSize: "0.85rem",
+                  border: "1px solid #ffeaa7",
+                }}
+              >
+                <strong>How to use:</strong>
+                <br />
+                {splitMode === "extract" && (
+                  <>
+                    1. Select pages to extract
+                    <br />
+                    2. Click "Split PDF" to create new PDF
+                    <br />
+                    3. Downloads automatically
+                  </>
+                )}
+                {splitMode === "ranges" && (
+                  <>
+                    1. Select page ranges
+                    <br />
+                    2. Each consecutive range becomes a PDF
+                    <br />
+                    3. Multiple files will download
+                  </>
+                )}
+                {splitMode === "fixed" && (
+                  <>
+                    1. Set pages per split
+                    <br />
+                    2. Click "Split PDF"
+                    <br />
+                    3. Multiple files will download
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* PDF Pages Grid */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {isProcessing ? (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "400px",
+                    fontSize: "clamp(1rem, 3vw, 1.2rem)",
+                    color: "#666",
+                  }}
+                >
+                  Loading PDF pages...
+                </div>
+              ) : (
+                <div
+                  className="page-grid"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                    gap: "1rem",
+                    padding: "1rem",
+                  }}
+                >
+                  {pageImages.map((imageUrl, index) => {
+                    const pageNum = index + 1;
+                    const isSelected = selectedPages.has(pageNum);
+                    const isClickable = splitMode !== "fixed" && selectMode === "individual";
+
+                    return (
+                      <div
+                        key={pageNum}
+                        onClick={() => isClickable && togglePageSelection(pageNum)}
+                        style={{
+                          border: isSelected ? "3px solid #007bff" : "2px solid #dee2e6",
+                          borderRadius: "8px",
+                          padding: "0.5rem",
+                          backgroundColor: isSelected ? "#e3f2fd" : "white",
+                          cursor: isClickable ? "pointer" : "default",
+                          position: "relative",
+                          boxShadow: isSelected ? "0 4px 12px rgba(0, 123, 255, 0.3)" : "0 2px 4px rgba(0,0,0,0.1)",
+                          transition: "all 0.2s ease",
+                          opacity: splitMode === "fixed" ? 0.7 : 1,
+                        }}
+                      >
+                        <img
+                          src={imageUrl}
+                          alt={`Page ${pageNum}`}
+                          style={{
+                            width: "100%",
+                            height: "auto",
+                            display: "block",
+                            borderRadius: "4px",
+                            opacity: isSelected ? 0.8 : 1,
+                          }}
+                        />
                         <div
                           style={{
-                            position: "absolute",
-                            top: "0.5rem",
-                            right: "0.5rem",
-                            backgroundColor: "#007bff",
-                            color: "white",
-                            borderRadius: "50%",
-                            width: "24px",
-                            height: "24px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "0.8rem",
+                            textAlign: "center",
+                            marginTop: "0.5rem",
+                            fontSize: "0.9rem",
                             fontWeight: "bold",
+                            color: isSelected ? "#007bff" : "#495057",
                           }}
                         >
-                          ✓
+                          Page {pageNum}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                        {isSelected && (splitMode === "extract" || splitMode === "ranges") && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "0.5rem",
+                              right: "0.5rem",
+                              backgroundColor: "#007bff",
+                              color: "white",
+                              borderRadius: "50%",
+                              width: "24px",
+                              height: "24px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "0.8rem",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            ✓
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-        
+        )}
+
         <ShareModal
           isOpen={showShareModal}
           onClose={() => setShowShareModal(false)}
@@ -984,317 +1093,317 @@ export default function SplitPdfPage() {
 
         {/* Main Content */}
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
-          <h1 style={{ 
-          fontSize: "2rem", 
-          fontWeight: "600",
-          marginBottom: "2rem",
-          textAlign: "left",
-          color: "#1a1a1a",
-          fontFamily: 'Georgia, "Times New Roman", serif',
-        }}>
-          Split PDF
-        </h1>
-
-        {/* Drop Zone */}
-        <div
-          onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
-          style={{
-            border: "3px solid rgba(57, 185, 57, 0.4)",
-            backgroundColor: "rgba(144, 238, 144, 0.2)",
-            borderRadius: "12px",
-            padding: "2rem",
-            textAlign: "center",
+          <h1 style={{
+            fontSize: "2rem",
+            fontWeight: "600",
             marginBottom: "2rem",
-            position: "relative",
-            minHeight: "280px",
-          }}
-        >
-          {!pdfFile ? (
-            /* Empty State */
-            <div style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "300px",
-              minHeight: "220px",
-            }}>
-              <div style={{ marginBottom: "1.5rem" }}>
-                <img src="./upload.svg" alt="Upload Icon" />
-              </div>
+            textAlign: "left",
+            color: "#1a1a1a",
+            fontFamily: 'Georgia, "Times New Roman", serif',
+          }}>
+            Split PDF
+          </h1>
 
-              <div ref={dropdownRef} style={{ position: "relative" }}>
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  style={{
-                    backgroundColor: "white",
-                    padding: "0.6rem 1rem",
-                    border: "1px solid #e0e0e0",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.9rem",
-                    fontWeight: "500",
-                    color: "#333",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <PiFiles size={18} />
-                  Select File
-                  <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
-                </button>
-
-                {isDropdownOpen && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 4px)",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      backgroundColor: "white",
-                      border: "1px solid #e0e0e0",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      zIndex: 1000,
-                      minWidth: "180px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {menuItems.map((item, index) => (
-                      <button
-                        key={index}
-                        onClick={item.onClick}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.75rem",
-                          padding: "0.7rem 1rem",
-                          width: "100%",
-                          border: "none",
-                          backgroundColor: "transparent",
-                          cursor: "pointer",
-                          fontSize: "0.85rem",
-                          color: "#333",
-                          textAlign: "left",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f5f5f5";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }}
-                      >
-                        <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
-                          {item.icon}
-                        </span>
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  onChange={handleFileChange}
-                  style={{ display: "none" }}
-                />
-              </div>
-            </div>
-          ) : (
-            /* File Uploaded State */
-            <div>
+          {/* Drop Zone */}
+          <div
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+            style={{
+              border: "3px solid rgba(57, 185, 57, 0.4)",
+              backgroundColor: "rgba(144, 238, 144, 0.2)",
+              borderRadius: "12px",
+              padding: "2rem",
+              textAlign: "center",
+              marginBottom: "2rem",
+              position: "relative",
+              minHeight: "280px",
+            }}
+          >
+            {!pdfFile ? (
+              /* Empty State */
               <div style={{
                 display: "flex",
-                justifyContent: "flex-end",
-                gap: "0.5rem",
-                marginBottom: "1.5rem",
-              }}>
-                <button
-                  onClick={handleStartEditing}
-                  style={{
-                    backgroundColor: "rgba(57, 185, 57, 0.4)",
-                    color: "black",
-                    border: "black",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.85rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  <PiScissors size={18} />
-                  Start Splitting
-                </button>
-              </div>
-
-              <div style={{
-                display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                marginBottom: "1.5rem",
+                height: "300px",
+                minHeight: "220px",
               }}>
-                <div
-                  style={{
-                    backgroundColor: "white",
-                    borderRadius: "8px",
-                    width: "120px",
-                    height: "140px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                    position: "relative",
-                  }}
-                >
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <img src="./upload.svg" alt="Upload Icon" />
+                </div>
+
+                <div ref={dropdownRef} style={{ position: "relative" }}>
                   <button
-                    onClick={removeFile}
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     style={{
-                      position: "absolute",
-                      top: "4px",
-                      right: "4px",
-                      background: "rgba(255, 255, 255, 1)",
-                      border: "none",
-                      borderRadius: "50%",
-                      width: "25px",
-                      height: "25px",
+                      backgroundColor: "white",
+                      padding: "0.6rem 1rem",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: "6px",
+                      cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      color: "black",
+                      gap: "0.5rem",
+                      fontSize: "0.9rem",
+                      fontWeight: "500",
+                      color: "#333",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                     }}
                   >
-                    <PiX size={35} />
+                    <PiFiles size={18} />
+                    Select File
+                    <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
                   </button>
-                  
-                  <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
-                  <span style={{ 
-                    fontSize: "0.65rem", 
-                    color: "#666", 
-                    maxWidth: "100px", 
-                    overflow: "hidden", 
-                    textOverflow: "ellipsis", 
-                    whiteSpace: "nowrap",
-                    padding: "0 0.5rem"
-                  }}>
-                    {pdfFile.name}
-                  </span>
+
+                  {isDropdownOpen && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 4px)",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        backgroundColor: "white",
+                        border: "1px solid #e0e0e0",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        zIndex: 1000,
+                        minWidth: "180px",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {menuItems.map((item, index) => (
+                        <button
+                          key={index}
+                          onClick={item.onClick}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.75rem",
+                            padding: "0.7rem 1rem",
+                            width: "100%",
+                            border: "none",
+                            backgroundColor: "transparent",
+                            cursor: "pointer",
+                            fontSize: "0.85rem",
+                            color: "#333",
+                            textAlign: "left",
+                            transition: "background-color 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#f5f5f5";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = "transparent";
+                          }}
+                        >
+                          <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
+                            {item.icon}
+                          </span>
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    onChange={handleFileChange}
+                    style={{ display: "none" }}
+                  />
                 </div>
               </div>
-
-              {error && (
-                <p style={{ 
-                  color: "#dc2626", 
-                  fontSize: "0.85rem", 
-                  marginTop: "1rem",
-                  textAlign: "center"
-                }}>
-                  {error}
-                </p>
-              )}
-
-              <div
-                style={{
+            ) : (
+              /* File Uploaded State */
+              <div>
+                <div style={{
                   display: "flex",
                   justifyContent: "flex-end",
-                  gap: "0.75rem",
-                  marginTop: "1.5rem",
+                  gap: "0.5rem",
+                  marginBottom: "1.5rem",
+                }}>
+                  <button
+                    onClick={handleStartEditing}
+                    style={{
+                      backgroundColor: "rgba(57, 185, 57, 0.4)",
+                      color: "black",
+                      border: "black",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      fontSize: "0.85rem",
+                      fontWeight: "500",
+                    }}
+                  >
+                    <PiScissors size={18} />
+                    Start Splitting
+                  </button>
+                </div>
+
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "1.5rem",
+                }}>
+                  <div
+                    style={{
+                      backgroundColor: "white",
+                      borderRadius: "8px",
+                      width: "120px",
+                      height: "140px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      position: "relative",
+                    }}
+                  >
+                    <button
+                      onClick={removeFile}
+                      style={{
+                        position: "absolute",
+                        top: "4px",
+                        right: "4px",
+                        background: "rgba(255, 255, 255, 1)",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: "25px",
+                        height: "25px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        color: "black",
+                      }}
+                    >
+                      <PiX size={35} />
+                    </button>
+
+                    <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+                    <span style={{
+                      fontSize: "0.65rem",
+                      color: "#666",
+                      maxWidth: "100px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      padding: "0 0.5rem"
+                    }}>
+                      {pdfFile.name}
+                    </span>
+                  </div>
+                </div>
+
+                {error && (
+                  <p style={{
+                    color: "#dc2626",
+                    fontSize: "0.85rem",
+                    marginTop: "1rem",
+                    textAlign: "center"
+                  }}>
+                    {error}
+                  </p>
+                )}
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: "0.75rem",
+                    marginTop: "1.5rem",
+                    opacity: 0.4,
+                  }}
+                >
+                  <PiUploadSimple size={18} />
+                  <PiLink size={18} />
+                  <FaGoogleDrive size={16} />
+                  <FaDropbox size={16} />
+                  <PiClipboard size={18} />
+                </div>
+              </div>
+            )}
+
+            {!pdfFile && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: "1rem",
+                  top: "90%",
+                  transform: "translateY(-50%)",
+                  display: "flex",
+                  gap: "0.5rem",
                   opacity: 0.4,
                 }}
               >
-                <PiUploadSimple size={18} />
-                <PiLink size={18} />
-                <FaGoogleDrive size={16} />
-                <FaDropbox size={16} />
-                <PiClipboard size={18} />
+                <PiUploadSimple size={20} />
+                <PiLink size={20} />
+                <FaGoogleDrive size={18} />
+                <FaDropbox size={18} />
+                <PiClipboard size={20} />
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {!pdfFile && (
-            <div
-              style={{
-                position: "absolute",
-                right: "1rem",
-                top: "90%",
-                transform: "translateY(-50%)",
-                display: "flex",
-                gap: "0.5rem",
-                opacity: 0.4,
-              }}
-            >
-              <PiUploadSimple size={20} />
-              <PiLink size={20} />
-              <FaGoogleDrive size={18} />
-              <FaDropbox size={18} />
-              <PiClipboard size={20} />
-            </div>
-          )}
-        </div>
+          {/* Info Section */}
+          <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
+            <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
+              Split your PDF into multiple files by extracting pages or dividing into equal parts.
+            </p>
+            <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
+              {[
+                "Extract specific pages into a new PDF",
+                "Split by page ranges or fixed intervals",
+                "Download all split files instantly",
+                "Works on any device — desktop, tablet, or mobile"
+              ].map((text, index) => (
+                <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                  <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
+                  {text}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        {/* Info Section */}
-        <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
-          <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
-            Split your PDF into multiple files by extracting pages or dividing into equal parts.
-          </p>
-          <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
-            {[
-              "Extract specific pages into a new PDF",
-              "Split by page ranges or fixed intervals",
-              "Download all split files instantly",
-              "Works on any device — desktop, tablet, or mobile"
-            ].map((text, index) => (
-              <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
-                {text}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Security Section */}
-        <div
-          style={{
-            marginTop: "3rem",
-            padding: "1.5rem",
-            backgroundColor: "#f0f9ff",
-            border: "1px solid #cce5ff",
-            borderRadius: "10px",
-            fontSize: "0.95rem",
-            fontFamily: 'Georgia, "Times New Roman", serif',
-          }}
-        >
-          <strong>Protected. Encrypted. Automatically Deleted.</strong>
-          <p style={{ marginTop: "0.5rem", color: "#555" }}>
-            Your files are processed in the browser and not stored. Instant and safe.
-          </p>
+          {/* Security Section */}
           <div
             style={{
-              marginTop: "1rem",
-              display: "flex",
-              justifyContent: "space-around",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "1rem",
-              filter: "grayscale(100%)",
+              marginTop: "3rem",
+              padding: "1.5rem",
+              backgroundColor: "#f0f9ff",
+              border: "1px solid #cce5ff",
+              borderRadius: "10px",
+              fontSize: "0.95rem",
+              fontFamily: 'Georgia, "Times New Roman", serif',
             }}
           >
-            <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
-            <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
-            <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
-            <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />
+            <strong>Protected. Encrypted. Automatically Deleted.</strong>
+            <p style={{ marginTop: "0.5rem", color: "#555" }}>
+              Your files are processed in the browser and not stored. Instant and safe.
+            </p>
+            <div
+              style={{
+                marginTop: "1rem",
+                display: "flex",
+                justifyContent: "space-around",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "1rem",
+                filter: "grayscale(100%)",
+              }}
+            >
+              <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
+              <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
+              <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
+              <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />
+            </div>
           </div>
-        </div>
         </div>
 
         {/* Right Ad */}
@@ -1377,14 +1486,14 @@ export default function SplitPdfPage() {
         </div>
       )}
 
-      <ToolInstructions 
-        title={instructionData.title} 
-        steps={instructionData.steps} 
+      <ToolInstructions
+        title={instructionData.title}
+        steps={instructionData.steps as any}
       />
-      <Testimonials 
+      <Testimonials
         title="What Our Users Say"
         testimonials={testimonialData.testimonials}
-        autoScrollInterval={3000} 
+        autoScrollInterval={3000}
       />
       <Footer />
     </div>

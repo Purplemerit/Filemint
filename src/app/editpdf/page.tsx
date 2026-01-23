@@ -1,13 +1,12 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
-import { useState, useRef } from "react";
 import Navbar from "../components/Navbar";
-import { 
-  PiFiles, 
-  PiLink, 
-  PiClipboard, 
+import {
+  PiFiles,
+  PiLink,
+  PiClipboard,
   PiCaretDown,
   PiUploadSimple,
   PiCheckCircle,
@@ -23,10 +22,56 @@ import toolData from "../data/toolInstructions.json";
 import Testimonials from "../components/Testimonials";
 import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
-
-
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import * as pdfjsLib from "pdfjs-dist";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+
+// Configure PDF.js worker
+if (typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+}
+
+interface PDFPageProps {
+  pageNumber: number;
+  pdfDocument: pdfjsLib.PDFDocumentProxy | null;
+  scale: number;
+  onDimensionsChanged: (pageNum: number, width: number, height: number) => void;
+}
+
+const PDFPage = ({ pageNumber, pdfDocument, scale, onDimensionsChanged }: PDFPageProps) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const renderPage = async () => {
+      if (!pdfDocument || !canvasRef.current) return;
+
+      try {
+        const page = await pdfDocument.getPage(pageNumber);
+        const viewport = page.getViewport({ scale });
+        const canvas = canvasRef.current;
+        const context = canvas.getContext("2d");
+
+        if (context) {
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          onDimensionsChanged(pageNumber, viewport.width, viewport.height);
+
+          await page.render({
+            canvasContext: context,
+            viewport: viewport,
+          }).promise;
+        }
+      } catch (error) {
+        console.error(`Error rendering page ${pageNumber}:`, error);
+      }
+    };
+
+    renderPage();
+  }, [pdfDocument, pageNumber, scale]);
+
+  return <canvas ref={canvasRef} style={{ display: "block", marginBottom: "0" }} />;
+};
 
 export default function EditPdfPage() {
   const { token, isLoading } = useAuth();
@@ -54,13 +99,19 @@ export default function EditPdfPage() {
   const [textContent, setTextContent] = useState("");
   const [fontSize, setFontSize] = useState(14);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [startPoint, setStartPoint] = useState<{x: number, y: number} | null>(null);
+  const [startPoint, setStartPoint] = useState<{ x: number, y: number } | null>(null);
   const [currentAnnotation, setCurrentAnnotation] = useState<any>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+
+  // New State for PDF.js Rendering
+  const [pages, setPages] = useState<number[]>([]);
+  const [pdfDocument, setPdfDocument] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+  const [scale, setScale] = useState(1.5);
+  const [pageDimensions, setPageDimensions] = useState<Record<number, { width: number; height: number }>>({});
+  const [currentPage, setCurrentPage] = useState<number>(1); // Currently active page for drawing
+
   const [isAnnotating, setIsAnnotating] = useState(false);
-  const pdfViewerRef = useRef<HTMLIFrameElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
-  
+  const [isEdited, setIsEdited] = useState(false);
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [urlInput, setUrlInput] = useState("");
@@ -77,8 +128,6 @@ export default function EditPdfPage() {
   const { openPicker: openGoogleDrivePicker } = useGoogleDrivePicker({
     onFilePicked: (file) => {
       setPdfFile(file);
-      const url = URL.createObjectURL(file);
-      setPdfUrl(url);
       setIsDropdownOpen(false);
     },
   });
@@ -87,11 +136,31 @@ export default function EditPdfPage() {
   const { openPicker: openDropboxPicker } = useDropboxPicker({
     onFilePicked: (file) => {
       setPdfFile(file);
-      const url = URL.createObjectURL(file);
-      setPdfUrl(url);
       setIsDropdownOpen(false);
     },
   });
+
+  // Load PDF when file changes
+  useEffect(() => {
+    if (pdfFile) {
+      const load = async () => {
+        try {
+          const arrayBuffer = await pdfFile.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+          setPdfDocument(pdf);
+          setPages(Array.from({ length: pdf.numPages }, (_, i) => i + 1));
+          // Reset edits
+          setAnnotations([]);
+          setIsEdited(false);
+          setEditedFileBlob(null);
+        } catch (error) {
+          console.error("Error loading PDF:", error);
+          alert("Failed to load PDF. Please try a different file.");
+        }
+      };
+      load();
+    }
+  }, [pdfFile]);
 
   const colors = [
     { name: "Red", value: "#FF0000" },
@@ -128,8 +197,6 @@ export default function EditPdfPage() {
     const file = e.dataTransfer.files?.[0];
     if (file && file.type === "application/pdf") {
       setPdfFile(file);
-      const url = URL.createObjectURL(file);
-      setPdfUrl(url);
     }
   };
 
@@ -137,8 +204,6 @@ export default function EditPdfPage() {
     const file = e.target.files?.[0];
     if (file && file.type === "application/pdf") {
       setPdfFile(file);
-      const url = URL.createObjectURL(file);
-      setPdfUrl(url);
     }
     setIsDropdownOpen(false);
   };
@@ -154,22 +219,20 @@ export default function EditPdfPage() {
 
   const handleUrlSubmit = async () => {
     if (!urlInput.trim()) return;
-    
+
     try {
       setIsUploading(true);
       const response = await fetch(urlInput);
       const blob = await response.blob();
-      
+
       if (blob.type !== "application/pdf") {
         alert("URL must point to a PDF file");
         return;
       }
-      
+
       const fileName = urlInput.split("/").pop() || "downloaded.pdf";
       const file = new File([blob], fileName, { type: "application/pdf" });
       setPdfFile(file);
-      const url = URL.createObjectURL(file);
-      setPdfUrl(url);
       setUrlInput("");
       setShowUrlModal(false);
     } catch (error) {
@@ -187,8 +250,6 @@ export default function EditPdfPage() {
           const blob = await item.getType("application/pdf");
           const file = new File([blob], "clipboard.pdf", { type: "application/pdf" });
           setPdfFile(file);
-          const url = URL.createObjectURL(file);
-          setPdfUrl(url);
           break;
         }
       }
@@ -202,10 +263,15 @@ export default function EditPdfPage() {
     setPdfFile(null);
     setPdfUrl("");
     setEditedFileBlob(null);
+    setIsEdited(false);
+    setAnnotations([]);
+    setIsEditingMode(false);
+    setPdfDocument(null);
+    setPages([]);
   };
 
   const handleStartEditing = () => {
-    if (pdfFile && pdfUrl) {
+    if (pdfFile) {
       setIsEditingMode(true);
     }
   };
@@ -218,14 +284,16 @@ export default function EditPdfPage() {
     setShowShareModal(true);
   };
 
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!overlayRef.current || !isAnnotating) return;
+  // --- Handlers for Page Interaction ---
 
-    const rect = overlayRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+  const handlePageClick = (e: React.MouseEvent<HTMLDivElement>, pageNum: number) => {
+    if (!isAnnotating) return;
 
     if (selectedTool === "text") {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
       const newAnnotation = {
         id: Date.now().toString(),
         type: "text" as const,
@@ -236,10 +304,17 @@ export default function EditPdfPage() {
         height: 30,
         color: selectedColor,
         fontSize: fontSize,
-        page: currentPage,
+        page: pageNum,
       };
       setAnnotations([...annotations, newAnnotation]);
-    } else if (selectedTool === "circle") {
+    } else if (selectedTool === "circle" && !isDrawing) {
+      // Only if simple click for circle, though typically circle is drawn. 
+      // Keeping logic for click-to-place fixed circle if desired, but 
+      // usually shapes are dragged. Let's support click-to-place for simplicity if not dragging.
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
       const newAnnotation = {
         id: Date.now().toString(),
         type: "circle" as const,
@@ -248,30 +323,32 @@ export default function EditPdfPage() {
         width: 50,
         height: 50,
         color: selectedColor,
-        page: currentPage,
+        page: pageNum,
       };
       setAnnotations([...annotations, newAnnotation]);
     }
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageNum: number) => {
     if (!isAnnotating) return;
-    
-    if (selectedTool === "rectangle" || selectedTool === "arrow" || selectedTool === "highlight") {
-      const rect = overlayRef.current?.getBoundingClientRect();
-      if (rect) {
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        setStartPoint({ x, y });
-        setIsDrawing(true);
-      }
+
+    // e.nativeEvent.offsetX is dangerous if clicking on children.
+    // Use getBoundingClientRect to be safe.
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (selectedTool === "rectangle" || selectedTool === "arrow" || selectedTool === "highlight" || selectedTool === "circle") {
+      setStartPoint({ x, y });
+      setIsDrawing(true);
+      setCurrentPage(pageNum);
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isAnnotating || !isDrawing || !startPoint || !overlayRef.current) return;
-    
-    const rect = overlayRef.current.getBoundingClientRect();
+  const handlePageMouseMove = (e: React.MouseEvent<HTMLDivElement>, pageNum: number) => {
+    if (!isAnnotating || !isDrawing || !startPoint || currentPage !== pageNum) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
     const currentX = e.clientX - rect.left;
     const currentY = e.clientY - rect.top;
 
@@ -283,15 +360,15 @@ export default function EditPdfPage() {
       width: Math.abs(currentX - startPoint.x),
       height: Math.abs(currentY - startPoint.y),
       color: selectedColor,
-      page: currentPage,
+      page: pageNum,
     };
 
     setCurrentAnnotation(annotation);
   };
 
-  const handleMouseUp = () => {
+  const handlePageMouseUp = () => {
     if (!isAnnotating) return;
-    
+
     if (isDrawing && currentAnnotation && currentAnnotation.width > 5 && currentAnnotation.height > 5) {
       const newAnnotation = {
         ...currentAnnotation,
@@ -309,37 +386,55 @@ export default function EditPdfPage() {
   };
 
   const updateAnnotationText = (id: string, newText: string) => {
-    setAnnotations(annotations.map(ann => 
+    setAnnotations(annotations.map(ann =>
       ann.id === id ? { ...ann, content: newText } : ann
     ));
   };
 
+  const handleDownload = () => {
+    if (!editedFileBlob) return;
+    const url = window.URL.createObjectURL(editedFileBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `edited_${pdfFile?.name || "document.pdf"}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleReset = () => {
+    removeFile();
+  };
+
   const downloadEditedPdf = async () => {
-    if (!pdfFile || annotations.length === 0) {
-      alert("Please add some annotations before downloading.");
+    if (!pdfFile || !pdfDocument) {
+      alert("Please upload a PDF first.");
       return;
     }
 
     try {
-      const script = document.createElement("script");
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js";
-
-      await new Promise((resolve) => {
-        script.onload = resolve;
-        document.head.appendChild(script);
-      });
-
-      // @ts-ignore
-      const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
-
       const arrayBuffer = await pdfFile.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
-      const pages = pdfDoc.getPages();
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const pages = pdfDoc.getPages();
 
       for (const annotation of annotations) {
+        if (annotation.page > pages.length || annotation.page < 1) continue;
+
         const page = pages[annotation.page - 1];
         const { height: pageHeight } = page.getSize();
+
+        const dim = pageDimensions[annotation.page];
+        if (!dim) continue;
+
+        // Calculate Scale Factor
+        // PDF points vs CSS pixels (at assumed scale)
+        // PDF rendering scale was {scale} (e.g. 1.5)
+        // So dimensions stored in annotation are based on 1.5x view.
+        // We need to divide by scale to get back to default PDF point units (roughly).
+        // Note: pdfjs viewport width at scale 1.0 matches standard PDF points (72 DPI).
+        const scaleFactor = 1 / scale;
 
         const hexToRgb = (hex: string) => {
           const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -353,16 +448,18 @@ export default function EditPdfPage() {
         const color = hexToRgb(annotation.color);
         const rgbColor = rgb(color.r, color.g, color.b);
 
-        const pdfX = annotation.x;
-        const pdfY = pageHeight - annotation.y - annotation.height;
+        const pdfX = annotation.x * scaleFactor;
+        const pdfW = annotation.width * scaleFactor;
+        const pdfH = annotation.height * scaleFactor;
+        const pdfY = pageHeight - (annotation.y * scaleFactor) - pdfH;
 
         switch (annotation.type) {
           case "text":
             if (annotation.content) {
               page.drawText(annotation.content, {
                 x: pdfX,
-                y: pdfY + annotation.height - 5,
-                size: annotation.fontSize || 14,
+                y: pdfY + pdfH - 5,
+                size: (annotation.fontSize || 14) * scaleFactor,
                 font: font,
                 color: rgbColor,
               });
@@ -372,18 +469,18 @@ export default function EditPdfPage() {
             page.drawRectangle({
               x: pdfX,
               y: pdfY,
-              width: annotation.width,
-              height: annotation.height,
+              width: pdfW,
+              height: pdfH,
               borderColor: rgbColor,
               borderWidth: 2,
             });
             break;
           case "circle":
             page.drawEllipse({
-              x: pdfX + annotation.width / 2,
-              y: pdfY + annotation.height / 2,
-              xScale: annotation.width / 2,
-              yScale: annotation.height / 2,
+              x: pdfX + pdfW / 2,
+              y: pdfY + pdfH / 2,
+              xScale: pdfW / 2,
+              yScale: pdfH / 2,
               borderColor: rgbColor,
               borderWidth: 2,
             });
@@ -392,67 +489,51 @@ export default function EditPdfPage() {
             page.drawRectangle({
               x: pdfX,
               y: pdfY,
-              width: annotation.width,
-              height: annotation.height,
+              width: pdfW,
+              height: pdfH,
               color: rgb(color.r, color.g, color.b),
               opacity: 0.3,
+            });
+            break;
+          case "arrow":
+            page.drawLine({
+              start: { x: pdfX, y: pdfY + pdfH / 2 },
+              end: { x: pdfX + pdfW, y: pdfY + pdfH / 2 },
+              color: rgbColor,
+              thickness: 2
             });
             break;
         }
       }
 
       const pdfBytes = await pdfDoc.save();
-
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
       setEditedFileBlob(blob);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `edited_${pdfFile.name}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setIsEdited(true);
+      setIsEditingMode(false);
 
-      alert("PDF edited and downloaded successfully!");
-
-      // Clear auto-download timer if exists
-      if (autoDownloadTimerRef.current) {
-        clearTimeout(autoDownloadTimerRef.current);
-        autoDownloadTimerRef.current = null;
-      }
     } catch (error) {
       console.error("Error generating edited PDF:", error);
       alert("Error generating edited PDF. Please try again.");
     }
   };
 
-  // Auto-download after 7 seconds when annotations are added
+  // Auto-download helper
   useEffect(() => {
-    if (annotations.length > 0 && pdfFile) {
-      // Clear existing timer
-      if (autoDownloadTimerRef.current) {
-        clearTimeout(autoDownloadTimerRef.current);
-      }
-
-      // Set new timer for 7 seconds
-      autoDownloadTimerRef.current = setTimeout(() => {
-        downloadEditedPdf();
+    let timeoutId: NodeJS.Timeout;
+    if (isEdited && editedFileBlob) {
+      timeoutId = setTimeout(() => {
+        handleDownload();
       }, 7000);
     }
-
     return () => {
-      if (autoDownloadTimerRef.current) {
-        clearTimeout(autoDownloadTimerRef.current);
-      }
+      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [annotations]);
+  }, [isEdited, editedFileBlob]);
 
   const goBack = () => {
     setIsEditingMode(false);
-    setAnnotations([]);
-    setCurrentAnnotation(null);
-    setIsAnnotating(false);
+    // Don't clear instructions or file, just mode
   };
 
   const toggleAnnotationMode = () => {
@@ -467,68 +548,39 @@ export default function EditPdfPage() {
     { icon: <PiClipboard size={18} />, label: "From Clipboard", onClick: handleFromClipboard },
   ];
 
+  const onDimensionChanged = (pageNum: number, width: number, height: number) => {
+    setPageDimensions(prev => ({
+      ...prev,
+      [pageNum]: { width, height }
+    }));
+  };
+
   // Editing Mode UI
   if (isEditingMode) {
     return (
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1rem" }}>
         <style>{`
+          /* Your existing styles ... preserved for simplicity */
           @media (max-width: 768px) {
-            .header-controls-edit {
-              flex-direction: column !important;
-              gap: 1rem !important;
-            }
-            .header-controls-edit > * {
-              width: 100% !important;
-            }
-            .main-container-edit {
-              flex-direction: column !important;
-            }
-            .tools-panel {
-              width: 100% !important;
-              position: static !important;
-              margin-bottom: 1.5rem;
-            }
-            .tool-grid {
-              grid-template-columns: repeat(3, 1fr) !important;
-            }
-            .color-grid {
-              grid-template-columns: repeat(4, 1fr) !important;
-            }
-            .pdf-viewer-container {
-              height: 500px !important;
-            }
-          }
-          @media (max-width: 480px) {
-            .tools-panel {
-              padding: 1rem !important;
-            }
-            .tool-grid {
-              grid-template-columns: repeat(2, 1fr) !important;
-              gap: 0.4rem !important;
-            }
-            .tool-grid button {
-              font-size: 0.8rem !important;
-              padding: 0.4rem !important;
-            }
-            .pdf-viewer-container {
-              height: 400px !important;
-            }
-            .annotations-list {
-              max-height: 150px !important;
-            }
+            .header-controls-edit { flex-direction: column !important; gap: 1rem !important; }
+            .header-controls-edit > * { width: 100% !important; }
+            .main-container-edit { flex-direction: column !important; }
+            .tools-panel { width: 100% !important; position: static !important; margin-bottom: 1.5rem; }
+            .tool-grid { grid-template-columns: repeat(3, 1fr) !important; }
+            .color-grid { grid-template-columns: repeat(4, 1fr) !important; }
+            .pdf-viewer-container { height: 500px !important; }
           }
         `}</style>
-        
+
         <div
           className="header-controls-edit"
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            margin:"3rem 0rem 2rem 0rem",
+            margin: "3rem 0rem 2rem 0rem",
             gap: "1rem",
             flexWrap: "wrap",
-            
           }}
         >
           <button
@@ -559,28 +611,13 @@ export default function EditPdfPage() {
                 cursor: "pointer",
                 fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
                 minWidth: "100px",
-              }}
-            >
-              Download PDF
-            </button>
-            {/* <button
-              onClick={handleShare}
-              style={{
-                backgroundColor: "white",
-                color: "#333",
-                border: "1px solid #e0e0e0",
-                padding: "0.6rem 1.2rem",
-                borderRadius: "5px",
-                cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
-                gap: "0.5rem",
-                fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
+                gap: "0.5rem"
               }}
             >
-              <TbShare3 />
-              Share
-            </button> */}
+              <span>Finish & Save</span>
+            </button>
           </div>
         </div>
 
@@ -594,8 +631,15 @@ export default function EditPdfPage() {
             height: "fit-content",
             position: "sticky",
             top: "2rem",
+            maxHeight: "90vh",
+            overflowY: "auto"
           }}>
             <h3 style={{ marginTop: 0, marginBottom: "1.5rem", fontSize: "clamp(1rem, 3vw, 1.17rem)" }}>Editing Tools</h3>
+
+            {/* Helper Status */}
+            <div style={{ marginBottom: "1.5rem", padding: "0.75rem", backgroundColor: "#e9ecef", borderRadius: "5px", fontSize: "0.85rem" }}>
+              {isAnnotating ? "✏️ Annotation Mode Active" : "👆 Viewing Mode (Scroll)"}
+            </div>
 
             {/* Annotation Mode Toggle */}
             <div style={{ marginBottom: "2rem" }}>
@@ -613,19 +657,8 @@ export default function EditPdfPage() {
                   fontWeight: "bold",
                 }}
               >
-                {isAnnotating ? "🔒 Exit Annotation Mode" : "✏️ Enter Annotation Mode"}
+                {isAnnotating ? "Exit Annotation Mode" : "Start Annotating"}
               </button>
-              <p style={{ 
-                fontSize: "clamp(0.7rem, 2vw, 0.8rem)", 
-                color: "#666", 
-                marginTop: "0.5rem",
-                textAlign: "center"
-              }}>
-                {isAnnotating 
-                  ? "Click to add annotations. Exit to scroll/navigate PDF." 
-                  : "PDF is scrollable. Enter annotation mode to add annotations."
-                }
-              </p>
             </div>
 
             {/* Tool Selection */}
@@ -716,228 +749,160 @@ export default function EditPdfPage() {
                     />
                   ))}
                 </div>
-                <input
-                  type="color"
-                  value={selectedColor}
-                  onChange={(e) => setSelectedColor(e.target.value)}
-                  style={{
-                    width: "100%",
-                    height: "40px",
-                    marginTop: "0.5rem",
-                    border: "none",
-                    borderRadius: "5px",
-                    cursor: "pointer",
-                  }}
-                />
               </div>
             )}
-
-            {/* Annotations List */}
-            <div style={{ marginBottom: "2rem" }}>
-              <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Annotations ({annotations.length})</h4>
-              <div className="annotations-list" style={{ maxHeight: "200px", overflowY: "auto" }}>
-                {annotations.map((annotation) => (
-                  <div
-                    key={annotation.id}
-                    style={{
-                      backgroundColor: "white",
-                      border: "1px solid #ddd",
-                      borderRadius: "3px",
-                      padding: "0.5rem",
-                      marginBottom: "0.5rem",
-                      fontSize: "clamp(0.75rem, 2vw, 0.8rem)",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div style={{ overflow: "hidden" }}>
-                      <div style={{ fontWeight: "bold" }}>
-                        {tools.find(t => t.value === annotation.type)?.icon} {annotation.type}
-                      </div>
-                      {annotation.content && (
-                        <div style={{ fontSize: "clamp(0.65rem, 1.8vw, 0.7rem)", color: "#666", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          &quot;{annotation.content.substring(0, 20)}...&quot;
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => removeAnnotation(annotation.id)}
-                      style={{
-                        backgroundColor: "#dc3545",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "3px",
-                        padding: "2px 6px",
-                        cursor: "pointer",
-                        fontSize: "clamp(0.65rem, 1.8vw, 0.7rem)",
-                        flexShrink: 0,
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Instructions */}
-            <div style={{
-              backgroundColor: "#e3f2fd",
-              padding: "1rem",
-              borderRadius: "5px",
-              fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
-            }}>
-              <strong>How to use:</strong>
-              <br />
-              1. {isAnnotating ? "Select a tool and click/drag on PDF" : "Click 'Enter Annotation Mode' to start"}
-              <br />
-              2. {isAnnotating ? "Customize colors and text" : "Use scroll/zoom controls normally"}
-              <br />
-              3. {isAnnotating ? "Exit mode to navigate PDF" : "Toggle modes as needed"}
-              <br />
-              4. Download when finished
-            </div>
           </div>
 
-          {/* PDF Viewer with Overlay */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="pdf-viewer-container" style={{ position: "relative", height: "800px", border: "2px solid #dee2e6", borderRadius: "10px", overflow: "auto", backgroundColor: "#f5f5f5" }}>
-              <iframe
-                ref={pdfViewerRef}
-                src={`${pdfUrl}#view=FitH&toolbar=1&navpanes=0&zoom=page-fit`}
-                style={{
-                  width: "100%",
-                  minHeight: "100%",
-                  height: "auto",
-                  border: "none",
-                }}
-                title="PDF Viewer"
-                allow="fullscreen"
-              />
-              
-              <div
-                ref={overlayRef}
-                onClick={handleOverlayClick}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  pointerEvents: isAnnotating ? "auto" : "none",
-                  cursor: isAnnotating ? (selectedTool === "text" ? "text" : "crosshair") : "default",
-                  backgroundColor: isAnnotating ? "rgba(0, 0, 0, 0.05)" : "transparent",
-                }}
-              >
-                {annotations.map((annotation) => (
-                  <div
-                    key={annotation.id}
-                    style={{
-                      position: "absolute",
-                      left: annotation.x,
-                      top: annotation.y,
-                      width: annotation.width,
-                      height: annotation.height,
-                      pointerEvents: "auto",
-                      ...(() => {
-                        switch (annotation.type) {
-                          case "text":
-                            return {
-                              color: annotation.color,
-                              fontSize: `${annotation.fontSize}px`,
-                              fontWeight: "bold",
-                              backgroundColor: "rgba(255, 255, 255, 0.8)",
-                              padding: "2px 4px",
-                              borderRadius: "2px",
-                            };
-                          case "rectangle":
-                            return {
-                              border: `2px solid ${annotation.color}`,
-                              backgroundColor: "transparent",
-                            };
-                          case "circle":
-                            return {
-                              border: `2px solid ${annotation.color}`,
-                              borderRadius: "50%",
-                              backgroundColor: "transparent",
-                            };
-                          case "highlight":
-                            return {
-                              backgroundColor: `${annotation.color}40`,
-                            };
-                          case "arrow":
-                            return {
-                              border: `2px solid ${annotation.color}`,
-                              backgroundColor: "transparent",
-                              position: "relative",
-                            };
-                          default:
-                            return {};
-                        }
-                      })(),
-                    }}
-                  >
-                    {annotation.type === "text" && annotation.content && (
-                      <input
-                        type="text"
-                        value={annotation.content}
-                        onChange={(e) => updateAnnotationText(annotation.id, e.target.value)}
+          {/* PDF Pages List */}
+          <div style={{ flex: 1, minWidth: 0, backgroundColor: "#e2e2e2", padding: "2rem", borderRadius: "8px", height: "80vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "2rem", alignItems: "center" }}>
+              {pages.map(pageNum => (
+                <div
+                  key={pageNum}
+                  style={{
+                    position: "relative",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                    backgroundColor: "white"
+                  }}
+                  onMouseDown={(e) => handlePageMouseDown(e, pageNum)}
+                  onMouseMove={(e) => handlePageMouseMove(e, pageNum)}
+                  onMouseUp={handlePageMouseUp}
+                  onClick={(e) => handlePageClick(e, pageNum)}
+                >
+                  <PDFPage
+                    pageNumber={pageNum}
+                    pdfDocument={pdfDocument}
+                    scale={scale}
+                    onDimensionsChanged={onDimensionChanged}
+                  />
+
+                  {/* Overlay for Page */}
+                  <div style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    pointerEvents: isAnnotating ? "auto" : "none",
+                    cursor: isAnnotating ? (selectedTool === "text" ? "text" : "crosshair") : "default",
+                  }}>
+                    {/* Annotations for this page */}
+                    {annotations.filter(ann => ann.page === pageNum).map(annotation => (
+                      <div
+                        key={annotation.id}
                         style={{
-                          border: "none",
-                          background: "transparent",
-                          color: annotation.color,
-                          fontSize: `${annotation.fontSize}px`,
-                          fontWeight: "bold",
-                          width: "100%",
-                          outline: "none",
+                          position: "absolute",
+                          left: annotation.x,
+                          top: annotation.y,
+                          width: annotation.width,
+                          height: annotation.height,
+                          pointerEvents: "auto",
+                          ...(() => {
+                            switch (annotation.type) {
+                              case "text":
+                                return {
+                                  color: annotation.color,
+                                  fontSize: `${annotation.fontSize}px`,
+                                  fontWeight: "bold",
+                                  backgroundColor: "rgba(255, 255, 255, 0.7)",
+                                  whiteSpace: "nowrap",
+                                  padding: "2px 4px",
+                                  borderRadius: "4px",
+                                  border: "1px dashed transparent"
+                                };
+                              case "rectangle":
+                                return {
+                                  border: `2px solid ${annotation.color}`,
+                                  backgroundColor: "transparent",
+                                };
+                              case "circle":
+                                return {
+                                  border: `2px solid ${annotation.color}`,
+                                  borderRadius: "50%",
+                                  backgroundColor: "transparent",
+                                };
+                              case "highlight":
+                                return {
+                                  backgroundColor: `${annotation.color}40`,
+                                };
+                              case "arrow":
+                                // Simplified arrow visualization for DOM (just a line/box for now or complex SVG)
+                                // Building a proper DOM arrow is hard, using simple box for preview
+                                return {
+                                  borderBottom: `2px solid ${annotation.color}`,
+                                  backgroundColor: "transparent",
+                                  transformOrigin: "left center",
+                                  // rotation would be needed for real arrows
+                                };
+                              default:
+                                return {};
+                            }
+                          })(),
+                        }}
+                      >
+                        {annotation.type === "text" && (
+                          <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                            <span style={{ cursor: "text" }}>{annotation.content}</span>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); removeAnnotation(annotation.id); }}
+                              style={{
+                                position: "absolute",
+                                top: "-10px",
+                                right: "-10px",
+                                background: "red",
+                                color: "white",
+                                borderRadius: "50%",
+                                width: "16px",
+                                height: "16px",
+                                fontSize: "10px",
+                                border: "none",
+                                cursor: "pointer",
+                                display: "flex", alignItems: "center", justifyContent: "center"
+                              }}
+                            >x</button>
+                          </div>
+                        )}
+                        {annotation.type !== "text" && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); removeAnnotation(annotation.id); }}
+                            style={{
+                              position: "absolute",
+                              top: "-8px",
+                              right: "-8px",
+                              background: "red",
+                              color: "white",
+                              borderRadius: "50%",
+                              width: "16px",
+                              height: "16px",
+                              fontSize: "10px",
+                              border: "none",
+                              cursor: "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center"
+                            }}
+                          >x</button>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Current Annotation Preview (Draft) */}
+                    {currentAnnotation && currentAnnotation.page === pageNum && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: currentAnnotation.x,
+                          top: currentAnnotation.y,
+                          width: currentAnnotation.width,
+                          height: currentAnnotation.height,
+                          border: `2px dashed ${currentAnnotation.color}`,
+                          backgroundColor: currentAnnotation.type === "highlight" ? `${currentAnnotation.color}40` : "transparent",
+                          borderRadius: currentAnnotation.type === "circle" ? "50%" : "0",
+                          pointerEvents: "none",
                         }}
                       />
                     )}
-                    
-                    <button
-                      onClick={() => removeAnnotation(annotation.id)}
-                      style={{
-                        position: "absolute",
-                        top: "-8px",
-                        right: "-8px",
-                        backgroundColor: "#dc3545",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "50%",
-                        width: "16px",
-                        height: "16px",
-                        fontSize: "10px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      ×
-                    </button>
                   </div>
-                ))}
-
-                {currentAnnotation && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: currentAnnotation.x,
-                      top: currentAnnotation.y,
-                      width: currentAnnotation.width,
-                      height: currentAnnotation.height,
-                      border: `2px dashed ${currentAnnotation.color}`,
-                      backgroundColor: currentAnnotation.type === "highlight" ? `${currentAnnotation.color}40` : "transparent",
-                      borderRadius: currentAnnotation.type === "circle" ? "50%" : "0",
-                      pointerEvents: "none",
-                    }}
-                  />
-                )}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -945,7 +910,7 @@ export default function EditPdfPage() {
     );
   }
 
-  // Main Upload UI
+  // Initial Upload UI or Success UI
   return (
     <div>
       <Navbar />
@@ -959,7 +924,7 @@ export default function EditPdfPage() {
         alignItems: "flex-start"
       }}>
         {/* Left Ad */}
-        <VerticalAdLeft/>
+        <VerticalAdLeft />
 
         {/* Main Content */}
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
@@ -979,7 +944,7 @@ export default function EditPdfPage() {
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
             style={{
-               border: "3px solid rgba(57, 185, 57, 0.4)",
+              border: "3px solid rgba(57, 185, 57, 0.4)",
               backgroundColor: "rgba(144, 238, 144, 0.2)",
               borderRadius: "12px",
               padding: "2rem",
@@ -989,280 +954,365 @@ export default function EditPdfPage() {
               minHeight: "280px",
             }}
           >
-          {!pdfFile ? (
-            /* Empty State */
-            <div style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "300px",
-              minHeight: "220px",
-            }}>
-              <div style={{ marginBottom: "1.5rem" }}>
-                <img src="./upload.svg" alt="Upload Icon" />
-              </div>
-
-              <div ref={dropdownRef} style={{ position: "relative" }}>
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  style={{
-                    backgroundColor: "white",
-                    padding: "0.6rem 1rem",
-                    border: "1px solid #e0e0e0",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.9rem",
-                    fontWeight: "500",
-                    color: "#333",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <PiFiles size={18} />
-                  Select File
-                  <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
-                </button>
-
-                {isDropdownOpen && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 4px)",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      backgroundColor: "white",
-                      border: "1px solid #e0e0e0",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      zIndex: 1000,
-                      minWidth: "180px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {menuItems.map((item, index) => (
-                      <button
-                        key={index}
-                        onClick={item.onClick}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.75rem",
-                          padding: "0.7rem 1rem",
-                          width: "100%",
-                          border: "none",
-                          backgroundColor: "transparent",
-                          cursor: "pointer",
-                          fontSize: "0.85rem",
-                          color: "#333",
-                          textAlign: "left",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f5f5f5";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }}
-                      >
-                        <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
-                          {item.icon}
-                        </span>
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/pdf"
-                  onChange={handleFileChange}
-                  style={{ display: "none" }}
-                />
-              </div>
-            </div>
-          ) : (
-            /* File Uploaded State */
-            <div>
+            {isEdited ? (
+              /* Success State - Download */
               <div style={{
                 display: "flex",
-                justifyContent: "flex-end",
-                gap: "0.5rem",
-                marginBottom: "1.5rem",
-              }}>
-                <button
-                  onClick={handleStartEditing}
-                  style={{
-                    backgroundColor: "#007bff",
-                    color: "white",
-                    border: "none",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.85rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  ✏️ Start Editing
-                </button>
-              </div>
-
-              <div style={{
-                display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
+                height: "100%",
+                gap: "1.5rem",
+                padding: "2rem 0"
               }}>
-                <div
-                  style={{
-                    backgroundColor: "white",
-                    borderRadius: "8px",
-                    width: "120px",
-                    height: "140px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                    position: "relative",
-                  }}
-                >
+                <div style={{
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  background: "#e8f5e9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#2e7d32",
+                  marginBottom: "0.5rem"
+                }}>
+                  <PiCheckCircle size={48} />
+                </div>
+                <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0, textAlign: "center" }}>
+                  Success!
+                </h2>
+                <p style={{ color: "#666", textAlign: "center", maxWidth: "400px" }}>
+                  Your PDF has been edited and saved.
+                </p>
+
+                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                   <button
-                    onClick={removeFile}
+                    onClick={handleDownload}
                     style={{
-                      position: "absolute",
-                      top: "4px",
-                      right: "4px",
-                      background: "rgba(255, 255, 255, 1)",
+                      backgroundColor: "#e11d48",
+                      color: "white",
+                      padding: "1rem 2.5rem",
+                      borderRadius: "8px",
+                      fontSize: "1.1rem",
+                      fontWeight: "600",
                       border: "none",
-                      borderRadius: "50%",
-                      width: "25px",
-                      height: "25px",
+                      cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      color: "black",
+                      gap: "0.5rem",
+                      boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)"
                     }}
                   >
-                    <PiX size={35} />
+                    Download PDF
                   </button>
-                  
-                  <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
-                  <span style={{ 
-                    fontSize: "0.65rem", 
-                    color: "#666", 
-                    maxWidth: "100px", 
-                    overflow: "hidden", 
-                    textOverflow: "ellipsis", 
-                    whiteSpace: "nowrap",
-                    padding: "0 0.5rem"
-                  }}>
-                    {pdfFile.name}
-                  </span>
+                </div>
+
+                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                  <button
+                    onClick={handleShare}
+                    style={{
+                      background: "transparent",
+                      color: "#666",
+                      border: "1px solid #ccc",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem"
+                    }}
+                  >
+                    <TbShare3 /> Share
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    style={{
+                      background: "transparent",
+                      color: "#666",
+                      border: "1px solid #ccc",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Edit Another File
+                  </button>
                 </div>
               </div>
+            ) : !pdfFile ? (
+              /* Empty State */
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "300px",
+                minHeight: "220px",
+              }}>
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <img src="./upload.svg" alt="Upload Icon" />
+                </div>
 
-              <div
-                style={{
+                <div ref={dropdownRef} style={{ position: "relative" }}>
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    style={{
+                      backgroundColor: "white",
+                      padding: "0.6rem 1rem",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      fontSize: "0.9rem",
+                      fontWeight: "500",
+                      color: "#333",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    }}
+                  >
+                    <PiFiles size={18} />
+                    Select File
+                    <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
+                  </button>
+
+                  {isDropdownOpen && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 4px)",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        backgroundColor: "white",
+                        border: "1px solid #e0e0e0",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        zIndex: 1000,
+                        minWidth: "180px",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {menuItems.map((item, index) => (
+                        <button
+                          key={index}
+                          onClick={item.onClick}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.75rem",
+                            padding: "0.7rem 1rem",
+                            width: "100%",
+                            border: "none",
+                            backgroundColor: "transparent",
+                            cursor: "pointer",
+                            fontSize: "0.85rem",
+                            color: "#333",
+                            textAlign: "left",
+                            transition: "background-color 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#f5f5f5";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = "transparent";
+                          }}
+                        >
+                          <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
+                            {item.icon}
+                          </span>
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handleFileChange}
+                    style={{ display: "none" }}
+                  />
+                </div>
+              </div>
+            ) : (
+              /* File Uploaded State */
+              <div>
+                <div style={{
                   display: "flex",
                   justifyContent: "flex-end",
-                  gap: "0.75rem",
-                  marginTop: "1.5rem",
+                  gap: "0.5rem",
+                  marginBottom: "1.5rem",
+                }}>
+                  <button
+                    onClick={handleStartEditing}
+                    style={{
+                      backgroundColor: "#007bff",
+                      color: "white",
+                      border: "none",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      fontSize: "0.85rem",
+                      fontWeight: "500",
+                    }}
+                  >
+                    ✏️ Start Editing
+                  </button>
+                </div>
+
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <div
+                    style={{
+                      backgroundColor: "white",
+                      borderRadius: "8px",
+                      width: "120px",
+                      height: "140px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      position: "relative",
+                    }}
+                  >
+                    <button
+                      onClick={removeFile}
+                      style={{
+                        position: "absolute",
+                        top: "4px",
+                        right: "4px",
+                        background: "rgba(255, 255, 255, 1)",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: "25px",
+                        height: "25px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        color: "black",
+                      }}
+                    >
+                      <PiX size={35} />
+                    </button>
+
+                    <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+                    <span style={{
+                      fontSize: "0.65rem",
+                      color: "#666",
+                      maxWidth: "100px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      padding: "0 0.5rem"
+                    }}>
+                      {pdfFile.name}
+                    </span>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: "0.75rem",
+                    marginTop: "1.5rem",
+                    opacity: 0.4,
+                  }}
+                >
+                  <PiUploadSimple size={18} />
+                  <PiLink size={18} />
+                  <FaGoogleDrive size={16} />
+                  <FaDropbox size={16} />
+                  <PiClipboard size={18} />
+                </div>
+              </div>
+            )}
+
+            {!pdfFile && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: "1rem",
+                  top: "90%",
+                  transform: "translateY(-50%)",
+                  display: "flex",
+                  gap: "0.5rem",
                   opacity: 0.4,
                 }}
               >
-                <PiUploadSimple size={18} />
-                <PiLink size={18} />
-                <FaGoogleDrive size={16} />
-                <FaDropbox size={16} />
-                <PiClipboard size={18} />
+                <PiUploadSimple size={20} />
+                <PiLink size={20} />
+                <FaGoogleDrive size={18} />
+                <FaDropbox size={18} />
+                <PiClipboard size={20} />
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {!pdfFile && (
-            <div
-              style={{
-                position: "absolute",
-                right: "1rem",
-                top: "90%",
-                transform: "translateY(-50%)",
-                display: "flex",
-                gap: "0.5rem",
-                opacity: 0.4,
-              }}
-            >
-              <PiUploadSimple size={20} />
-              <PiLink size={20} />
-              <FaGoogleDrive size={18} />
-              <FaDropbox size={18} />
-              <PiClipboard size={20} />
-            </div>
-          )}
-        </div>
+          {/* Info Section */}
+          <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
+            <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
+              Add text, shapes, highlights and annotations to your PDF documents.
+            </p>
+            <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
+              {[
+                "Add text, rectangles, circles, and highlights",
+                "Customize colors and font sizes",
+                "Works on any device — desktop, tablet, or mobile"
+              ].map((text, index) => (
+                <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                  <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
+                  {text}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        {/* Info Section */}
-        <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
-          <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
-            Add text, shapes, highlights and annotations to your PDF documents.
-          </p>
-          <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
-            {[
-              "Add text, rectangles, circles, and highlights",
-              "Customize colors and font sizes",
-              "Works on any device — desktop, tablet, or mobile"
-            ].map((text, index) => (
-              <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
-                {text}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Security Section */}
-        <div
-          style={{
-            marginTop: "3rem",
-            padding: "1.5rem",
-            backgroundColor: "#f0f9ff",
-            border: "1px solid #cce5ff",
-            borderRadius: "10px",
-            fontSize: "0.95rem",
-            fontFamily: 'Georgia, "Times New Roman", serif',
-          }}
-        >
-          <strong>Protected. Encrypted. Automatically Deleted.</strong>
-          <p style={{ marginTop: "0.5rem", color: "#555" }}>
-            For years, our platform has helped users convert and manage files
-            securely—with no file tracking, no storage, and full privacy. Every
-            document you upload is encrypted and automatically deleted after 2
-            hours. Your data stays yours—always.
-          </p>
+          {/* Security Section */}
           <div
             style={{
-              marginTop: "1rem",
-              display: "flex",
-              justifyContent: "space-around",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "1rem",
-              filter: "grayscale(100%)",
+              marginTop: "3rem",
+              padding: "1.5rem",
+              backgroundColor: "#f0f9ff",
+              border: "1px solid #cce5ff",
+              borderRadius: "10px",
+              fontSize: "0.95rem",
+              fontFamily: 'Georgia, "Times New Roman", serif',
             }}
           >
-            <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
-            <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
-            <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
-            <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />
+            <strong>Protected. Encrypted. Automatically Deleted.</strong>
+            <p style={{ marginTop: "0.5rem", color: "#555" }}>
+              For years, our platform has helped users convert and manage files
+              securely—with no file tracking, no storage, and full privacy. Every
+              document you upload is encrypted and automatically deleted after 2
+              hours. Your data stays yours—always.
+            </p>
+            <div
+              style={{
+                marginTop: "1rem",
+                display: "flex",
+                justifyContent: "space-around",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "1rem",
+                filter: "grayscale(100%)",
+              }}
+            >
+              <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
+              <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
+              <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
+              <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />
+            </div>
           </div>
-        </div>
         </div>
 
         {/* Right Ad */}
@@ -1345,14 +1395,14 @@ export default function EditPdfPage() {
         </div>
       )}
 
-      <ToolInstructions 
-        title={instructionData.title} 
-        steps={instructionData.steps} 
+      <ToolInstructions
+        title={instructionData.title}
+        steps={instructionData.steps as any}
       />
-      <Testimonials 
+      <Testimonials
         title="What Our Users Say"
         testimonials={testimonialData.testimonials}
-        autoScrollInterval={3000} 
+        autoScrollInterval={3000}
       />
       <ShareModal
         isOpen={showShareModal}

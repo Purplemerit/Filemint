@@ -21,7 +21,7 @@ class MockIncomingMessage extends Readable {
     this.push(buffer);
     this.push(null);
   }
-  _read() {}
+  _read() { }
 }
 
 async function hasQpdf(): Promise<boolean> {
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const form = new IncomingForm({
     multiples: false,
     uploadDir,
-    maxFileSize: 10 * 1024 * 1024,
+    maxFileSize: 50 * 1024 * 1024, // 50MB
     keepExtensions: true,
   });
 
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const mockReq = new MockIncomingMessage(buffer, contentType);
 
     return new Promise((resolve) => {
-      form.parse(mockReq as any, async (err, fields, files: { file?: File[] }) => {
+      form.parse(mockReq as any, async (err: any, fields: any, files: { file?: File[] }) => {
         if (err) {
           console.error("Form parsing error:", err);
           return resolve(
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
           }
 
           return resolve(
-            new Response(outputBuffer, {
+            new Response(outputBuffer as any, {
               headers: {
                 "Content-Type": "application/pdf",
                 "Content-Disposition": `attachment; filename=compressed_${path.basename(file.originalFilename || "file.pdf")}`,
@@ -108,8 +108,8 @@ export async function POST(req: NextRequest) {
           );
         } finally {
           try {
-            await fs.unlink(inputPath).catch(() => {});
-            await fs.unlink(outputPath).catch(() => {});
+            await fs.unlink(inputPath).catch(() => { });
+            await fs.unlink(outputPath).catch(() => { });
           } catch (cleanupError) {
             console.error("Cleanup failed:", cleanupError);
           }
