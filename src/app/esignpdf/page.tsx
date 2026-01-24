@@ -15,7 +15,9 @@ import {
   PiSignature,
   PiPenNib,
   PiTextT,
-  PiImage
+  PiImage,
+  PiMagnifyingGlassPlus,
+  PiMagnifyingGlassMinus
 } from "react-icons/pi";
 import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import { TbShare3 } from "react-icons/tb";
@@ -159,6 +161,28 @@ export default function ESignPdfPage() {
     document.head.appendChild(link);
     return () => { document.head.removeChild(link); }
   }, []);
+
+  // Handle responsive scale
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== 'undefined') {
+        const width = window.innerWidth;
+        if (width < 600) {
+          setScale(0.6);
+        } else if (width < 900) {
+          setScale(0.8);
+        } else {
+          setScale(1.5);
+        }
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.1, 3.0));
+  const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.3));
 
   // PDF Load Effect
   useEffect(() => {
@@ -466,6 +490,13 @@ export default function ESignPdfPage() {
              .pdf-viewer-container {
                height: 500px !important;
                padding: 1rem !important;
+               overflow-x: auto !important;
+               width: 100% !important;
+               max-width: 100% !important;
+               box-sizing: border-box !important;
+             }
+             .pdf-pages-wrapper {
+               align-items: flex-start !important;
              }
            }
          `}</style>
@@ -486,6 +517,17 @@ export default function ESignPdfPage() {
             ← Back
           </button>
           <h1 style={{ fontSize: "1.5rem", margin: 0 }}>Sign PDF</h1>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "auto", marginRight: "1rem", backgroundColor: "white", padding: "0.4rem", borderRadius: "5px", border: "1px solid #ccc" }}>
+            <button onClick={handleZoomOut} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }} title="Zoom Out">
+              <PiMagnifyingGlassMinus size={20} />
+            </button>
+            <span style={{ fontSize: "0.9rem", minWidth: "3rem", textAlign: "center" }}>{Math.round(scale * 100)}%</span>
+            <button onClick={handleZoomIn} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }} title="Zoom In">
+              <PiMagnifyingGlassPlus size={20} />
+            </button>
+          </div>
+
           <button
             onClick={finishSigning}
             style={{
@@ -521,7 +563,7 @@ export default function ESignPdfPage() {
 
           {/* Document Viewer */}
           <div className="pdf-viewer-container" style={{ flex: 1, backgroundColor: "#e2e2e2", padding: "2rem", borderRadius: "8px", height: "80vh", overflowY: "auto", position: "relative" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "2rem", alignItems: "center" }}>
+            <div className="pdf-pages-wrapper" style={{ display: "flex", flexDirection: "column", gap: "2rem", alignItems: "center" }}>
               {pages.map(pageNum => (
                 <div key={pageNum} style={{ position: "relative", backgroundColor: "white", boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}>
                   <PDFPage pageNumber={pageNum} pdfDocument={pdfDocument} scale={scale} onDimensionsChanged={onDimensionChanged} />
@@ -700,8 +742,19 @@ export default function ESignPdfPage() {
   return (
     <div>
       <Navbar />
+      <style>{`
+        @media (max-width: 1024px) {
+          .upload-container {
+            flex-direction: column !important;
+            padding: 0 1rem !important;
+          }
+          .ad-column {
+            display: none !important;
+          }
+        }
+      `}</style>
 
-      <div style={{
+      <div className="upload-container" style={{
         display: "flex",
         maxWidth: "1400px",
         margin: "4rem auto",
@@ -710,7 +763,9 @@ export default function ESignPdfPage() {
         alignItems: "flex-start"
       }}>
         {/* Left Ad */}
-        <VerticalAdLeft />
+        <div className="ad-column">
+          <VerticalAdLeft />
+        </div>
 
         {/* Main Content */}
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
@@ -859,7 +914,9 @@ export default function ESignPdfPage() {
             <strong>Protected. Encrypted.</strong> <p style={{ marginTop: "0.5rem", color: "#555" }}>Your files are encrypted and automatically deleted after 2 hours.</p>
           </div>
         </div>
-        <VerticalAdRight />
+        <div className="ad-column">
+          <VerticalAdRight />
+        </div>
       </div>
 
       {/* URL Input Modal */}
