@@ -10,7 +10,9 @@ import {
   PiCaretDown,
   PiUploadSimple,
   PiCheckCircle,
-  PiX
+  PiX,
+  PiMagnifyingGlassPlus,
+  PiMagnifyingGlassMinus
 } from "react-icons/pi";
 import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import { TbShare3 } from "react-icons/tb";
@@ -83,7 +85,7 @@ export default function EditPdfPage() {
   const [annotations, setAnnotations] = useState<
     Array<{
       id: string;
-      type: "text" | "highlight" | "rectangle" | "arrow" | "circle";
+      type: "text" | "highlight" | "rectangle" | "arrow" | "circle" | "whiteout";
       content?: string;
       x: number;
       y: number;
@@ -94,7 +96,7 @@ export default function EditPdfPage() {
       page: number;
     }>
   >([]);
-  const [selectedTool, setSelectedTool] = useState<"text" | "highlight" | "rectangle" | "arrow" | "circle">("text");
+  const [selectedTool, setSelectedTool] = useState<"text" | "highlight" | "rectangle" | "arrow" | "circle" | "whiteout">("text");
   const [selectedColor, setSelectedColor] = useState("#FF0000");
   const [textContent, setTextContent] = useState("");
   const [fontSize, setFontSize] = useState(14);
@@ -108,6 +110,7 @@ export default function EditPdfPage() {
   const [scale, setScale] = useState(1.5);
   const [pageDimensions, setPageDimensions] = useState<Record<number, { width: number; height: number }>>({});
   const [currentPage, setCurrentPage] = useState<number>(1); // Currently active page for drawing
+  const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null);
 
   const [isAnnotating, setIsAnnotating] = useState(false);
   const [isEdited, setIsEdited] = useState(false);
@@ -139,6 +142,28 @@ export default function EditPdfPage() {
       setIsDropdownOpen(false);
     },
   });
+
+  // Handle responsive scale
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== 'undefined') {
+        const width = window.innerWidth;
+        if (width < 600) {
+          setScale(0.6);
+        } else if (width < 900) {
+          setScale(0.8);
+        } else {
+          setScale(1.5);
+        }
+      }
+    };
+
+    // Initial check
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Load PDF when file changes
   useEffect(() => {
@@ -179,6 +204,7 @@ export default function EditPdfPage() {
     { name: "Rectangle", value: "rectangle", icon: "⬜" },
     { name: "Circle", value: "circle", icon: "⭕" },
     { name: "Arrow", value: "arrow", icon: "➡️" },
+    { name: "Whiteout", value: "whiteout", icon: "🌫️" },
   ];
 
   // Close dropdown when clicking outside
@@ -297,13 +323,30 @@ export default function EditPdfPage() {
       const newAnnotation = {
         id: Date.now().toString(),
         type: "text" as const,
-        content: textContent || "Click to edit",
+        content: textContent || "", // Start empty if no predefined text
         x: x,
         y: y,
         width: 200,
         height: 30,
         color: selectedColor,
         fontSize: fontSize,
+        page: pageNum,
+      };
+      setAnnotations([...annotations, newAnnotation]);
+      setEditingAnnotationId(newAnnotation.id);
+    } else if (selectedTool === "whiteout" && !isDrawing) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const newAnnotation = {
+        id: Date.now().toString(),
+        type: "whiteout" as const,
+        x: x,
+        y: y,
+        width: 100,
+        height: 30, // Default whiteout size
+        color: "#FFFFFF",
         page: pageNum,
       };
       setAnnotations([...annotations, newAnnotation]);
@@ -338,7 +381,7 @@ export default function EditPdfPage() {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    if (selectedTool === "rectangle" || selectedTool === "arrow" || selectedTool === "highlight" || selectedTool === "circle") {
+    if (selectedTool === "rectangle" || selectedTool === "arrow" || selectedTool === "highlight" || selectedTool === "circle" || selectedTool === "whiteout") {
       setStartPoint({ x, y });
       setIsDrawing(true);
       setCurrentPage(pageNum);
@@ -380,6 +423,8 @@ export default function EditPdfPage() {
     setStartPoint(null);
     setCurrentAnnotation(null);
   };
+
+
 
   const removeAnnotation = (id: string) => {
     setAnnotations(annotations.filter((ann) => ann.id !== id));
@@ -465,6 +510,16 @@ export default function EditPdfPage() {
               });
             }
             break;
+          case "whiteout":
+            page.drawRectangle({
+              x: pdfX,
+              y: pdfY,
+              width: pdfW,
+              height: pdfH,
+              color: rgb(1, 1, 1), // White
+              borderColor: rgb(1, 1, 1),
+            });
+            break;
           case "rectangle":
             page.drawRectangle({
               x: pdfX,
@@ -531,6 +586,9 @@ export default function EditPdfPage() {
     };
   }, [isEdited, editedFileBlob]);
 
+  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.1, 3.0));
+  const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.3));
+
   const goBack = () => {
     setIsEditingMode(false);
     // Don't clear instructions or file, just mode
@@ -568,7 +626,25 @@ export default function EditPdfPage() {
             .tools-panel { width: 100% !important; position: static !important; margin-bottom: 1.5rem; }
             .tool-grid { grid-template-columns: repeat(3, 1fr) !important; }
             .color-grid { grid-template-columns: repeat(4, 1fr) !important; }
-            .pdf-viewer-container { height: 500px !important; }
+            .pdf-viewer-container { 
+              height: 500px !important; 
+              padding: 1rem !important; 
+              overflow-x: auto !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              box-sizing: border-box !important;
+            }
+            .pdf-viewer-container {
+              height: 500px !important;
+              padding: 1rem !important;
+              overflow-x: auto !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              box-sizing: border-box !important;
+            }
+            .pdf-pages-wrapper {
+              align-items: flex-start !important;
+            }
           }
         `}</style>
 
@@ -600,6 +676,15 @@ export default function EditPdfPage() {
           </button>
           <h1 style={{ fontSize: "clamp(1.2rem, 4vw, 1.5rem)", margin: 0 }}>Edit Your PDF</h1>
           <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginRight: "1rem", backgroundColor: "white", padding: "0.4rem", borderRadius: "5px", border: "1px solid #ccc" }}>
+              <button onClick={handleZoomOut} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }} title="Zoom Out">
+                <PiMagnifyingGlassMinus size={20} />
+              </button>
+              <span style={{ fontSize: "0.9rem", minWidth: "3rem", textAlign: "center" }}>{Math.round(scale * 100)}%</span>
+              <button onClick={handleZoomIn} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }} title="Zoom In">
+                <PiMagnifyingGlassPlus size={20} />
+              </button>
+            </div>
             <button
               onClick={downloadEditedPdf}
               style={{
@@ -692,25 +777,13 @@ export default function EditPdfPage() {
               </div>
             )}
 
-            {/* Text Input */}
+            {/* Text Input - Instructions only now */}
             {isAnnotating && selectedTool === "text" && (
               <div style={{ marginBottom: "2rem" }}>
-                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Text Content</h4>
-                <input
-                  type="text"
-                  placeholder="Enter text to add"
-                  value={textContent}
-                  onChange={(e) => setTextContent(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    border: "1px solid #ccc",
-                    borderRadius: "5px",
-                    marginBottom: "0.5rem",
-                    fontSize: "clamp(0.85rem, 2.5vw, 1rem)",
-                    boxSizing: "border-box",
-                  }}
-                />
+                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Text Options</h4>
+                <p style={{ fontSize: "0.8rem", color: "#666", marginBottom: "0.5rem" }}>
+                  Click anywhere on the PDF to start typing. Click existing text to edit.
+                </p>
                 <div style={{ marginBottom: "0.5rem" }}>
                   <label style={{ fontSize: "clamp(0.8rem, 2vw, 0.9rem)", marginBottom: "0.3rem", display: "block" }}>
                     Font Size: {fontSize}px
@@ -754,8 +827,8 @@ export default function EditPdfPage() {
           </div>
 
           {/* PDF Pages List */}
-          <div style={{ flex: 1, minWidth: 0, backgroundColor: "#e2e2e2", padding: "2rem", borderRadius: "8px", height: "80vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "2rem", alignItems: "center" }}>
+          <div className="pdf-viewer-container" style={{ flex: 1, minWidth: 0, backgroundColor: "#e2e2e2", padding: "2rem", borderRadius: "8px", height: "80vh", overflowY: "auto" }}>
+            <div className="pdf-pages-wrapper" style={{ display: "flex", flexDirection: "column", gap: "2rem", alignItems: "center" }}>
               {pages.map(pageNum => (
                 <div
                   key={pageNum}
@@ -834,32 +907,75 @@ export default function EditPdfPage() {
                                   transformOrigin: "left center",
                                   // rotation would be needed for real arrows
                                 };
+                              case "whiteout":
+                                return {
+                                  backgroundColor: "white",
+                                  border: "1px solid #eee"
+                                };
                               default:
                                 return {};
                             }
                           })(),
                         }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (annotation.type === "text") {
+                            setEditingAnnotationId(annotation.id);
+                          }
+                        }}
                       >
                         {annotation.type === "text" && (
                           <div style={{ position: "relative", width: "100%", height: "100%" }}>
-                            <span style={{ cursor: "text" }}>{annotation.content}</span>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); removeAnnotation(annotation.id); }}
-                              style={{
-                                position: "absolute",
-                                top: "-10px",
-                                right: "-10px",
-                                background: "red",
-                                color: "white",
-                                borderRadius: "50%",
-                                width: "16px",
-                                height: "16px",
-                                fontSize: "10px",
-                                border: "none",
-                                cursor: "pointer",
-                                display: "flex", alignItems: "center", justifyContent: "center"
-                              }}
-                            >x</button>
+                            {editingAnnotationId === annotation.id ? (
+                              <textarea
+                                autoFocus
+                                value={annotation.content}
+                                onChange={(e) => updateAnnotationText(annotation.id, e.target.value)}
+                                onBlur={() => {
+                                  setEditingAnnotationId(null);
+                                  if (!annotation.content?.trim()) {
+                                    removeAnnotation(annotation.id);
+                                  }
+                                }}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  border: "1px dashed #007bff",
+                                  background: "transparent",
+                                  color: annotation.color,
+                                  fontSize: `${annotation.fontSize}px`,
+                                  fontFamily: "inherit",
+                                  padding: 0,
+                                  resize: "none",
+                                  overflow: "hidden",
+                                  outline: "none",
+                                }}
+                                onMouseDown={(e) => e.stopPropagation()} // Prevent dragging setup
+                              />
+                            ) : (
+                              <span style={{ cursor: "text", display: "inline-block", minWidth: "20px", minHeight: "20px" }}>{annotation.content || "Type here..."}</span>
+                            )}
+
+                            {editingAnnotationId !== annotation.id && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); removeAnnotation(annotation.id); }}
+                                style={{
+                                  position: "absolute",
+                                  top: "-10px",
+                                  right: "-10px",
+                                  background: "red",
+                                  color: "white",
+                                  borderRadius: "50%",
+                                  width: "16px",
+                                  height: "16px",
+                                  fontSize: "10px",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  zIndex: 5
+                                }}
+                              >x</button>
+                            )}
                           </div>
                         )}
                         {annotation.type !== "text" && (
@@ -914,8 +1030,19 @@ export default function EditPdfPage() {
   return (
     <div>
       <Navbar />
+      <style>{`
+        @media (max-width: 1024px) {
+          .upload-container {
+            flex-direction: column !important;
+            padding: 0 1rem !important;
+          }
+          .ad-column {
+            display: none !important;
+          }
+        }
+      `}</style>
 
-      <div style={{
+      <div className="upload-container" style={{
         display: "flex",
         maxWidth: "1400px",
         margin: "4rem auto",
@@ -924,7 +1051,9 @@ export default function EditPdfPage() {
         alignItems: "flex-start"
       }}>
         {/* Left Ad */}
-        <VerticalAdLeft />
+        <div className="ad-column">
+          <VerticalAdLeft />
+        </div>
 
         {/* Main Content */}
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
@@ -1316,7 +1445,9 @@ export default function EditPdfPage() {
         </div>
 
         {/* Right Ad */}
-        <VerticalAdRight />
+        <div className="ad-column">
+          <VerticalAdRight />
+        </div>
       </div>
 
       {/* URL Input Modal */}
