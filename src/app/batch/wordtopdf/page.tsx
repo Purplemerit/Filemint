@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Navbar from "../../components/Navbar";
+import VerticalAdLeft from "../../components/Verticaladleft";
+import VerticalAdRight from "../../components/Verticaladright";
+import { PiCheckCircle, PiFileDoc, PiTrash, PiCloudArrowUp } from "react-icons/pi";
 
 export default function DocToPdfPage() {
   const [files, setFiles] = useState<File[]>([]);
@@ -95,146 +98,161 @@ export default function DocToPdfPage() {
 
       <Navbar />
 
-      <div style={{ maxWidth: "900px", margin: "4rem auto", padding: "0 2rem" }}>
-        <h1 style={{ fontSize: "2rem", marginBottom: "2rem" }}>
-          Convert DOC/DOCX to PDF (Batch)
-        </h1>
+      <div className="main-layout">
+        <VerticalAdLeft />
 
-        {error && (
-          <div
-            style={{
-              backgroundColor: "#ffe6e6",
-              padding: "1rem",
-              borderRadius: "5px",
-              marginBottom: "1rem",
-              color: "#d00",
-            }}
-          >
-            {error}
-          </div>
-        )}
+        <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
+          <h1 className="tool-title">
+            Batch Word to PDF
+          </h1>
 
-        <div
-          onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
-          style={{
-            border: "2px dashed #90EE90",
-            backgroundColor: "#f0fff0",
-            borderRadius: "10px",
-            padding: "4rem",
-            textAlign: "center",
-            marginBottom: "2rem",
-          }}
-        >
-          <i
-            className="fas fa-cloud-upload-alt"
-            style={{ fontSize: "3rem", color: "#888" }}
-          ></i>
-          <p style={{ marginTop: "1rem", marginBottom: "1rem" }}>
-            Drag and drop DOC/DOCX files here (batch supported)
-          </p>
-          <label
-            htmlFor="fileInput"
-            style={{
-              backgroundColor: "white",
-              padding: "0.5rem 1rem",
-              border: "1px solid #ccc",
-              borderRadius: "5px",
-              cursor: "pointer",
-              display: "inline-block",
-            }}
-          >
-            Select Files
-            <input
-              id="fileInput"
-              type="file"
-              accept=".doc,.docx"
-              multiple={true}
-              onChange={handleFileChange}
-              style={{ display: "none" }}
-            />
-          </label>
-        </div>
-
-        {files.length > 0 && (
-          <div style={{ marginBottom: "2rem" }}>
-            {files.map((file, index) => (
-              <div
-                key={index}
-                style={{
-                  backgroundColor: "#f9f9f9",
-                  padding: "0.75rem 1rem",
-                  borderRadius: "5px",
-                  marginBottom: "0.5rem",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <span>
-                  <i
-                    className="fas fa-file-word"
-                    style={{ color: "#007bff", marginRight: "0.5rem" }}
-                  ></i>
-                  {file.name}
-                </span>
-                <button
-                  onClick={() => removeFile(index)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#c00",
-                    cursor: "pointer",
-                    fontSize: "1rem",
-                  }}
-                >
-                  <i className="fas fa-trash-alt"></i>
-                </button>
-              </div>
-            ))}
-
-            <button
-              onClick={handleConvert}
-              disabled={isConverting}
+          {error && (
+            <div
               style={{
-                marginTop: "1rem",
-                backgroundColor: isConverting ? "#ccc" : "#007bff",
-                color: "white",
-                border: "none",
-                padding: "0.6rem 1.2rem",
-                borderRadius: "5px",
-                cursor: isConverting ? "not-allowed" : "pointer",
-                fontSize: "1rem",
+                backgroundColor: "#ffe6e6",
+                padding: "1rem",
+                borderRadius: "10px",
+                marginBottom: "1.5rem",
+                color: "#d00",
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.9rem'
               }}
             >
-              <i className="fas fa-arrow-right" style={{ marginRight: "0.5rem" }}></i>
-              {isConverting ? "Converting..." : "Convert to PDF"}
-            </button>
+              <i className="fas fa-exclamation-circle"></i>
+              {error}
+            </div>
+          )}
+
+          <div
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+            className="drop-zone-container"
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <PiCloudArrowUp size={64} style={{ color: "#888", marginBottom: '1rem' }} />
+            <p style={{ marginTop: "1rem", marginBottom: "1.5rem", fontSize: '1.1rem', color: '#444' }}>
+              Drag & drop DOC/DOCX files here
+            </p>
+            <label
+              htmlFor="fileInput"
+              className="primary-btn"
+              style={{
+                padding: "0.8rem 2rem",
+                fontSize: "1rem",
+                display: "inline-block",
+                cursor: 'pointer'
+              }}
+            >
+              Select Files
+              <input
+                id="fileInput"
+                type="file"
+                accept=".doc,.docx"
+                multiple={true}
+                onChange={handleFileChange}
+                style={{ display: "none" }}
+              />
+            </label>
           </div>
-        )}
 
-        <div style={{ marginTop: "3rem" }}>
-          <p style={{ marginBottom: "1rem", fontSize: "0.95rem" }}>
-            Easily convert multiple DOC, DOCX files to PDF in one go!
-          </p>
-        </div>
+          {files.length > 0 && (
+            <div style={{ marginBottom: "2rem" }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                {files.map((file, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      backgroundColor: "white",
+                      padding: "1rem",
+                      borderRadius: "12px",
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                      border: '1px solid #eee',
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
+                      <PiFileDoc size={24} style={{ color: "#2b579a", flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.9rem', color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {file.name}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => removeFile(index)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#dc2626",
+                        cursor: "pointer",
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <PiTrash size={20} />
+                    </button>
+                  </div>
+                ))}
+              </div>
 
-        <div
-          style={{
-            marginTop: "3rem",
-            padding: "1.5rem",
-            backgroundColor: "#f0f9ff",
-            border: "1px solid #cce5ff",
-            borderRadius: "10px",
-            fontSize: "0.95rem",
-          }}
-        >
-          <strong>Private. Encrypted. Automatically Deleted.</strong>
-          <p style={{ marginTop: "0.5rem" }}>
-            Every document you upload is encrypted and automatically deleted after 2 hours.
-            Your data stays yours—always.
-          </p>
+              <div style={{ textAlign: 'center' }}>
+                <button
+                  onClick={handleConvert}
+                  disabled={isConverting}
+                  className="primary-btn"
+                  style={{
+                    padding: "1rem 3rem",
+                    fontSize: "1.1rem",
+                    opacity: isConverting ? 0.7 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                  }}
+                >
+                  {isConverting ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      Convert to PDF
+                      <PiCheckCircle size={22} />
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div style={{ marginTop: "3rem", fontFamily: 'Georgia, serif' }}>
+            <p style={{ marginBottom: "1rem", fontSize: "1rem", color: "#555" }}>
+              Easily convert multiple DOC, DOCX files to PDF in one go with high fidelity.
+            </p>
+          </div>
+
+          <div
+            style={{
+              marginTop: "3rem",
+              padding: "2rem",
+              backgroundColor: "#f0f9ff",
+              border: "1px solid #cce5ff",
+              borderRadius: "12px",
+              fontSize: "0.95rem",
+              fontFamily: 'Georgia, serif'
+            }}
+          >
+            <strong style={{ fontSize: '1.1rem', color: '#0369a1' }}>Private. Encrypted. Automatically Deleted.</strong>
+            <p style={{ marginTop: "0.75rem", color: "#555", lineHeight: '1.6' }}>
+              Every document you upload is encrypted and automatically deleted after 2 hours.
+              Your data stays yours—always. We process thousands of files daily with zero data retention.
+            </p>
+          </div>
         </div>
+        <VerticalAdRight />
       </div>
     </div>
   );

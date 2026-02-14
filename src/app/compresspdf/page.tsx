@@ -109,7 +109,8 @@ export default function CompressPdfPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Compression failed");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Compression failed");
       }
 
       const reductionPercent = parseInt(response.headers.get("X-Reduction-Percent") || "0");
@@ -266,14 +267,7 @@ export default function CompressPdfPage() {
 
         {/* Main Content */}
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
-          <h1 style={{
-            fontSize: "2rem",
-            fontWeight: "600",
-            marginBottom: "2rem",
-            textAlign: "left",
-            color: "#1a1a1a",
-            fontFamily: 'Georgia, "Times New Roman", serif',
-          }}>
+          <h1 className="tool-title">
             Compress PDF
           </h1>
 
@@ -283,57 +277,6 @@ export default function CompressPdfPage() {
             onDragOver={(e) => e.preventDefault()}
             className="drop-zone-container"
           >
-            <style>{`
-              .main-layout {
-                display: flex;
-                max-width: 1400px;
-                margin: 2rem auto;
-                padding: 0 1rem;
-                gap: 2rem;
-                align-items: flex-start;
-              }
-              .drop-zone-container {
-                border: 3px solid rgba(144, 238, 144, 0.5);
-                backgroundColor: rgba(144, 238, 144, 0.2);
-                border-radius: 12px;
-                padding: 2rem;
-                text-align: center;
-                margin-bottom: 2rem;
-                position: relative;
-                min-height: 280px;
-                width: 100%;
-                box-sizing: border-box;
-              }
-              .stats-container {
-                display: none; /* Removed as requested */
-              }
-              @media (max-width: 1024px) {
-                .main-layout {
-                  flex-direction: column;
-                  margin: 1rem auto;
-                }
-                .ad-column {
-                  display: none !important;
-                }
-                h1 {
-                  font-size: 1.5rem !important;
-                  text-align: center !important;
-                }
-              }
-              @media (max-width: 640px) {
-                .drop-zone-container {
-                  padding: 1rem;
-                }
-                .action-buttons {
-                  flex-direction: column;
-                  width: 100%;
-                }
-                .action-buttons button {
-                  width: 100%;
-                  justify-content: center;
-                }
-              }
-            `}</style>
 
             {isCompressed ? (
               /* Success State - Download */

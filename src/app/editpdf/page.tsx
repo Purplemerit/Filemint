@@ -543,7 +543,7 @@ export default function EditPdfPage() {
 
     try {
       const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
+      const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
       const docPages = pdfDoc.getPages();
       for (const annotation of annotations) {
         if (annotation.page > docPages.length || annotation.page < 1) continue;

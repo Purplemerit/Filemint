@@ -365,7 +365,7 @@ export default function SplitPdfPage() {
       const { PDFDocument } = window.PDFLib;
 
       const arrayBuffer = await pdfFile!.arrayBuffer();
-      const originalPdf = await PDFDocument.load(arrayBuffer);
+      const originalPdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
 
       const blobs: Blob[] = [];
 
@@ -1081,27 +1081,13 @@ export default function SplitPdfPage() {
     <div>
       <Navbar />
 
-      <div style={{
-        display: "flex",
-        maxWidth: "1400px",
-        margin: "4rem auto",
-        padding: "0 2rem",
-        gap: "2rem",
-        alignItems: "flex-start"
-      }}>
+      <div className="main-layout">
         {/* Left Ad */}
         <VerticalAdLeft />
 
         {/* Main Content */}
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
-          <h1 style={{
-            fontSize: "2rem",
-            fontWeight: "600",
-            marginBottom: "2rem",
-            textAlign: "left",
-            color: "#1a1a1a",
-            fontFamily: 'Georgia, "Times New Roman", serif',
-          }}>
+          <h1 className="tool-title">
             Split PDF
           </h1>
 
@@ -1109,16 +1095,7 @@ export default function SplitPdfPage() {
           <div
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
-            style={{
-              border: "3px solid rgba(57, 185, 57, 0.4)",
-              backgroundColor: "rgba(144, 238, 144, 0.2)",
-              borderRadius: "12px",
-              padding: "2rem",
-              textAlign: "center",
-              marginBottom: "2rem",
-              position: "relative",
-              minHeight: "280px",
-            }}
+            className="drop-zone-container"
           >
             {!pdfFile ? (
               /* Empty State */
