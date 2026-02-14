@@ -81,7 +81,9 @@ export default function HomePage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+
           minHeight: "90vh",
+
           gap: 0,
           flexWrap: "wrap",
           position: "relative",
@@ -262,7 +264,7 @@ export default function HomePage() {
       .text-section {
         margin: 0 !important;
         margin-left: 0 !important;
-        padding: 12vh 8vw !important;
+        padding: 6vh 8vw !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
         position: relative;
@@ -302,7 +304,7 @@ export default function HomePage() {
       </main>
       <AdBanner />
       {/* Popular Tools Section */}
-      <section style={{ padding: "0", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
+      <section style={{ padding: "1.5rem 0 0 0", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
         <h2
           className="section-title"
           style={{
@@ -551,21 +553,20 @@ export default function HomePage() {
         >
           <h2
             style={{
-              fontSize: isMobile ? "1.5rem" : "2.8rem",
+              fontSize: "2.8rem",
               fontWeight: "520",
               color: "#111",
-              lineHeight: "1.2",
+              marginBottom: "0.5rem",
             }}
           >
             Advanced Tools
           </h2>
           <p
             style={{
-              fontSize: isMobile ? "1.5rem" : "2.8rem",
+              fontSize: "2.8rem",
               fontWeight: "520",
               color: "#111",
-              marginTop: isMobile ? "0.5rem" : "-25px",
-              lineHeight: "1.2",
+              marginTop: "0.5rem",
             }}
           >
             Made Simple (and Free)
