@@ -7,6 +7,8 @@ import { promisify } from "util";
 import os from "os";
 import sharp from "sharp";
 import { inflate } from "zlib";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 
 const execAsync = promisify(exec);
 const inflateAsync = promisify(inflate);
@@ -21,8 +23,46 @@ async function hasQpdf(): Promise<boolean> {
 }
 
 /**
+ * Attempts to 'unlock' or 'repair' a restricted PDF by re-printing it via Puppeteer.
+ */
+async function repairPdf(buffer: Buffer): Promise<Buffer> {
+  let browser = null;
+  try {
+    const isLambda = !!process.env.AWS_LAMBDA_FUNCTION_VERSION;
+    const executablePath = isLambda
+      ? await chromium.executablePath()
+      : (process.platform === 'win32'
+        ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+        : puppeteer.executablePath());
+
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath,
+      headless: true,
+    });
+
+    const page = await browser.newPage();
+    const dataUrl = `data:application/pdf;base64,${buffer.toString('base64')}`;
+    await page.goto(dataUrl, { waitUntil: "networkidle0", timeout: 30000 });
+
+    const repairedPdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: 0, right: 0, bottom: 0, left: 0 }
+    });
+
+    return Buffer.from(repairedPdf);
+  } catch (err) {
+    console.error("PDF Repair failed:", err);
+    throw err;
+  } finally {
+    if (browser) await (browser as any).close();
+  }
+}
+
+/**
  * Aggressively compresses a PDF by enumerating and re-compressing ALL image objects in the file.
- * This is the most thorough way to reduce size as it catches images hidden in any part of the PDF structure.
  */
 async function aggressiveCompress(inputBuffer: Buffer): Promise<Buffer> {
   const pdfDoc = await PDFDocument.load(inputBuffer, { ignoreEncryption: true });
@@ -52,51 +92,36 @@ async function aggressiveCompress(inputBuffer: Buffer): Promise<Buffer> {
         (filter instanceof PDFArray && (filter as any).asArray().map((v: any) => v.toString()).includes('/DCTDecode'));
 
       if (isDCT) {
-        // Re-compress existing JPEG
         compressedData = await sharp(rawData)
           .resize(1000, null, { withoutEnlargement: true })
           .jpeg({ quality: 20, mozjpeg: true })
           .toBuffer();
       }
       else if (filter?.toString() === '/FlateDecode' && width > 0 && height > 0) {
-        // Unpack raw pixels from Flate (common in scans)
         try {
           const decompressed = await inflateAsync(rawData);
-
           let channels = 3;
           if (colorSpace?.toString() === '/DeviceGray') channels = 1;
 
-          // Attempt to wrap as raw pixels. If it fails (e.g. predictor encoding), Sharp will throw and we skip.
           compressedData = await sharp(decompressed, {
             raw: { width, height, channels: channels as 1 | 2 | 3 | 4 }
           })
             .resize(1000, null, { withoutEnlargement: true })
             .jpeg({ quality: 20, mozjpeg: true })
             .toBuffer();
-        } catch (e) {
-          // Decompression or raw parsing failed, skip this image
-          continue;
-        }
+        } catch (e) { continue; }
       }
 
       if (compressedData && compressedData.length < rawData.length * 0.8) {
-        // OVERWRITE the stream content in place
         (object as any).contents = new Uint8Array(compressedData);
-
-        // Update metadata for the new JPEG format
         dict.set(PDFName.of('Filter'), PDFName.of('DCTDecode'));
         dict.set(PDFName.of('ColorSpace'), PDFName.of('DeviceRGB'));
         dict.set(PDFName.of('BitsPerComponent'), PDFNumber.of(8));
-        dict.delete(PDFName.of('DecodeParams')); // Remove old compression params
-
+        dict.delete(PDFName.of('DecodeParams'));
         compressedCount++;
       }
-    } catch (err) {
-      // Silent skip for complex/proprietary image formats
-    }
+    } catch (err) { }
   }
-
-  console.log(`[Aggressive] Re-compressed ${compressedCount} image objects.`);
 
   return Buffer.from(await pdfDoc.save({
     useObjectStreams: true,
@@ -114,12 +139,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    const inputBuffer = Buffer.from(await file.arrayBuffer());
+    let inputBuffer = Buffer.from(await file.arrayBuffer());
     console.log(`[Compress] Start: ${inputBuffer.length} bytes`);
 
-    let outputBuffer = await aggressiveCompress(inputBuffer);
+    let outputBuffer;
+    try {
+      // Diagnostic load to check for XFA before aggressive processing
+      const pdf = await PDFDocument.load(inputBuffer, { ignoreEncryption: true });
+      try {
+        if ((pdf.getForm() as any).getXFA && (pdf.getForm() as any).getXFA()) {
+          throw new Error("Adobe XFA forms are not supported for aggressive compression.");
+        }
+      } catch (e: any) { if (e.message.includes("XFA")) throw e; }
 
-    // Final structural pass with qpdf if available
+      outputBuffer = await aggressiveCompress(inputBuffer);
+    } catch (err: any) {
+      console.warn(`Block detected for ${file.name}, attempting repair...`);
+      try {
+        const repaired = await repairPdf(inputBuffer);
+        outputBuffer = await aggressiveCompress(repaired);
+      } catch (repairErr: any) {
+        return NextResponse.json({
+          error: `"${file.name}": ${err.message || "The document is secured with a password or uses an unsupported format"}. Please remove security first.`
+        }, { status: 500 });
+      }
+    }
+
     const qpdfAvailable = await hasQpdf();
     if (qpdfAvailable && outputBuffer.length < inputBuffer.length) {
       const uploadDir = os.tmpdir();
@@ -135,9 +180,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Safety: If somehow it got bigger, force original
     if (outputBuffer.length >= inputBuffer.length) {
-      console.log("[Compress] No reduction achieved, returning original.");
       outputBuffer = inputBuffer;
     }
 
@@ -146,14 +189,13 @@ export async function POST(req: NextRequest) {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="compressed_${file.name}"`,
-        "Content-Length": outputBuffer.length.toString(),
       },
     });
 
   } catch (error: any) {
-    console.error("Compression error:", error);
+    console.error("Compression global error:", error);
     return NextResponse.json({
-      error: `Compression failed: ${error.message || "Invalid or protected PDF"}. Try removing security or optimizing the PDF first.`
+      error: `Compression failed: ${error.message}`
     }, { status: 500 });
   }
 }
