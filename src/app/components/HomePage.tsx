@@ -236,6 +236,7 @@ export default function HomePage() {
         padding: 0;
         width: 100%;
         max-width: 100vw;
+        min-height: auto !important;
       }
 
       .floating {
@@ -264,9 +265,7 @@ export default function HomePage() {
       .text-section {
         margin: 0 !important;
         margin-left: 0 !important;
-        padding: 6vh 8vw !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
+        padding: 4vh 1rem !important;
         position: relative;
         z-index: 2;
         background: transparent;
