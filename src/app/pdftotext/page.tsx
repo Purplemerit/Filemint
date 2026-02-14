@@ -5,14 +5,15 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { TbShare3 } from "react-icons/tb";
-import { 
-  PiFiles, 
-  PiLink, 
-  PiClipboard, 
+import {
+  PiFiles,
+  PiLink,
+  PiClipboard,
   PiCaretDown,
   PiUploadSimple,
   PiCheckCircle,
-  PiX
+  PiX,
+  PiPlus
 } from "react-icons/pi";
 import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import ShareModal from "../components/ShareModal";
@@ -25,80 +26,307 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import { v4 as uuidv4 } from 'uuid';
+import JSZip from 'jszip';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+interface FileWithId {
+  id: string;
+  file: File;
+  status: 'idle' | 'extracting' | 'completed' | 'error';
+  text?: string;
+  error?: string;
+}
+
+function SortableFileCard({
+  item,
+  onRemove,
+}: {
+  item: FileWithId;
+  onRemove: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1000 : "auto",
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        ...style,
+        display: "flex",
+        alignItems: "center",
+        gap: "0.5rem",
+      }}
+      {...attributes}
+      {...listeners}
+    >
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "8px",
+          width: "120px",
+          height: "140px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          position: "relative",
+        }}
+      >
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(item.id);
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          style={{
+            position: "absolute",
+            top: "4px",
+            right: "4px",
+            background: "white",
+            border: "1px solid #ddd",
+            borderRadius: "50%",
+            width: "22px",
+            height: "22px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            zIndex: 2,
+          }}
+        >
+          <PiX size={14} />
+        </button>
+
+        <img
+          src="./pdf.svg"
+          alt="PDF"
+          style={{ width: "35px", height: "45px", marginBottom: "0.5rem" }}
+        />
+        <span
+          style={{
+            fontSize: "0.65rem",
+            color: "#666",
+            maxWidth: "100px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            padding: "0 0.5rem",
+            textAlign: "center"
+          }}
+        >
+          {item.file.name}
+        </span>
+
+        {item.status === 'extracting' && (
+          <div style={{
+            position: 'absolute',
+            bottom: '0',
+            left: '0',
+            height: '4px',
+            width: '100%',
+            backgroundColor: '#f3f3f3',
+            borderRadius: '0 0 8px 8px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              height: '100%',
+              width: '50%',
+              backgroundColor: '#e11d48',
+              animation: 'loading 1s linear infinite'
+            }}></div>
+          </div>
+        )}
+
+        {item.status === 'completed' && (
+          <div style={{
+            position: 'absolute',
+            top: 2,
+            left: 2,
+            color: '#2e7d32'
+          }}>
+            <PiCheckCircle size={18} />
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes loading {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(200%); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function PdfToTextPage() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<FileWithId[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const { token, isLoading } = useAuth();
-  const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [textBlob, setTextBlob] = useState<Blob | null>(null);
+  const [zipBlob, setZipBlob] = useState<Blob | null>(null);
   const instructionData = toolData["pdf-to-text"];
 
-  const [isConverting, setIsConverting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [textResult, setTextResult] = useState<string | null>(null);
+  const [isConvertingBatch, setIsConvertingBatch] = useState(false);
+  const [isConverted, setIsConverted] = useState(false);
 
-  const handleConvert = async () => {
-    if (!file) {
-      setError("Please select a PDF file.");
-      return;
-    }
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
-    setIsConverting(true);
-    setError(null);
-    setTextResult(null);
-
-    const formData = new FormData();
-    formData.append("files", file);
-
-    try {
-      const res = await fetch("/api/pdftotext", {
-        method: "POST",
-        body: formData,
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setFiles((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
       });
-
-      if (!res.ok) throw new Error("Conversion failed.");
-
-      const text = await res.text();
-      setTextResult(text);
-      
-      // Create blob for sharing
-      const blob = new Blob([text], { type: "text/plain" });
-      setTextBlob(blob);
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
-    } finally {
-      setIsConverting(false);
     }
   };
 
-  const downloadText = () => {
-    if (!textResult) return;
-    
-    const blob = new Blob([textResult], { type: "text/plain" });
-    const url = window.URL.createObjectURL(blob);
+  const addFiles = (newFiles: File[]) => {
+    const validFiles = newFiles.filter(f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
+    if (validFiles.length < newFiles.length) {
+      alert("Only PDF files are supported.");
+    }
+    const filesWithIds: FileWithId[] = validFiles.map(f => ({
+      id: uuidv4(),
+      file: f,
+      status: 'idle'
+    }));
+    setFiles(prev => [...prev, ...filesWithIds]);
+  };
+
+  const removeFile = (id: string) => {
+    setFiles(prev => prev.filter(f => f.id !== id));
+  };
+
+  const handleConvertBatch = async () => {
+    if (files.length === 0) return;
+
+    setIsConvertingBatch(true);
+    setIsConverted(false);
+    setZipBlob(null);
+
+    const extractionPromises = files.map(async (fileData) => {
+      setFiles(prev => prev.map(f => f.id === fileData.id ? { ...f, status: 'extracting' } : f));
+
+      try {
+        const formData = new FormData();
+        formData.append("files", fileData.file);
+
+        const response = await fetch("/api/pdftotext", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) throw new Error("Extraction failed");
+
+        const text = await response.text();
+        setFiles(prev => prev.map(f => f.id === fileData.id ? { ...f, status: 'completed', text } : f));
+        return { id: fileData.id, text, name: fileData.file.name };
+      } catch (err) {
+        setFiles(prev => prev.map(f => f.id === fileData.id ? { ...f, status: 'error', error: 'Failed' } : f));
+        return null;
+      }
+    });
+
+    const results = await Promise.all(extractionPromises);
+    const successfulResults = results.filter((r): r is { id: string; text: string; name: string } => r !== null);
+
+    if (successfulResults.length > 0) {
+      if (successfulResults.length === 1) {
+        setZipBlob(new Blob([successfulResults[0].text], { type: "text/plain" }));
+      } else {
+        const zip = new JSZip();
+        successfulResults.forEach(res => {
+          const fileName = res.name.replace(/\.[^/.]+$/, "") + ".txt";
+          zip.file(fileName, res.text);
+        });
+        const content = await zip.generateAsync({ type: "blob" });
+        setZipBlob(content);
+      }
+      setIsConverted(true);
+    }
+
+    setIsConvertingBatch(false);
+  };
+
+  const handleDownload = () => {
+    if (!zipBlob) return;
+    const url = window.URL.createObjectURL(zipBlob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "extracted-text.txt";
+    a.download = files.length > 1 ? "extracted_text_files.zip" : `extracted_${files[0].file.name.replace(/\.[^/.]+$/, "")}.txt`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+  };
+
+  const handleReset = () => {
+    setFiles([]);
+    setZipBlob(null);
+    setIsConverted(false);
+  };
+
+  const handleCopyOne = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Text copied to clipboard!");
+    } catch (err) {
+      alert("Failed to copy text");
+    }
   };
 
   const { openPicker: openGoogleDrivePicker } = useGoogleDrivePicker({
     onFilePicked: (file) => {
-      setFile(file);
+      addFiles([file]);
       setIsDropdownOpen(false);
     },
   });
 
   const { openPicker: openDropboxPicker } = useDropboxPicker({
     onFilePicked: (file) => {
-      setFile(file);
+      addFiles([file]);
       setIsDropdownOpen(false);
     },
   });
@@ -115,59 +343,29 @@ export default function PdfToTextPage() {
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === "application/pdf") {
-      setFile(droppedFile);
-      setError(null);
-    } else {
-      setError("Only PDF files are supported.");
-    }
+    addFiles(Array.from(e.dataTransfer.files));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    if (selected && selected.type === "application/pdf") {
-      setFile(selected);
-      setError(null);
-    } else {
-      setError("Only PDF files are supported.");
-    }
+    if (e.target.files) addFiles(Array.from(e.target.files));
     setIsDropdownOpen(false);
   };
 
-  const handleFromDevice = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handlePasteUrl = () => {
-    setShowUrlModal(true);
-    setIsDropdownOpen(false);
-  };
+  const handleFromDevice = () => fileInputRef.current?.click();
+  const handlePasteUrl = () => { setShowUrlModal(true); setIsDropdownOpen(false); };
 
   const handleUrlSubmit = async () => {
     if (!urlInput.trim()) return;
-    
     try {
       setIsUploading(true);
       const response = await fetch(urlInput);
       const blob = await response.blob();
-      
-      if (blob.type !== "application/pdf") {
-        alert("URL must point to a PDF file");
-        return;
-      }
-      
+      if (blob.type !== "application/pdf") { alert("URL must point to a PDF"); return; }
       const fileName = urlInput.split("/").pop() || "downloaded.pdf";
-      const file = new File([blob], fileName, { type: "application/pdf" });
-      setFile(file);
+      addFiles([new File([blob], fileName, { type: "application/pdf" })]);
       setUrlInput("");
       setShowUrlModal(false);
-      setError(null);
-    } catch (error) {
-      alert("Failed to fetch PDF from URL");
-    } finally {
-      setIsUploading(false);
-    }
+    } catch (error) { alert("Failed to fetch PDF"); } finally { setIsUploading(false); }
   };
 
   const handleFromClipboard = async () => {
@@ -176,31 +374,12 @@ export default function PdfToTextPage() {
       for (const item of clipboardItems) {
         if (item.types.includes("application/pdf")) {
           const blob = await item.getType("application/pdf");
-          const file = new File([blob], "clipboard.pdf", { type: "application/pdf" });
-          setFile(file);
-          setError(null);
+          addFiles([new File([blob], "clipboard.pdf", { type: "application/pdf" })]);
           break;
         }
       }
-    } catch (error) {
-      alert("No PDF found in clipboard or clipboard access denied");
-    }
+    } catch (e) { alert("No PDF in clipboard"); }
     setIsDropdownOpen(false);
-  };
-
-  const removeFile = () => {
-    setFile(null);
-    setTextBlob(null);
-    setTextResult(null);
-    setError(null);
-  };
-
-  const handleShare = () => {
-    if (!textBlob) {
-      alert("Please extract the text first before sharing");
-      return;
-    }
-    setShowShareModal(true);
   };
 
   const menuItems = [
@@ -215,507 +394,96 @@ export default function PdfToTextPage() {
     <div>
       <Navbar />
 
-      <div style={{
-        display: "flex",
-        maxWidth: "1400px",
-        margin: "4rem auto",
-        padding: "0 2rem",
-        gap: "2rem",
-        alignItems: "flex-start"
-      }}>
-        {/* Left Ad */}
+      <div style={{ display: "flex", maxWidth: "1400px", margin: "4rem auto", padding: "0 2rem", gap: "2rem", alignItems: "flex-start" }}>
         <VerticalAdLeft />
 
-        {/* Main Content */}
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
-        <h1 style={{ 
-          fontSize: "2rem", 
-          fontWeight: "600",
-          marginBottom: "2rem",
-          textAlign: "left",
-          color: "#1a1a1a",
-          fontFamily: 'Georgia, "Times New Roman", serif',
-        }}>
-          PDF to Text
-        </h1>
+          <h1 style={{ fontSize: "2rem", fontWeight: "600", marginBottom: "2rem", color: "#1a1a1a", fontFamily: 'Georgia, serif' }}>PDF to Text</h1>
 
-        {/* Drop Zone */}
-        <div
-          onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
-          style={{
-            border: "3px solid rgba(216, 121, 253, 0.5)",
-            backgroundColor: "rgb(243, 230, 255)",
-            borderRadius: "12px",
-            padding: "2rem",
-            textAlign: "center",
-            marginBottom: "2rem",
-            position: "relative",
-            minHeight: "280px",
-          }}
-        >
-          {!file ? (
-            /* Empty State */
-            <div style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "300px",
-              minHeight: "220px",
-            }}>
-              <div style={{ marginBottom: "1.5rem" }}>
-                <img src="./upload.svg" alt="Upload Icon" />
-              </div>
-
-              <div ref={dropdownRef} style={{ position: "relative" }}>
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  style={{
-                    backgroundColor: "white",
-                    padding: "0.6rem 1rem",
-                    border: "1px solid #e0e0e0",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.9rem",
-                    fontWeight: "500",
-                    color: "#333",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <PiFiles size={18} />
-                  Select File
-                  <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
+          <div onDrop={handleDrop} onDragOver={(e) => e.preventDefault()} style={{ border: "3px solid rgba(216, 121, 253, 0.5)", backgroundColor: "rgb(243, 230, 255)", borderRadius: "12px", padding: "2rem", textAlign: "center", marginBottom: "2rem", position: "relative", minHeight: "280px" }}>
+            {isConverted ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "1.5rem" }}>
+                <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: "#e8f5e9", display: "flex", alignItems: "center", justifyContent: "center", color: "#2e7d32" }}>
+                  <PiCheckCircle size={48} />
+                </div>
+                <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0 }}>Extraction Complete!</h2>
+                <button onClick={handleDownload} style={{ backgroundColor: "#e11d48", color: "white", padding: "1rem 2.5rem", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600", border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)" }}>
+                  Download {files.length > 1 ? "All (ZIP)" : "Text File"}
                 </button>
+                <div style={{ display: "flex", gap: "1rem" }}>
+                  <button onClick={() => setShowShareModal(true)} style={{ background: "transparent", color: "#666", border: "1px solid #ccc", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}><TbShare3 /> Share</button>
+                  <button onClick={handleReset} style={{ background: "transparent", color: "#666", border: "1px solid #ccc", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer" }}>Start Over</button>
+                </div>
 
-                {isDropdownOpen && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 4px)",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      backgroundColor: "white",
-                      border: "1px solid #e0e0e0",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      zIndex: 1000,
-                      minWidth: "180px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {menuItems.map((item, index) => (
-                      <button
-                        key={index}
-                        onClick={item.onClick}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.75rem",
-                          padding: "0.7rem 1rem",
-                          width: "100%",
-                          border: "none",
-                          backgroundColor: "transparent",
-                          cursor: "pointer",
-                          fontSize: "0.85rem",
-                          color: "#333",
-                          textAlign: "left",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f5f5f5";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }}
-                      >
-                        <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
-                          {item.icon}
-                        </span>
-                        {item.label}
-                      </button>
-                    ))}
+                {files.length === 1 && files[0].text && (
+                  <div style={{ marginTop: '2rem', textAlign: 'left', width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <h3 style={{ margin: 0, fontSize: '1rem' }}>Preview extracted text:</h3>
+                      <button onClick={() => handleCopyOne(files[0].text!)} style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', cursor: 'pointer', border: '1px solid #ddd', borderRadius: '4px', background: 'white' }}>Copy Text</button>
+                    </div>
+                    <pre style={{ background: 'white', padding: '1rem', borderRadius: '8px', maxHeight: '200px', overflowY: 'auto', whiteSpace: 'pre-wrap', border: '1px solid #ddd', fontSize: '0.8rem' }}>{files[0].text}</pre>
                   </div>
                 )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  onChange={handleFileChange}
-                  style={{ display: "none" }}
-                />
               </div>
-            </div>
-          ) : (
-            /* File Uploaded State */
-            <div>
-              <div style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "0.5rem",
-                marginBottom: "1.5rem",
-              }}>
-                <button
-                  onClick={handleConvert}
-                  disabled={isConverting}
-                  style={{
-                    backgroundColor: isConverting ? "#ccc" : "#2196f3",
-                    color: "white",
-                    border: "none",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    cursor: isConverting ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.85rem",
-                    fontWeight: "500",
-                    opacity: isConverting ? 0.7 : 1,
-                  }}
-                >
-                  {isConverting ? "Extracting..." : "Extract Text"}
-                </button>
-                {textResult && (
-                  <>
-                    <button
-                      onClick={downloadText}
-                      style={{
-                        backgroundColor: "#28a745",
-                        color: "white",
-                        border: "none",
-                        padding: "0.5rem 1rem",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                        fontSize: "0.85rem",
-                        fontWeight: "500",
-                      }}
-                    >
-                      Download Text
-                    </button>
-                    <button
-                      onClick={handleShare}
-                      style={{
-                        backgroundColor: "white",
-                        color: "#333",
-                        border: "1px solid #e0e0e0",
-                        padding: "0.5rem 1rem",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                        fontSize: "0.85rem",
-                        fontWeight: "500",
-                      }}
-                    >
-                      <TbShare3 />
-                      Share
-                    </button>
-                  </>
-                )}
-              </div>
-
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}>
-                <div
-                  style={{
-                    backgroundColor: "white",
-                    borderRadius: "8px",
-                    width: "120px",
-                    height: "140px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                    position: "relative",
-                  }}
-                >
-                  <button
-                    onClick={removeFile}
-                    style={{
-                      position: "absolute",
-                      top: "4px",
-                      right: "4px",
-                      background: "rgba(255, 255, 255, 1)",
-                      border: "none",
-                      borderRadius: "50%",
-                      width: "25px",
-                      height: "25px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      color: "black",
-                    }}
-                  >
-                    <PiX size={35} />
+            ) : files.length === 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "300px" }}>
+                <div style={{ marginBottom: "1.5rem" }}><img src="./upload.svg" alt="Upload" /></div>
+                <div ref={dropdownRef} style={{ position: "relative" }}>
+                  <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ backgroundColor: "white", padding: "0.6rem 1rem", border: "1px solid #e0e0e0", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", color: "#333", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+                    <PiFiles size={18} /> Select Files <PiCaretDown size={14} />
                   </button>
-                  
-                  <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
-                  <span style={{ 
-                    fontSize: "0.65rem", 
-                    color: "#666", 
-                    maxWidth: "100px", 
-                    overflow: "hidden", 
-                    textOverflow: "ellipsis", 
-                    whiteSpace: "nowrap",
-                    padding: "0 0.5rem"
-                  }}>
-                    {file.name}
-                  </span>
+                  {isDropdownOpen && (
+                    <div style={{ position: "absolute", top: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", backgroundColor: "white", border: "1px solid #e0e0e0", borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", zIndex: 1000, minWidth: "180px" }}>
+                      {menuItems.map((item, i) => <button key={i} onClick={item.onClick} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.7rem 1rem", width: "100%", background: "transparent", border: "none", cursor: "pointer", fontSize: "0.85rem", textAlign: "left" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f5f5f5'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}><span style={{ color: "#666" }}>{item.icon}</span> {item.label}</button>)}
+                    </div>
+                  )}
+                  <input ref={fileInputRef} type="file" multiple accept="application/pdf" onChange={handleFileChange} style={{ display: "none" }} />
                 </div>
               </div>
-
-              {error && (
-                <p style={{ 
-                  color: "#dc2626", 
-                  fontSize: "0.85rem", 
-                  marginTop: "1rem",
-                  textAlign: "center"
-                }}>
-                  {error}
-                </p>
-              )}
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "0.75rem",
-                  marginTop: "1.5rem",
-                  opacity: 0.4,
-                }}
-              >
-                <PiUploadSimple size={18} />
-                <PiLink size={18} />
-                <FaGoogleDrive size={16} />
-                <FaDropbox size={16} />
-                <PiClipboard size={18} />
+            ) : (
+              <div>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginBottom: "1.5rem" }}>
+                  <button onClick={handleFromDevice} style={{ backgroundColor: "white", border: "1px solid #ddd", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.5rem" }}><PiPlus /> Add More</button>
+                  <button onClick={handleConvertBatch} disabled={isConvertingBatch} style={{ backgroundColor: "#e11d48", color: "white", border: "none", padding: "0.5rem 1.5rem", borderRadius: "6px", cursor: isConvertingBatch ? "not-allowed" : "pointer", fontSize: "0.85rem", fontWeight: "600", opacity: isConvertingBatch ? 0.7 : 1 }}>{isConvertingBatch ? "Extracting..." : `Extract ${files.length} Files`}</button>
+                </div>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={files.map(f => f.id)} strategy={rectSortingStrategy}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
+                      {files.map(item => <SortableFileCard key={item.id} item={item} onRemove={removeFile} />)}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               </div>
-            </div>
-          )}
-
-          {!file && (
-            <div
-              style={{
-                position: "absolute",
-                right: "1rem",
-                top: "90%",
-                transform: "translateY(-50%)",
-                display: "flex",
-                gap: "0.5rem",
-                opacity: 0.4,
-              }}
-            >
-              <PiUploadSimple size={20} />
-              <PiLink size={20} />
-              <FaGoogleDrive size={18} />
-              <FaDropbox size={18} />
-              <PiClipboard size={20} />
-            </div>
-          )}
-        </div>
-
-        {/* Text Result Display */}
-        {textResult && (
-          <div
-            style={{
-              backgroundColor: "#f8f9fa",
-              padding: "1.5rem",
-              borderRadius: "10px",
-              marginBottom: "2rem",
-              border: "1px solid #e0e0e0",
-            }}
-          >
-            <h2 style={{ 
-              fontSize: "1.2rem", 
-              marginBottom: "1rem",
-              fontFamily: 'Georgia, "Times New Roman", serif',
-              fontWeight: "600"
-            }}>
-              Extracted Text:
-            </h2>
-            <div
-              style={{
-                backgroundColor: "white",
-                padding: "1rem",
-                borderRadius: "5px",
-                fontFamily: "monospace",
-                fontSize: "0.85rem",
-                maxHeight: "400px",
-                overflowY: "auto",
-                border: "1px solid #ddd",
-                whiteSpace: "pre-wrap",
-                wordWrap: "break-word",
-              }}
-            >
-              {textResult}
-            </div>
+            )}
           </div>
-        )}
 
-        {/* Info Section */}
-        <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
-          <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
-            Extract plain text from your PDF files for easy editing and analysis with our seamless online tool.
-          </p>
-          <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
-            {[
-              "Extract all text content from PDFs",
-              "Works on any device — desktop, tablet, or mobile",
-              "Trusted by users worldwide for secure and fast extraction"
-            ].map((text, index) => (
-              <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
-                {text}
-              </li>
-            ))}
-          </ul>
+          <div style={{ marginTop: "3rem", fontFamily: 'Georgia, serif' }}>
+            <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>Extract plain text from multiple PDFs simultaneously with high-speed parallel processing.</p>
+            <ul style={{ listStyleType: "none", padding: 0 }}>
+              {["Extract text from multiple files", "Supports any PDF structure", "Secure and private extraction"].map((t, i) => <li key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}><PiCheckCircle size={18} style={{ color: "green" }} /> {t}</li>)}
+            </ul>
+          </div>
         </div>
 
-        {/* Security Section */}
-        <div
-          style={{
-            marginTop: "3rem",
-            padding: "1.5rem",
-            backgroundColor: "#f0f9ff",
-            border: "1px solid #cce5ff",
-            borderRadius: "10px",
-            fontSize: "0.95rem",
-            fontFamily: 'Georgia, "Times New Roman", serif',
-          }}
-        >
-          <strong>Protected. Encrypted. Automatically Deleted.</strong>
-          <p style={{ marginTop: "0.5rem", color: "#555" }}>
-            For years, our platform has helped users convert and manage files
-            securely—with no file tracking, no storage, and full privacy. Every
-            document you upload is encrypted and automatically deleted after 2
-            hours. Your data stays yours—always.
-          </p>
-          <div
-            style={{
-              marginTop: "1rem",
-              display: "flex",
-              justifyContent: "space-around",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "1rem",
-              filter: "grayscale(100%)",
-            }}
-          >
-            <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
-            <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
-            <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
-            <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />          </div>
-        </div>
-        </div>
-
-        {/* Right Ad */}
         <VerticalAdRight />
       </div>
 
-      {/* URL Input Modal */}
       {showUrlModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2000,
-          }}
-          onClick={() => setShowUrlModal(false)}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "2rem",
-              borderRadius: "10px",
-              width: "90%",
-              maxWidth: "500px",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }} onClick={() => setShowUrlModal(false)}>
+          <div style={{ background: "white", padding: "2rem", borderRadius: "10px", width: "90%", maxWidth: "500px" }} onClick={e => e.stopPropagation()}>
             <h3 style={{ marginBottom: "1rem" }}>Paste PDF URL</h3>
-            <input
-              type="url"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="https://example.com/document.pdf"
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #ccc",
-                borderRadius: "6px",
-                fontSize: "0.9rem",
-                marginBottom: "1rem",
-                boxSizing: "border-box",
-              }}
-            />
+            <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-              <button
-                onClick={() => setShowUrlModal(false)}
-                style={{
-                  padding: "0.5rem 1rem",
-                  border: "1px solid #ccc",
-                  borderRadius: "6px",
-                  backgroundColor: "white",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUrlSubmit}
-                disabled={isUploading}
-                style={{
-                  padding: "0.5rem 1rem",
-                  border: "none",
-                  borderRadius: "6px",
-                  backgroundColor: "#007bff",
-                  color: "white",
-                  cursor: isUploading ? "not-allowed" : "pointer",
-                  opacity: isUploading ? 0.7 : 1,
-                }}
-              >
-                {isUploading ? "Loading..." : "Add PDF"}
-              </button>
+              <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
+              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#e11d48", color: "white", borderRadius: "6px", opacity: isUploading ? 0.7 : 1 }}>{isUploading ? "Loading..." : "Add"}</button>
             </div>
           </div>
         </div>
       )}
 
-      <ToolInstructions 
-        title={instructionData.title} 
-        steps={instructionData.steps} 
-      />
-      <Testimonials 
-        title="What Our Users Say"
-        testimonials={testimonialData.testimonials}
-        autoScrollInterval={3000} 
-      />
-      <ShareModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        fileBlob={textBlob}
-        fileName="extracted-text.txt"
-      />
+      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} fileBlob={zipBlob} fileName={files.length > 1 ? "extracted_text.zip" : "extracted.txt"} />
+      <ToolInstructions title={instructionData.title} steps={instructionData.steps as any} />
+      <Testimonials title="What Users Say" testimonials={testimonialData.testimonials} autoScrollInterval={3000} />
       <Footer />
     </div>
   );

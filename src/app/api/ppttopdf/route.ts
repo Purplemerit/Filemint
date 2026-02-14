@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await pptFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Extract slide text
+    // Extract slide text using original AdmZip method from GitHub
     const zip = new AdmZip(buffer);
     const slideFiles = zip
       .getEntries()
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       )
       .sort((a, b) => a.entryName.localeCompare(b.entryName, undefined, { numeric: true }));
 
-    const slideTitles: string[] = [];
+    const slideContents: string[] = [];
     for (const slide of slideFiles) {
       const xml = slide.getData().toString("utf8");
       const matches = xml.match(/<a:t>([^<]+)<\/a:t>/g);
@@ -47,40 +47,109 @@ export async function POST(req: NextRequest) {
           .map((m) => m.replace(/<\/?a:t>/g, ""))
           .map(escapeHtml)
           .join(" ");
-        slideTitles.push(text);
+        slideContents.push(text);
       } else {
-        slideTitles.push("Untitled Slide");
+        slideContents.push("");
       }
     }
 
+    // "PROPER FORMAT" Presentation Template
+    // Restored original logic but with high-fidelity slide styling
     const html = `
+      <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="UTF-8">
           <style>
-            body { font-family: Arial, sans-serif; padding: 2rem; }
-            .slide {
-              page-break-after: always;
-              border: 2px solid #ccc;
-              padding: 2rem;
-              margin-bottom: 2rem;
-              border-radius: 10px;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+            
+            body { 
+              margin: 0; 
+              padding: 0; 
+              background: #f0f2f5; 
+              font-family: 'Inter', sans-serif;
             }
-            h2 { margin-top: 0; color: #d9534f; }
+
+            .slide {
+              width: 11in;
+              height: 8.5in;
+              background: white;
+              margin: 20px auto;
+              padding: 60px;
+              box-sizing: border-box;
+              display: flex;
+              flex-direction: column;
+              justify-content: flex-start;
+              position: relative;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+              page-break-after: always;
+              border-radius: 4px;
+              overflow: hidden;
+            }
+
+            .slide::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 8px;
+              background: linear-gradient(90deg, #d9534f, #f0ad4e);
+            }
+
+            .slide-number {
+              position: absolute;
+              bottom: 30px;
+              right: 40px;
+              color: #999;
+              font-size: 14px;
+            }
+
+            h2 { 
+              font-size: 32px; 
+              color: #2c3e50; 
+              margin-bottom: 40px;
+              border-bottom: 2px solid #eee;
+              padding-bottom: 10px;
+              font-weight: 700;
+            }
+
+            p { 
+              font-size: 18px; 
+              line-height: 1.6; 
+              color: #444; 
+              white-space: pre-wrap;
+              word-wrap: break-word;
+            }
+
+            @page {
+              size: 11in 8.5in;
+              margin: 0;
+            }
+
+            @media print {
+              body { background: white; }
+              .slide { margin: 0; box-shadow: none; border: none; border-radius: 0; }
+            }
           </style>
         </head>
         <body>
-          ${slideTitles
-            .map(
-              (title, i) =>
-                `<div class="slide"><h2>Slide ${i + 1}</h2><p>${title}</p></div>`
-            )
-            .join("")}
+          ${slideContents
+        .map(
+          (text, i) => `
+                <div class="slide">
+                  <h2>Slide ${i + 1}</h2>
+                  <p>${text || "(Empty Slide)"}</p>
+                  <div class="slide-number">${i + 1} / ${slideContents.length}</div>
+                </div>
+              `
+        )
+        .join("")}
         </body>
       </html>
     `;
 
-    // ✅ Determine environment
+    // Determine environment (Restored from GitHub version)
     const isLocal = process.env.NODE_ENV === "development";
 
     if (isLocal) {
@@ -93,21 +162,31 @@ export async function POST(req: NextRequest) {
       puppeteer = core.default;
     }
 
-    // ✅ Launch browser
+    // Launch browser (Restored from GitHub version)
     const browser = isLocal
-      ? await puppeteer.launch({ headless: true }) // full puppeteer includes chromium
+      ? await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"]
+      })
       : await puppeteer.launch({
-          args: chromium.args,
-          defaultViewport: chromium.defaultViewport,
-          executablePath: await chromium.executablePath(),
-          headless: chromium.headless,
-        });
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+      });
 
     const page = await browser.newPage();
+    await page.setViewport({ width: 1100, height: 850 });
     await page.setContent(html, { waitUntil: "networkidle0" });
 
     tempPdfPath = path.join(tmpdir(), `ppt-${Date.now()}.pdf`);
-    await page.pdf({ path: tempPdfPath, format: "A4" });
+    await page.pdf({
+      path: tempPdfPath,
+      printBackground: true,
+      margin: { top: 0, right: 0, bottom: 0, left: 0 },
+      preferCSSPageSize: true
+    });
+
     await browser.close();
 
     const pdfBuffer = await fs.promises.readFile(tempPdfPath);
@@ -115,15 +194,19 @@ export async function POST(req: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": 'attachment; filename="converted.pdf"',
+        "Content-Disposition": 'attachment; filename="presentation_converted.pdf"',
       },
     });
   } catch (error: any) {
     console.error("Error during PowerPoint to PDF conversion:", error);
     return NextResponse.json({ error: `Conversion failed: ${error.message}` }, { status: 500 });
   } finally {
-    if (tempPdfPath && fs.existsSync(tempPdfPath)) {
-      await fs.promises.unlink(tempPdfPath);
+    try {
+      if (tempPdfPath && fs.existsSync(tempPdfPath)) {
+        await fs.promises.unlink(tempPdfPath);
+      }
+    } catch (cleanupError) {
+      console.error("Error cleaning up PDF temp file:", cleanupError);
     }
   }
 }

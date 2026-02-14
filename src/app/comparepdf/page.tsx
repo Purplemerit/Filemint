@@ -145,7 +145,7 @@ export default function ComparePdfPage() {
   // --- Upload Handlers (Shared) ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2) => {
     const f = e.target.files?.[0];
-    if (f?.type === "application/pdf") {
+    if (f && (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"))) {
       num === 1 ? setPdf1(f) : setPdf2(f);
     }
     num === 1 ? setIsDropdown1Open(false) : setIsDropdown2Open(false);
@@ -153,7 +153,9 @@ export default function ComparePdfPage() {
   const handleDrop = (e: React.DragEvent, num: 1 | 2) => {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
-    if (f?.type === "application/pdf") num === 1 ? setPdf1(f) : setPdf2(f);
+    if (f && (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"))) {
+      num === 1 ? setPdf1(f) : setPdf2(f);
+    }
   };
   const handleUrlSubmit = async () => {
     if (!urlInput.trim()) return;
@@ -161,7 +163,7 @@ export default function ComparePdfPage() {
     try {
       const res = await fetch(urlInput);
       const blob = await res.blob();
-      if (blob.type !== "application/pdf") return alert("Not JPG");
+      if (blob.type !== "application/pdf") return alert("Not PDF");
       const f = new File([blob], "downloaded.pdf", { type: "application/pdf" });
       activeUpload === 1 ? setPdf1(f) : setPdf2(f);
       setShowUrlModal(false);
@@ -194,7 +196,7 @@ export default function ComparePdfPage() {
           </div>
         ) : (
           <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
-            <button onClick={() => setOpen(!isOpen)} style={{ padding: "0.8rem 1.5rem", background: "#007bff", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <button onClick={() => setOpen(!isOpen)} style={{ padding: "0.8rem 1.5rem", background: "#e11d48", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <PiUploadSimple size={20} /> Select File <PiCaretDown />
             </button>
             {isOpen && (
@@ -205,7 +207,7 @@ export default function ComparePdfPage() {
                 <button onClick={num === 1 ? openDB1 : openDB2} style={{ display: "block", width: "100%", padding: "10px", textAlign: "left", border: "none", background: "white", cursor: "pointer" }}>Dropbox</button>
               </div>
             )}
-            <input ref={inputRef} type="file" accept="application/pdf" onChange={(e) => handleFileChange(e, num)} style={{ display: "none" }} />
+            <input ref={inputRef} type="file" accept="application/pdf,.pdf" onChange={(e) => handleFileChange(e, num)} style={{ display: "none" }} />
           </div>
         )}
       </div>
@@ -247,7 +249,7 @@ export default function ComparePdfPage() {
                 <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
                   <button onClick={reset} style={{ background: "transparent", border: "1px solid #666", color: "white", padding: "0.5rem 1rem", borderRadius: "4px", cursor: "pointer" }}>Upload New</button>
                   <div style={{ display: "flex", backgroundColor: "#444", borderRadius: "4px", overflow: "hidden" }}>
-                    <button onClick={() => setViewMode("side-by-side")} style={{ padding: "0.5rem", background: viewMode === "side-by-side" ? "#007bff" : "transparent", color: "white", border: "none", cursor: "pointer" }}>Side by Side</button>
+                    <button onClick={() => setViewMode("side-by-side")} style={{ padding: "0.5rem", background: viewMode === "side-by-side" ? "#e11d48" : "transparent", color: "white", border: "none", cursor: "pointer" }}>Side by Side</button>
                   </div>
                 </div>
 
@@ -320,7 +322,7 @@ export default function ComparePdfPage() {
             <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
               <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#007bff", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
+              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#e11d48", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
             </div>
           </div>
         </div>

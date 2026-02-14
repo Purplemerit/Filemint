@@ -116,7 +116,7 @@ export default function SplitPdfPage() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === "application/pdf") {
+    if (droppedFile && (droppedFile.type === "application/pdf" || droppedFile.name.toLowerCase().endsWith(".pdf"))) {
       setPdfFile(droppedFile);
       const url = URL.createObjectURL(droppedFile);
       setPdfUrl(url);
@@ -128,7 +128,7 @@ export default function SplitPdfPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
-    if (selected && selected.type === "application/pdf") {
+    if (selected && (selected.type === "application/pdf" || selected.name.toLowerCase().endsWith(".pdf"))) {
       setPdfFile(selected);
       const url = URL.createObjectURL(selected);
       setPdfUrl(url);
@@ -555,7 +555,7 @@ export default function SplitPdfPage() {
                 onClick={splitPdf}
                 disabled={isProcessing || (splitMode === "extract" && selectedPages.size === 0)}
                 style={{
-                  backgroundColor: isProcessing || (splitMode === "extract" && selectedPages.size === 0) ? "#6c757d" : "#e11d48", // Brand Red
+                  backgroundColor: "#e11d48", // Brand Red
                   color: "white",
                   border: "none",
                   padding: "0.6rem 1.2rem",
@@ -614,6 +614,7 @@ export default function SplitPdfPage() {
             <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
               <button
                 onClick={handleDownload}
+                className="download-button"
                 style={{
                   backgroundColor: "#e11d48",
                   color: "white",
@@ -1227,9 +1228,9 @@ export default function SplitPdfPage() {
                   <button
                     onClick={handleStartEditing}
                     style={{
-                      backgroundColor: "rgba(57, 185, 57, 0.4)",
-                      color: "black",
-                      border: "black",
+                      backgroundColor: "#e11d48",
+                      color: "white",
+                      border: "none",
                       padding: "0.5rem 1rem",
                       borderRadius: "6px",
                       cursor: "pointer",
@@ -1283,7 +1284,7 @@ export default function SplitPdfPage() {
                         color: "black",
                       }}
                     >
-                      <PiX size={35} />
+                      <PiX size={18} />
                     </button>
 
                     <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
@@ -1473,7 +1474,7 @@ export default function SplitPdfPage() {
                   padding: "0.5rem 1rem",
                   border: "none",
                   borderRadius: "6px",
-                  backgroundColor: "#007bff",
+                  backgroundColor: "#e11d48",
                   color: "white",
                   cursor: isUploading ? "not-allowed" : "pointer",
                   opacity: isUploading ? 0.7 : 1,

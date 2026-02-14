@@ -25,16 +25,142 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { PiPlus } from "react-icons/pi";
+
+// Interface for File with ID
+interface FileWithId {
+  id: string;
+  file: File;
+}
+
+// Sortable File Card Component
+function SortableFileCard({
+  item,
+  onRemove,
+}: {
+  item: FileWithId;
+  onRemove: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1000 : "auto",
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        ...style,
+        display: "flex",
+        alignItems: "center",
+        gap: "0.5rem",
+      }}
+      {...attributes}
+      {...listeners}
+    >
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "8px",
+          width: "120px",
+          height: "140px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          position: "relative",
+          cursor: "grab",
+        }}
+      >
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent drag start when clicking delete
+            onRemove(item.id);
+          }}
+          onPointerDown={(e) => e.stopPropagation()} // Prevent drag start
+          style={{
+            position: "absolute",
+            top: "4px",
+            right: "4px",
+            background: "rgba(255, 255, 255, 1)",
+            border: "none",
+            borderRadius: "50%",
+            width: "25px",
+            height: "25px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            color: "black",
+            zIndex: 10,
+          }}
+        >
+          <PiX size={18} />
+        </button>
+
+        <img src="./png.png" alt="PNG Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+        <p
+          style={{
+            fontSize: "0.75rem",
+            color: "#333",
+            textAlign: "center",
+            padding: "0 5px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            width: "100%",
+            margin: 0,
+          }}
+        >
+          {item.file.name}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function PngToPdfPage() {
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<FileWithId[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isAddDropdownOpen, setIsAddDropdownOpen] = useState(false);
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const { token, isLoading } = useAuth();
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const addDropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const addFileInputRef = useRef<HTMLInputElement>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [convertedFileBlob, setConvertedFileBlob] = useState<Blob | null>(null);
   const instructionData = toolData["png-to-pdf"];
@@ -49,7 +175,8 @@ export default function PngToPdfPage() {
     const url = window.URL.createObjectURL(convertedFileBlob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `converted_${files[0]?.name?.replace(/\.[^/.]+$/, "") || "images"}.pdf`;
+    const firstFileName = files[0]?.file?.name?.replace(/\.[^/.]+$/, "") || "images";
+    a.download = `converted_${firstFileName}.pdf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -88,7 +215,7 @@ export default function PngToPdfPage() {
     setError(null);
 
     const formData = new FormData();
-    files.forEach((file) => formData.append("files", file));
+    files.forEach((item) => formData.append("files", item.file));
 
     try {
       const response = await fetch("/api/pngtopdf", {
@@ -118,26 +245,56 @@ export default function PngToPdfPage() {
     }
   };
 
+  const addFiles = (newFiles: File[]) => {
+    const filesWithIds = newFiles.map(file => ({
+      id: crypto.randomUUID(),
+      file
+    }));
+    setFiles(prev => [...prev, ...filesWithIds]);
+  };
+
   const { openPicker: openGoogleDrivePicker } = useGoogleDrivePicker({
     onFilePicked: (file) => {
-      setFiles((prev) => [...prev, file]);
+      addFiles([file]);
       setIsDropdownOpen(false);
+      setIsAddDropdownOpen(false);
     },
-    multiple: true,
   });
 
   const { openPicker: openDropboxPicker } = useDropboxPicker({
     onFilePicked: (file) => {
-      setFiles((prev) => [...prev, file]);
+      addFiles([file]);
       setIsDropdownOpen(false);
+      setIsAddDropdownOpen(false);
     },
-    multiple: true,
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      setFiles((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over?.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
+      }
+      if (addDropdownRef.current && !addDropdownRef.current.contains(event.target as Node)) {
+        setIsAddDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -152,7 +309,9 @@ export default function PngToPdfPage() {
     if (droppedFiles.length < e.dataTransfer.files.length) {
       setError("Only PNG files are supported.");
     }
-    setFiles((prev) => [...prev, ...droppedFiles]);
+    if (droppedFiles.length > 0) {
+      addFiles(droppedFiles);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,18 +322,26 @@ export default function PngToPdfPage() {
       if (selectedFiles.length < e.target.files.length) {
         setError("Only PNG files are supported.");
       }
-      setFiles((prev) => [...prev, ...selectedFiles]);
+      if (selectedFiles.length > 0) {
+        addFiles(selectedFiles);
+      }
     }
     setIsDropdownOpen(false);
+    setIsAddDropdownOpen(false);
   };
 
   const handleFromDevice = () => {
     fileInputRef.current?.click();
   };
 
+  const handleAddFromDevice = () => {
+    addFileInputRef.current?.click();
+  };
+
   const handlePasteUrl = () => {
     setShowUrlModal(true);
     setIsDropdownOpen(false);
+    setIsAddDropdownOpen(false);
   };
 
   const handleUrlSubmit = async () => {
@@ -192,7 +359,7 @@ export default function PngToPdfPage() {
       }
 
       const file = new File([blob], fileName, { type: "image/png" });
-      setFiles((prev) => [...prev, file]);
+      addFiles([file]);
       setUrlInput("");
       setShowUrlModal(false);
       setError(null);
@@ -210,7 +377,7 @@ export default function PngToPdfPage() {
         if (item.types.includes("image/png")) {
           const blob = await item.getType("image/png");
           const file = new File([blob], "clipboard.png", { type: "image/png" });
-          setFiles((prev) => [...prev, file]);
+          addFiles([file]);
           setError(null);
           break;
         }
@@ -219,10 +386,11 @@ export default function PngToPdfPage() {
       alert("No PNG found in clipboard or clipboard access denied");
     }
     setIsDropdownOpen(false);
+    setIsAddDropdownOpen(false);
   };
 
-  const removeFile = (index: number) => {
-    setFiles(files.filter((_, i) => i !== index));
+  const removeFile = (id: string) => {
+    setFiles(files.filter((item) => item.id !== id));
     if (files.length === 1) {
       setConvertedFileBlob(null);
       setIsConverted(false);
@@ -239,11 +407,11 @@ export default function PngToPdfPage() {
   };
 
   const menuItems = [
-    { icon: <PiUploadSimple size={18} />, label: "From Device", onClick: handleFromDevice },
-    { icon: <PiLink size={18} />, label: "Paste URL", onClick: handlePasteUrl },
-    { icon: <FaGoogleDrive size={16} />, label: "Google Drive", onClick: openGoogleDrivePicker },
-    { icon: <FaDropbox size={16} />, label: "Drop Box", onClick: openDropboxPicker },
-    { icon: <PiClipboard size={18} />, label: "From Clipboard", onClick: handleFromClipboard },
+    { icon: <PiUploadSimple size={18} />, label: "From Device", onClick: handleFromDevice, onClickAdd: handleAddFromDevice },
+    { icon: <PiLink size={18} />, label: "Paste URL", onClick: handlePasteUrl, onClickAdd: handlePasteUrl },
+    { icon: <FaGoogleDrive size={16} />, label: "Google Drive", onClick: openGoogleDrivePicker, onClickAdd: openGoogleDrivePicker },
+    { icon: <FaDropbox size={16} />, label: "Drop Box", onClick: openDropboxPicker, onClickAdd: openDropboxPicker },
+    { icon: <PiClipboard size={18} />, label: "From Clipboard", onClick: handleFromClipboard, onClickAdd: handleFromClipboard },
   ];
 
   return (
@@ -322,6 +490,7 @@ export default function PngToPdfPage() {
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                   <button
                     onClick={handleDownload}
+                    className="download-button"
                     style={{
                       backgroundColor: "#e11d48", // Brand color
                       color: "white",
@@ -483,8 +652,8 @@ export default function PngToPdfPage() {
                     onClick={handleConvert}
                     disabled={isConverting}
                     style={{
-                      backgroundColor: "#ffffffff",
-                      color: "Black",
+                      backgroundColor: "#e11d48",
+                      color: "white",
                       border: "none",
                       padding: "0.5rem 1rem",
                       borderRadius: "6px",
@@ -497,22 +666,24 @@ export default function PngToPdfPage() {
                       opacity: isConverting ? 0.7 : 1,
                     }}
                   >
-                    {isConverting ? "Converting..." : "Convert & Download"}
+                    {isConverting ? "Converting..." : "Convert to PDF"}
                   </button>
                   <button
                     onClick={handleShare}
+                    disabled={!isConverted}
                     style={{
                       backgroundColor: "white",
                       color: "#333",
                       border: "1px solid #e0e0e0",
                       padding: "0.5rem 1rem",
                       borderRadius: "6px",
-                      cursor: "pointer",
+                      cursor: !isConverted ? "not-allowed" : "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
                       fontSize: "0.85rem",
                       fontWeight: "500",
+                      opacity: !isConverted ? 0.5 : 1
                     }}
                   >
                     <TbShare3 />
@@ -520,66 +691,137 @@ export default function PngToPdfPage() {
                   </button>
                 </div>
 
-                <div style={{
-                  display: "flex",
-                  gap: "0.75rem",
-                  flexWrap: "wrap",
-                  justifyContent: "center",
-                  maxHeight: "200px",
-                  overflowY: "auto",
-                }}>
-                  {files.map((file, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        backgroundColor: "white",
-                        borderRadius: "8px",
-                        width: "100px",
-                        height: "120px",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                        position: "relative",
-                      }}
-                    >
-                      <button
-                        onClick={() => removeFile(index)}
-                        style={{
-                          position: "absolute",
-                          top: "4px",
-                          right: "4px",
-                          background: "rgba(255, 255, 255, 1)",
-                          border: "none",
-                          borderRadius: "50%",
-                          width: "22px",
-                          height: "22px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                          color: "black",
-                        }}
-                      >
-                        <PiX size={28} />
-                      </button>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={files.map((f) => f.id)}
+                    strategy={rectSortingStrategy}
+                  >
+                    <div style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "0.5rem",
+                      flexWrap: "wrap",
+                      justifyContent: "center",
+                    }}>
+                      {files.map((item, index) => (
+                        <SortableFileCard
+                          key={item.id}
+                          item={item}
+                          onRemove={removeFile}
+                        />
+                      ))}
 
-                      <img src="./png.png" alt="PNG Icon" style={{ width: "35px", height: "40px", marginBottom: "0.5rem" }} />
-                      <span style={{
-                        fontSize: "0.6rem",
-                        color: "#666",
-                        maxWidth: "85px",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        padding: "0 0.25rem"
-                      }}>
-                        {file.name}
-                      </span>
+                      {/* Add Files Card */}
+                      <div ref={addDropdownRef} style={{ position: "relative" }}>
+                        <div
+                          onClick={() => setIsAddDropdownOpen(!isAddDropdownOpen)}
+                          style={{
+                            backgroundColor: "white",
+                            borderRadius: "8px",
+                            width: "120px",
+                            height: "140px",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                            cursor: "pointer",
+                            border: "2px dashed #ccc",
+                            padding: "0.5rem",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "40px",
+                              height: "40px",
+                              border: "2px dashed #3b82f6",
+                              borderRadius: "8px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginBottom: "0.5rem",
+                            }}
+                          >
+                            <PiPlus size={20} style={{ color: "#3b82f6" }} />
+                          </div>
+                          <p style={{
+                            fontSize: "0.55rem",
+                            color: "#000000ff",
+                            marginTop: "0.5rem",
+                            textAlign: "center",
+                            maxWidth: "120px",
+                          }}>
+                            Add more PNG images
+                          </p>
+                        </div>
+
+                        {/* Add Files Dropdown */}
+                        {isAddDropdownOpen && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "calc(100% + 4px)",
+                              left: "50%",
+                              transform: "translateX(-50%)",
+                              backgroundColor: "white",
+                              border: "1px solid #e0e0e0",
+                              borderRadius: "8px",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                              zIndex: 1000,
+                              minWidth: "180px",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {menuItems.map((item, index) => (
+                              <button
+                                key={index}
+                                onClick={item.onClickAdd}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.75rem",
+                                  padding: "0.7rem 1rem",
+                                  width: "100%",
+                                  border: "none",
+                                  backgroundColor: "transparent",
+                                  cursor: "pointer",
+                                  fontSize: "0.85rem",
+                                  color: "#333",
+                                  textAlign: "left",
+                                  transition: "background-color 0.2s",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = "#f5f5f5";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = "transparent";
+                                }}
+                              >
+                                <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
+                                  {item.icon}
+                                </span>
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        <input
+                          ref={addFileInputRef}
+                          type="file"
+                          accept=".png"
+                          multiple
+                          onChange={handleFileChange}
+                          style={{ display: "none" }}
+                        />
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  </SortableContext>
+                </DndContext>
 
                 {error && (
                   <p style={{

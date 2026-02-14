@@ -127,7 +127,7 @@ export default function PdfToPngPage() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === "application/pdf") {
+    if (droppedFile && (droppedFile.type === "application/pdf" || droppedFile.name.toLowerCase().endsWith(".pdf"))) {
       setFile(droppedFile);
       setError(null);
     } else {
@@ -137,7 +137,7 @@ export default function PdfToPngPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
-    if (selected && selected.type === "application/pdf") {
+    if (selected && (selected.type === "application/pdf" || selected.name.toLowerCase().endsWith(".pdf"))) {
       setFile(selected);
       setError(null);
     } else {
@@ -404,6 +404,7 @@ export default function PdfToPngPage() {
                   <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                     <button
                       onClick={handleDownload}
+                      className="download-button"
                       style={{
                         backgroundColor: "#e11d48", // Brand color
                         color: "white",
@@ -564,7 +565,7 @@ export default function PdfToPngPage() {
                       onClick={handleConvert}
                       disabled={isConverting}
                       style={{
-                        backgroundColor: isConverting ? "#ccc" : "#4caf50",
+                        backgroundColor: "#e11d48",
                         color: "white",
                         border: "none",
                         padding: "0.5rem 1rem",
@@ -579,29 +580,29 @@ export default function PdfToPngPage() {
                       }}
                     >
                       <PiImage size={18} />
-                      {isConverting ? `Converting... ${progress}%` : "Convert & Download"}
+                      {isConverting ? `Converting... ${progress}%` : "Convert to PNG"}
                     </button>
-                    {convertedFileBlob && (
-                      <button
-                        onClick={handleShare}
-                        style={{
-                          backgroundColor: "white",
-                          color: "#333",
-                          border: "1px solid #e0e0e0",
-                          padding: "0.5rem 1rem",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          fontSize: "0.85rem",
-                          fontWeight: "500",
-                        }}
-                      >
-                        <TbShare3 />
-                        Share
-                      </button>
-                    )}
+                    <button
+                      onClick={handleShare}
+                      disabled={!convertedFileBlob}
+                      style={{
+                        backgroundColor: "white",
+                        color: "#333",
+                        border: "1px solid #e0e0e0",
+                        padding: "0.5rem 1rem",
+                        borderRadius: "6px",
+                        cursor: !convertedFileBlob ? "not-allowed" : "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.85rem",
+                        fontWeight: "500",
+                        opacity: !convertedFileBlob ? 0.5 : 1
+                      }}
+                    >
+                      <TbShare3 />
+                      Share
+                    </button>
                   </div>
 
                   <div style={{
@@ -642,7 +643,7 @@ export default function PdfToPngPage() {
                           color: "black",
                         }}
                       >
-                        <PiX size={35} />
+                        <PiX size={18} />
                       </button>
 
                       <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
@@ -884,7 +885,7 @@ export default function PdfToPngPage() {
                   padding: "0.5rem 1rem",
                   border: "none",
                   borderRadius: "6px",
-                  backgroundColor: "#4caf50",
+                  backgroundColor: "#e11d48",
                   color: "white",
                   cursor: isUploading ? "not-allowed" : "pointer",
                   opacity: isUploading ? 0.7 : 1,

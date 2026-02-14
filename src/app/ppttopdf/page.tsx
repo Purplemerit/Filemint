@@ -319,6 +319,7 @@ export default function PptToPdfPage() {
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                   <button
                     onClick={handleDownload}
+                    className="download-button"
                     style={{
                       backgroundColor: "#e11d48", // Brand color
                       color: "white",
@@ -479,8 +480,8 @@ export default function PptToPdfPage() {
                     onClick={handleConvert}
                     disabled={isConverting}
                     style={{
-                      backgroundColor: "#ffffffff",
-                      color: "Black",
+                      backgroundColor: "#e11d48",
+                      color: "white",
                       border: "none",
                       padding: "0.5rem 1rem",
                       borderRadius: "6px",
@@ -493,22 +494,24 @@ export default function PptToPdfPage() {
                       opacity: isConverting ? 0.7 : 1,
                     }}
                   >
-                    {isConverting ? "Converting..." : "Convert & Download"}
+                    {isConverting ? "Converting..." : "Convert to PDF"}
                   </button>
                   <button
                     onClick={handleShare}
+                    disabled={!isConverted}
                     style={{
                       backgroundColor: "white",
                       color: "#333",
                       border: "1px solid #e0e0e0",
                       padding: "0.5rem 1rem",
                       borderRadius: "6px",
-                      cursor: "pointer",
+                      cursor: !isConverted ? "not-allowed" : "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
                       fontSize: "0.85rem",
                       fontWeight: "500",
+                      opacity: !isConverted ? 0.5 : 1
                     }}
                   >
                     <TbShare3 />
@@ -553,7 +556,7 @@ export default function PptToPdfPage() {
                         color: "black",
                       }}
                     >
-                      <PiX size={35} />
+                      <PiX size={18} />
                     </button>
 
                     <img src="./ppt.png" alt="PPT Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />

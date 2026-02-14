@@ -44,6 +44,7 @@ export default function CompressPdfPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [isCompressed, setIsCompressed] = useState(false);
+  const [stats, setStats] = useState<{ original: number; compressed: number; percent: number } | null>(null);
 
   const handleDownload = () => {
     if (!compressedFileBlob) return;
@@ -76,7 +77,16 @@ export default function CompressPdfPage() {
     setFiles([]);
     setCompressedFileBlob(null);
     setIsCompressed(false);
+    setStats(null);
     setError(null);
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const handleCompress = async () => {
@@ -84,14 +94,11 @@ export default function CompressPdfPage() {
       setError("Please upload a PDF file.");
       return;
     }
-    if (files.length > 1) {
-      setError("Only one PDF file can be compressed at a time.");
-      return;
-    }
 
     setIsCompressing(true);
     setError(null);
 
+    const originalSize = files[0].size;
     const formData = new FormData();
     formData.append("file", files[0]);
 
@@ -102,16 +109,21 @@ export default function CompressPdfPage() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Compression failed");
+        throw new Error("Compression failed");
       }
 
+      const reductionPercent = parseInt(response.headers.get("X-Reduction-Percent") || "0");
       const blob = await response.blob();
+
       setCompressedFileBlob(blob);
+      setStats({
+        original: originalSize,
+        compressed: blob.size,
+        percent: reductionPercent
+      });
       setIsCompressed(true);
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
-      setError(errorMessage);
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setIsCompressing(false);
     }
@@ -144,7 +156,7 @@ export default function CompressPdfPage() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files).filter((file) =>
-      file.type === "application/pdf" || file.name.endsWith(".pdf")
+      file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
     );
     if (droppedFiles.length > 0) {
       setFiles([droppedFiles[0]]);
@@ -313,6 +325,34 @@ export default function CompressPdfPage() {
                 <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0, textAlign: "center" }}>
                   PDF Compressed Successfully!
                 </h2>
+
+                {stats && (
+                  <div style={{
+                    display: "flex",
+                    gap: "2rem",
+                    padding: "1rem 2rem",
+                    backgroundColor: "#f9fafb",
+                    borderRadius: "12px",
+                    border: "1px solid #e5e7eb",
+                    marginTop: "0.5rem"
+                  }}>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "0.8rem", color: "#6b7280", textTransform: "uppercase" }}>Original</div>
+                      <div style={{ fontSize: "1.1rem", fontWeight: "600", color: "#374151" }}>{formatSize(stats.original)}</div>
+                    </div>
+                    <div style={{ width: "1px", backgroundColor: "#e5e7eb" }}></div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "0.8rem", color: "#6b7280", textTransform: "uppercase" }}>Compressed</div>
+                      <div style={{ fontSize: "1.1rem", fontWeight: "600", color: "#e11d48" }}>{formatSize(stats.compressed)}</div>
+                    </div>
+                    <div style={{ width: "1px", backgroundColor: "#e5e7eb" }}></div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "0.8rem", color: "#6b7280", textTransform: "uppercase" }}>Savings</div>
+                      <div style={{ fontSize: "1.1rem", fontWeight: "600", color: "#059669" }}>{stats.percent}%</div>
+                    </div>
+                  </div>
+                )}
+
                 <p style={{ color: "#666", textAlign: "center", maxWidth: "400px" }}>
                   Your PDF has been compressed. Download your file below.
                 </p>
@@ -320,6 +360,7 @@ export default function CompressPdfPage() {
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                   <button
                     onClick={handleDownload}
+                    className="download-button"
                     style={{
                       backgroundColor: "#e11d48", // Brand color
                       color: "white",
@@ -485,8 +526,8 @@ export default function CompressPdfPage() {
                     onClick={handleCompress}
                     disabled={isCompressing}
                     style={{
-                      backgroundColor: "#ffffffff",
-                      color: "Black",
+                      backgroundColor: "#e11d48",
+                      color: "white",
                       border: "none",
                       padding: "0.5rem 1rem",
                       borderRadius: "6px",
@@ -499,22 +540,24 @@ export default function CompressPdfPage() {
                       opacity: isCompressing ? 0.7 : 1,
                     }}
                   >
-                    {isCompressing ? "Compressing..." : "Compress & Download"}
+                    {isCompressing ? "Compressing..." : "Compress PDF"}
                   </button>
                   <button
                     onClick={handleShare}
+                    disabled={!compressedFileBlob}
                     style={{
                       backgroundColor: "white",
                       color: "#333",
                       border: "1px solid #e0e0e0",
                       padding: "0.5rem 1rem",
                       borderRadius: "6px",
-                      cursor: "pointer",
+                      cursor: !compressedFileBlob ? "not-allowed" : "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
                       fontSize: "0.85rem",
                       fontWeight: "500",
+                      opacity: !compressedFileBlob ? 0.5 : 1
                     }}
                   >
                     <TbShare3 />
@@ -561,7 +604,7 @@ export default function CompressPdfPage() {
                         color: "black",
                       }}
                     >
-                      <PiX size={35} />
+                      <PiX size={18} />
                     </button>
 
                     <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
@@ -755,7 +798,7 @@ export default function CompressPdfPage() {
                   padding: "0.5rem 1rem",
                   border: "none",
                   borderRadius: "6px",
-                  backgroundColor: "#007bff",
+                  backgroundColor: "#e11d48",
                   color: "white",
                   cursor: isUploading ? "not-allowed" : "pointer",
                   opacity: isUploading ? 0.7 : 1,

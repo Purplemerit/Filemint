@@ -26,8 +26,129 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+// Interface for File with ID
+interface FileWithId {
+  id: string;
+  file: File;
+}
+
+// Sortable File Card Component
+function SortableFileCard({
+  item,
+  onRemove,
+}: {
+  item: FileWithId;
+  onRemove: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1000 : "auto",
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        ...style,
+        display: "flex",
+        alignItems: "center",
+        gap: "0.5rem",
+      }}
+      {...attributes}
+      {...listeners}
+    >
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "8px",
+          width: "120px",
+          height: "140px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          position: "relative",
+          cursor: "grab",
+        }}
+      >
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent drag start when clicking delete
+            onRemove(item.id);
+          }}
+          onPointerDown={(e) => e.stopPropagation()} // Prevent drag start
+          style={{
+            position: "absolute",
+            top: "4px",
+            right: "4px",
+            background: "rgba(255, 255, 255, 1)",
+            border: "none",
+            borderRadius: "50%",
+            width: "25px",
+            height: "25px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            color: "black",
+            zIndex: 10,
+          }}
+        >
+          <PiX size={18} />
+        </button>
+
+        <img src="./jpg.png" alt="Image Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+        <p
+          style={{
+            fontSize: "0.75rem",
+            color: "#333",
+            textAlign: "center",
+            padding: "0 5px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            width: "100%",
+            margin: 0,
+          }}
+        >
+          {item.file.name}
+        </p>
+      </div>
+    </div>
+  );
+}
 export default function JpgToPdfPage() {
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<FileWithId[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isAddDropdownOpen, setIsAddDropdownOpen] = useState(false);
   const [showUrlModal, setShowUrlModal] = useState(false);
@@ -53,7 +174,8 @@ export default function JpgToPdfPage() {
     const url = window.URL.createObjectURL(convertedFileBlob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `converted_${files[0]?.name?.replace(/\.[^/.]+$/, "") || "images"}.pdf`;
+    const firstFileName = files[0]?.file?.name?.replace(/\.[^/.]+$/, "") || "images";
+    a.download = `converted_${firstFileName}.pdf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -92,7 +214,7 @@ export default function JpgToPdfPage() {
     setError(null);
 
     const formData = new FormData();
-    files.forEach((file) => formData.append("files", file));
+    files.forEach((item) => formData.append("files", item.file));
 
     try {
       const response = await fetch("/api/jpgtopdf", {
@@ -122,9 +244,17 @@ export default function JpgToPdfPage() {
     }
   };
 
+  const addFiles = (newFiles: File[]) => {
+    const filesWithIds = newFiles.map(file => ({
+      id: crypto.randomUUID(),
+      file
+    }));
+    setFiles(prev => [...prev, ...filesWithIds]);
+  };
+
   const { openPicker: openGoogleDrivePicker } = useGoogleDrivePicker({
     onFilePicked: (file) => {
-      setFiles((prev) => [...prev, file]);
+      addFiles([file]);
       setIsDropdownOpen(false);
       setIsAddDropdownOpen(false);
     },
@@ -132,11 +262,30 @@ export default function JpgToPdfPage() {
 
   const { openPicker: openDropboxPicker } = useDropboxPicker({
     onFilePicked: (file) => {
-      setFiles((prev) => [...prev, file]);
+      addFiles([file]);
       setIsDropdownOpen(false);
       setIsAddDropdownOpen(false);
     },
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      setFiles((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over?.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -154,17 +303,23 @@ export default function JpgToPdfPage() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files).filter((file) =>
-      file.type === "image/jpeg" || file.type === "image/jpg"
+      file.type === "image/jpeg" || file.type === "image/jpg" ||
+      file.name.toLowerCase().endsWith(".jpg") || file.name.toLowerCase().endsWith(".jpeg")
     );
-    setFiles((prev) => [...prev, ...droppedFiles]);
+    if (droppedFiles.length > 0) {
+      addFiles(droppedFiles);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files).filter((file) =>
-        file.type === "image/jpeg" || file.type === "image/jpg"
+        file.type === "image/jpeg" || file.type === "image/jpg" ||
+        file.name.toLowerCase().endsWith(".jpg") || file.name.toLowerCase().endsWith(".jpeg")
       );
-      setFiles((prev) => [...prev, ...selectedFiles]);
+      if (selectedFiles.length > 0) {
+        addFiles(selectedFiles);
+      }
     }
     setIsDropdownOpen(false);
     setIsAddDropdownOpen(false);
@@ -199,7 +354,7 @@ export default function JpgToPdfPage() {
 
       const fileName = urlInput.split("/").pop() || "downloaded.jpg";
       const file = new File([blob], fileName, { type: "image/jpeg" });
-      setFiles((prev) => [...prev, file]);
+      addFiles([file]);
       setUrlInput("");
       setShowUrlModal(false);
     } catch (error) {
@@ -225,7 +380,7 @@ export default function JpgToPdfPage() {
           if (type.includes("image/jpeg") || type.includes("image/jpg")) {
             const blob = await item.getType(type);
             const file = new File([blob], "clipboard.jpg", { type: "image/jpeg" });
-            setFiles((prev) => [...prev, file]);
+            addFiles([file]);
             break;
           }
         }
@@ -237,8 +392,8 @@ export default function JpgToPdfPage() {
     setIsAddDropdownOpen(false);
   };
 
-  const removeFile = (index: number) => {
-    setFiles(files.filter((_, i) => i !== index));
+  const removeFile = (id: string) => {
+    setFiles(files.filter((item) => item.id !== id));
     setIsConverted(false);
   };
 
@@ -334,6 +489,7 @@ export default function JpgToPdfPage() {
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                   <button
                     onClick={handleDownload}
+                    className="download-button"
                     style={{
                       backgroundColor: "#e11d48", // Brand color
                       color: "white",
@@ -495,8 +651,8 @@ export default function JpgToPdfPage() {
                     onClick={handleConvert}
                     disabled={isConverting}
                     style={{
-                      backgroundColor: "#ffffffff",
-                      color: "Black",
+                      backgroundColor: "#e11d48",
+                      color: "white",
                       border: "none",
                       padding: "0.5rem 1rem",
                       borderRadius: "6px",
@@ -509,22 +665,24 @@ export default function JpgToPdfPage() {
                       opacity: isConverting ? 0.7 : 1,
                     }}
                   >
-                    {isConverting ? "Converting..." : "Convert & Download"}
+                    {isConverting ? "Converting..." : "Convert to PDF"}
                   </button>
                   <button
                     onClick={handleShare}
+                    disabled={!isConverted}
                     style={{
                       backgroundColor: "white",
                       color: "#333",
                       border: "1px solid #e0e0e0",
                       padding: "0.5rem 1rem",
                       borderRadius: "6px",
-                      cursor: "pointer",
+                      cursor: !isConverted ? "not-allowed" : "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
                       fontSize: "0.85rem",
                       fontWeight: "500",
+                      opacity: !isConverted ? 0.5 : 1
                     }}
                   >
                     <TbShare3 />
@@ -532,172 +690,137 @@ export default function JpgToPdfPage() {
                   </button>
                 </div>
 
-                <div style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "0.5rem",
-                  flexWrap: "wrap",
-                  justifyContent: "center",
-                }}>
-                  {files.map((file, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                      }}
-                    >
-                      <div
-                        style={{
-                          backgroundColor: "white",
-                          borderRadius: "8px",
-                          width: "120px",
-                          height: "140px",
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                          position: "relative",
-                        }}
-                      >
-                        <button
-                          onClick={() => removeFile(index)}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={files.map((f) => f.id)}
+                    strategy={rectSortingStrategy}
+                  >
+                    <div style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "0.5rem",
+                      flexWrap: "wrap",
+                      justifyContent: "center",
+                    }}>
+                      {files.map((item, index) => (
+                        <SortableFileCard
+                          key={item.id}
+                          item={item}
+                          onRemove={removeFile}
+                        />
+                      ))}
+
+                      {/* Add Files Card */}
+                      <div ref={addDropdownRef} style={{ position: "relative" }}>
+                        <div
+                          onClick={() => setIsAddDropdownOpen(!isAddDropdownOpen)}
                           style={{
-                            position: "absolute",
-                            top: "4px",
-                            right: "4px",
-                            background: "rgba(255, 255, 255, 1)",
-                            border: "none",
-                            borderRadius: "50%",
-                            width: "25px",
-                            height: "25px",
+                            backgroundColor: "white",
+                            borderRadius: "8px",
+                            width: "120px",
+                            height: "140px",
                             display: "flex",
+                            flexDirection: "column",
                             alignItems: "center",
                             justifyContent: "center",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                             cursor: "pointer",
-                            color: "black",
+                            border: "2px dashed #ccc",
+                            padding: "0.5rem",
                           }}
                         >
-                          <PiX size={35} />
-                        </button>
-
-                        <img src="./jpg.png" alt="Image Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
-                      </div>
-
-                      {index < files.length - 1 && (
-                        <span style={{ fontSize: "1.5rem", color: "#666", fontWeight: "300" }}>
-                          +
-                        </span>
-                      )}
-                    </div>
-                  ))}
-
-                  {/* Add Files Card */}
-                  <div ref={addDropdownRef} style={{ position: "relative" }}>
-                    <div
-                      onClick={() => setIsAddDropdownOpen(!isAddDropdownOpen)}
-                      style={{
-                        backgroundColor: "white",
-                        borderRadius: "8px",
-                        width: "120px",
-                        height: "140px",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                        cursor: "pointer",
-                        border: "2px dashed #ccc",
-                        padding: "0.5rem",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "40px",
-                          height: "40px",
-                          border: "2px dashed #3b82f6",
-                          borderRadius: "8px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          marginBottom: "0.5rem",
-                        }}
-                      >
-                        <PiPlus size={20} style={{ color: "#3b82f6" }} />
-                      </div>
-                      <p style={{
-                        fontSize: "0.55rem",
-                        color: "#000000ff",
-                        marginTop: "0.5rem",
-                        textAlign: "left",
-                        maxWidth: "120px",
-                      }}>
-                        Add more JPG images
-                      </p>
-                    </div>
-
-                    {isAddDropdownOpen && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: "calc(100% + 4px)",
-                          left: "50%",
-                          transform: "translateX(-50%)",
-                          backgroundColor: "white",
-                          border: "1px solid #e0e0e0",
-                          borderRadius: "8px",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                          zIndex: 1000,
-                          minWidth: "180px",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {menuItems.map((item, index) => (
-                          <button
-                            key={index}
-                            onClick={item.onClickAdd}
+                          <div
                             style={{
+                              width: "40px",
+                              height: "40px",
+                              border: "2px dashed #3b82f6",
+                              borderRadius: "8px",
                               display: "flex",
                               alignItems: "center",
-                              gap: "0.75rem",
-                              padding: "0.7rem 1rem",
-                              width: "100%",
-                              border: "none",
-                              backgroundColor: "transparent",
-                              cursor: "pointer",
-                              fontSize: "0.85rem",
-                              color: "#333",
-                              textAlign: "left",
-                              transition: "background-color 0.2s",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#f5f5f5";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = "transparent";
+                              justifyContent: "center",
+                              marginBottom: "0.5rem",
                             }}
                           >
-                            <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
-                              {item.icon}
-                            </span>
-                            {item.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                            <PiPlus size={20} style={{ color: "#3b82f6" }} />
+                          </div>
+                          <p style={{
+                            fontSize: "0.55rem",
+                            color: "#000000ff",
+                            marginTop: "0.5rem",
+                            textAlign: "center",
+                            maxWidth: "120px",
+                          }}>
+                            Add more JPG images
+                          </p>
+                        </div>
 
-                    <input
-                      ref={addFileInputRef}
-                      type="file"
-                      accept=".jpg,.jpeg,image/jpeg"
-                      multiple
-                      onChange={handleFileChange}
-                      style={{ display: "none" }}
-                    />
-                  </div>
-                </div>
+                        {/* Add Files Dropdown */}
+                        {isAddDropdownOpen && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "calc(100% + 4px)",
+                              left: "50%",
+                              transform: "translateX(-50%)",
+                              backgroundColor: "white",
+                              border: "1px solid #e0e0e0",
+                              borderRadius: "8px",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                              zIndex: 1000,
+                              minWidth: "180px",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {menuItems.map((item, index) => (
+                              <button
+                                key={index}
+                                onClick={item.onClickAdd}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.75rem",
+                                  padding: "0.7rem 1rem",
+                                  width: "100%",
+                                  border: "none",
+                                  backgroundColor: "transparent",
+                                  cursor: "pointer",
+                                  fontSize: "0.85rem",
+                                  color: "#333",
+                                  textAlign: "left",
+                                  transition: "background-color 0.2s",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = "#f5f5f5";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = "transparent";
+                                }}
+                              >
+                                <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
+                                  {item.icon}
+                                </span>
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        <input
+                          ref={addFileInputRef}
+                          type="file"
+                          accept=".jpg,.jpeg,image/jpeg"
+                          multiple
+                          onChange={handleFileChange}
+                          style={{ display: "none" }}
+                        />
+                      </div>
+                    </div>
+                  </SortableContext>
+                </DndContext>
 
                 {error && (
                   <p style={{
@@ -810,80 +933,82 @@ export default function JpgToPdfPage() {
       </div>
 
       {/* URL Input Modal */}
-      {showUrlModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2000,
-          }}
-          onClick={() => setShowUrlModal(false)}
-        >
+      {
+        showUrlModal && (
           <div
             style={{
-              backgroundColor: "white",
-              padding: "2rem",
-              borderRadius: "10px",
-              width: "90%",
-              maxWidth: "500px",
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 2000,
             }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={() => setShowUrlModal(false)}
           >
-            <h3 style={{ marginBottom: "1rem" }}>Paste Image URL</h3>
-            <input
-              type="url"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="https://example.com/image.jpg"
+            <div
               style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #ccc",
-                borderRadius: "6px",
-                fontSize: "0.9rem",
-                marginBottom: "1rem",
-                boxSizing: "border-box",
+                backgroundColor: "white",
+                padding: "2rem",
+                borderRadius: "10px",
+                width: "90%",
+                maxWidth: "500px",
               }}
-            />
-            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-              <button
-                onClick={() => setShowUrlModal(false)}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 style={{ marginBottom: "1rem" }}>Paste Image URL</h3>
+              <input
+                type="url"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder="https://example.com/image.jpg"
                 style={{
-                  padding: "0.5rem 1rem",
+                  width: "100%",
+                  padding: "0.75rem",
                   border: "1px solid #ccc",
                   borderRadius: "6px",
-                  backgroundColor: "white",
-                  cursor: "pointer",
+                  fontSize: "0.9rem",
+                  marginBottom: "1rem",
+                  boxSizing: "border-box",
                 }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUrlSubmit}
-                disabled={isUploading}
-                style={{
-                  padding: "0.5rem 1rem",
-                  border: "none",
-                  borderRadius: "6px",
-                  backgroundColor: "#007bff",
-                  color: "white",
-                  cursor: isUploading ? "not-allowed" : "pointer",
-                  opacity: isUploading ? 0.7 : 1,
-                }}
-              >
-                {isUploading ? "Loading..." : "Add Image"}
-              </button>
+              />
+              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => setShowUrlModal(false)}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    border: "1px solid #ccc",
+                    borderRadius: "6px",
+                    backgroundColor: "white",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUrlSubmit}
+                  disabled={isUploading}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    border: "none",
+                    borderRadius: "6px",
+                    backgroundColor: "#007bff",
+                    color: "white",
+                    cursor: isUploading ? "not-allowed" : "pointer",
+                    opacity: isUploading ? 0.7 : 1,
+                  }}
+                >
+                  {isUploading ? "Loading..." : "Add Image"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       <ToolInstructions
         title={instructionData.title}
@@ -901,6 +1026,6 @@ export default function JpgToPdfPage() {
         fileName="converted.pdf"
       />
       <Footer />
-    </div>
+    </div >
   );
 }

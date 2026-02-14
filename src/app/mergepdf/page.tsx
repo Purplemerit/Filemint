@@ -43,16 +43,19 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+// Interface for File with ID
+interface FileWithId {
+  id: string;
+  file: File;
+}
 
 // Sortable File Card Component
 function SortableFileCard({
-  file,
-  index,
+  item,
   onRemove,
 }: {
-  file: File;
-  index: number;
-  onRemove: (index: number) => void;
+  item: FileWithId;
+  onRemove: (id: string) => void;
 }) {
   const {
     attributes,
@@ -61,7 +64,7 @@ function SortableFileCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: file.name + index }); // Use a composite ID to ensure uniqueness if names are same
+  } = useSortable({ id: item.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -100,7 +103,7 @@ function SortableFileCard({
         <button
           onClick={(e) => {
             e.stopPropagation(); // Prevent drag start when clicking delete
-            onRemove(index);
+            onRemove(item.id);
           }}
           onPointerDown={(e) => e.stopPropagation()} // Prevent drag start
           style={{
@@ -141,7 +144,7 @@ function SortableFileCard({
             margin: 0,
           }}
         >
-          {file.name}
+          {item.file.name}
         </p>
       </div>
 
@@ -151,7 +154,7 @@ function SortableFileCard({
 }
 
 export default function MergePdfPage() {
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<FileWithId[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isAddDropdownOpen, setIsAddDropdownOpen] = useState(false);
   const [showUrlModal, setShowUrlModal] = useState(false);
@@ -180,24 +183,32 @@ export default function MergePdfPage() {
 
     if (active.id !== over?.id) {
       setFiles((items) => {
-        const oldIndex = items.findIndex((item, idx) => (item.name + idx) === active.id);
-        const newIndex = items.findIndex((item, idx) => (item.name + idx) === over?.id);
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over?.id);
         return arrayMove(items, oldIndex, newIndex);
       });
     }
   };
 
+  const addFiles = (newFiles: File[]) => {
+    const filesWithIds = newFiles.map(file => ({
+      id: crypto.randomUUID(),
+      file
+    }));
+    setFiles(prev => [...prev, ...filesWithIds]);
+  };
+
   // Close dropdown when clicking outside
   const { openPicker: openGoogleDrivePicker, isLoaded: isGoogleLoaded } = useGoogleDrivePicker({
     onFilePicked: (file) => {
-      setFiles((prev) => [...prev, file]);
+      addFiles([file]);
       setIsDropdownOpen(false);
       setIsAddDropdownOpen(false);
     },
   });
   const { openPicker: openDropboxPicker, isLoaded: isDropboxLoaded } = useDropboxPicker({
     onFilePicked: (file) => {
-      setFiles((prev) => [...prev, file]);
+      addFiles([file]);
       setIsDropdownOpen(false);
       setIsAddDropdownOpen(false);
     },
@@ -237,20 +248,70 @@ export default function MergePdfPage() {
     };
   }, [isMerged, mergedFileBlob]);
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  // Helper to traverse directories
+  const traverseFileTree = async (item: any, fileList: File[]) => {
+    if (item.isFile) {
+      return new Promise<void>((resolve) => {
+        item.file((file: File) => {
+          if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+            fileList.push(file);
+          }
+          resolve();
+        });
+      });
+    } else if (item.isDirectory) {
+      const dirReader = item.createReader();
+      return new Promise<void>((resolve) => {
+        dirReader.readEntries(async (entries: any[]) => {
+          for (const entry of entries) {
+            await traverseFileTree(entry, fileList);
+          }
+          resolve();
+        });
+      });
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const droppedFiles = Array.from(e.dataTransfer.files).filter((file) =>
-      file.type.includes("pdf")
-    );
-    setFiles((prev) => [...prev, ...droppedFiles]);
+    const items = e.dataTransfer.items;
+    const fileList: File[] = [];
+
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        // webkitGetAsEntry is non-standard but supported in most browsers for DnD folders
+        const item = (items[i] as any).webkitGetAsEntry?.() || items[i].getAsFile();
+        if (item) {
+          if (item instanceof File) {
+            if (item.type.includes("pdf")) fileList.push(item);
+          } else if ((item as any).isFile) {
+            // It's a file entry
+            await traverseFileTree(item, fileList);
+          } else if ((item as any).isDirectory) {
+            // It's a directory entry
+            await traverseFileTree(item, fileList);
+          }
+        }
+      }
+    } else {
+      // Fallback
+      const droppedFiles = Array.from(e.dataTransfer.files).filter((file) =>
+        file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+      );
+      fileList.push(...droppedFiles);
+    }
+
+    if (fileList.length > 0) {
+      addFiles(fileList);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files).filter((file) =>
-        file.type.includes("pdf")
+        file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
       );
-      setFiles((prev) => [...prev, ...selectedFiles]);
+      addFiles(selectedFiles);
     }
     setIsDropdownOpen(false);
     setIsAddDropdownOpen(false);
@@ -285,7 +346,7 @@ export default function MergePdfPage() {
 
       const fileName = urlInput.split("/").pop() || "downloaded.pdf";
       const file = new File([blob], fileName, { type: "application/pdf" });
-      setFiles((prev) => [...prev, file]);
+      addFiles([file]);
       setUrlInput("");
       setShowUrlModal(false);
     } catch (error) {
@@ -312,7 +373,7 @@ export default function MergePdfPage() {
         if (item.types.includes("application/pdf")) {
           const blob = await item.getType("application/pdf");
           const file = new File([blob], "clipboard.pdf", { type: "application/pdf" });
-          setFiles((prev) => [...prev, file]);
+          addFiles([file]);
         }
       }
     } catch (error) {
@@ -322,8 +383,8 @@ export default function MergePdfPage() {
     setIsAddDropdownOpen(false);
   };
 
-  const removeFile = (index: number) => {
-    setFiles(files.filter((_, i) => i !== index));
+  const removeFile = (id: string) => {
+    setFiles(files.filter((item) => item.id !== id));
   };
 
   const handleMerge = async () => {
@@ -334,7 +395,7 @@ export default function MergePdfPage() {
 
     setIsUploading(true); // Reuse uploading state for processing
     const formData = new FormData();
-    files.forEach((file) => formData.append("files", file));
+    files.forEach((item) => formData.append("files", item.file));
 
     try {
       const response = await fetch("/api/merge", {
@@ -538,7 +599,7 @@ export default function MergePdfPage() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="application/pdf"
+                    accept="application/pdf,.pdf"
                     multiple
                     onChange={handleFileChange}
                     style={{ display: "none" }}
@@ -576,6 +637,7 @@ export default function MergePdfPage() {
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                   <button
                     onClick={handleDownload}
+                    className="download-button"
                     style={{
                       backgroundColor: "#e11d48", // iLovePDF-like red/brand color or theme color
                       color: "white",
@@ -636,7 +698,7 @@ export default function MergePdfPage() {
                   onDragEnd={handleDragEnd}
                 >
                   <SortableContext
-                    items={files.map((f, i) => f.name + i)}
+                    items={files.map((f) => f.id)}
                     strategy={rectSortingStrategy}
                   >
                     <div style={{
@@ -647,11 +709,10 @@ export default function MergePdfPage() {
                       justifyContent: "center",
                       marginBottom: "2rem"
                     }}>
-                      {files.map((file, index) => (
+                      {files.map((item, index) => (
                         <SortableFileCard
-                          key={file.name + index}
-                          file={file}
-                          index={index}
+                          key={item.id}
+                          item={item}
                           onRemove={removeFile}
                         />
                       ))}
@@ -754,7 +815,7 @@ export default function MergePdfPage() {
                         <input
                           ref={addFileInputRef}
                           type="file"
-                          accept="application/pdf"
+                          accept="application/pdf,.pdf"
                           multiple
                           onChange={handleFileChange}
                           style={{ display: "none" }}
@@ -938,7 +999,7 @@ export default function MergePdfPage() {
                   padding: "0.5rem 1rem",
                   border: "none",
                   borderRadius: "6px",
-                  backgroundColor: "#007bff",
+                  backgroundColor: "#e11d48",
                   color: "white",
                   cursor: isUploading ? "not-allowed" : "pointer",
                   opacity: isUploading ? 0.7 : 1,
@@ -953,7 +1014,7 @@ export default function MergePdfPage() {
       )}
       <ToolInstructions
         title={instructionData.title}
-        steps={instructionData.steps}
+        steps={(instructionData.steps as any)}
       />
       <Testimonials
         title="What Our Users Say"

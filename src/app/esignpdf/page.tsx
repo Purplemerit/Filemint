@@ -32,7 +32,7 @@ import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
 import * as pdfjsLib from "pdfjs-dist";
-import { PDFDocument, rgb } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 // Configure PDF.js worker
 if (typeof window !== 'undefined') {
@@ -218,13 +218,13 @@ export default function ESignPdfPage() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type === "application/pdf") {
+    if (file && (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
       setPdfFile(file);
     }
   };
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type === "application/pdf") {
+    if (file && (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
       setPdfFile(file);
     }
     setIsDropdownOpen(false);
@@ -362,12 +362,32 @@ export default function ESignPdfPage() {
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       const pdfPages = pdfDoc.getPages();
 
+      const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || "#000000");
+        return result ? {
+          r: parseInt(result[1], 16) / 255,
+          g: parseInt(result[2], 16) / 255,
+          b: parseInt(result[3], 16) / 255
+        } : { r: 0, g: 0, b: 0 };
+      };
+
+      const getBytes = async (content: string) => {
+        if (content.startsWith('data:')) {
+          const base64 = content.split(',')[1];
+          const binaryStr = atob(base64);
+          const bytes = new Uint8Array(binaryStr.length);
+          for (let i = 0; i < binaryStr.length; i++) {
+            bytes[i] = binaryStr.charCodeAt(i);
+          }
+          return bytes;
+        }
+        return await fetch(content).then(res => res.arrayBuffer());
+      };
+
       for (const sig of signatures) {
         if (sig.page > pdfPages.length || sig.page < 1) continue;
         const page = pdfPages[sig.page - 1];
         const { height: pageHeight } = page.getSize();
-        const dim = pageDimensions[sig.page];
-        if (!dim) continue;
 
         const scaleFactor = 1 / scale;
         const pdfX = sig.x * scaleFactor;
@@ -375,60 +395,84 @@ export default function ESignPdfPage() {
         const pdfH = sig.height * scaleFactor;
         const pdfY = pageHeight - (sig.y * scaleFactor) - pdfH;
 
+        const color = hexToRgb(sig.color || "#000000");
+        const pdfColor = rgb(color.r, color.g, color.b);
+
         if (sig.type === "text") {
-          // We need to embed custom font if possible, or fallback to standard
-          // pdf-lib supports standard fonts easily. Embedding custom fonts requires full font file bytes.
-          // For simplicity, we might stick to StandardFonts.Helvetica or embed the specific font if we had bytes.
-          // Since we don't have bytes for Google Fonts easily in client without fetching, 
-          // we will approximate or use standard font, OR draw text as SVG/Image?
-          // Drawing as SVG path is complex.
-          // Let's use Standard Font for now but try to match style (Italic) or use Times Roman often looks formal
-          // OR better: Create a canvas with the text and font, export to image, embed image. That preserves look!
-          const canvas = document.createElement('canvas');
-          canvas.width = sig.width * 2; // High res
-          canvas.height = sig.height * 2;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.scale(2, 2);
-            ctx.font = `${sig.fontFamily} 40px`; // Match approximated size
-            ctx.fillStyle = sig.color || "#000";
-            ctx.fillText(sig.content, 0, 40); // Baseline approx
+          try {
+            // BULLETPROOF STRATEGY: Render text to a high-res image to guarantee font fidelity
+            const offscreenCanvas = document.createElement('canvas');
+            const ctx = offscreenCanvas.getContext('2d');
+            if (!ctx) throw new Error("Canvas context failed");
+
+            // Use high resolution for crisp text (3x scale)
+            const renderScale = 3;
+            offscreenCanvas.width = sig.width * renderScale;
+            offscreenCanvas.height = sig.height * renderScale;
+
+            ctx.scale(renderScale, renderScale);
+            // Wait a tiny bit to ensure browser font is ready (it should be since it's visible in editor)
+            ctx.font = `italic 40px "${sig.fontFamily || 'Dancing Script'}", cursive`;
+            ctx.fillStyle = sig.color || "#000000";
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
+
+            // Draw text in the center of the signature box
+            ctx.fillText(sig.content, sig.width / 2, sig.height / 2);
+
+            const imgData = offscreenCanvas.toDataURL('image/png');
+            const imageBytes = await getBytes(imgData);
+            const image = await pdfDoc.embedPng(imageBytes);
+
+            page.drawImage(image, {
+              x: pdfX,
+              y: pdfY,
+              width: pdfW,
+              height: pdfH
+            });
+          } catch (e) {
+            console.error("Text-to-Image conversion failed:", e);
+            // Final fallback
+            const standardFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+            page.drawText(sig.content, {
+              x: pdfX,
+              y: pdfY + (pdfH * 0.2),
+              size: (sig.height * 0.7) * scaleFactor,
+              font: standardFont,
+              color: pdfColor,
+            });
           }
-          const imgData = canvas.toDataURL('image/png');
-          const image = await pdfDoc.embedPng(imgData);
-          page.drawImage(image, {
-            x: pdfX,
-            y: pdfY,
-            width: pdfW,
-            height: pdfH
-          });
-        } else {
-          // Image or Draw (both are data URLs)
-          const imageBytes = await fetch(sig.content).then(res => res.arrayBuffer());
-          let image;
-          if (sig.content.startsWith('data:image/png')) {
-            image = await pdfDoc.embedPng(imageBytes);
-          } else {
-            image = await pdfDoc.embedJpg(imageBytes);
+        }
+        else {
+          try {
+            const imageBytes = await getBytes(sig.content);
+            let image;
+            if (sig.content.startsWith('data:image/png')) {
+              image = await pdfDoc.embedPng(imageBytes);
+            } else {
+              image = await pdfDoc.embedJpg(imageBytes);
+            }
+            page.drawImage(image, {
+              x: pdfX,
+              y: pdfY,
+              width: pdfW,
+              height: pdfH
+            });
+          } catch (e) {
+            console.error("Image loading failed:", e);
           }
-          page.drawImage(image, {
-            x: pdfX,
-            y: pdfY,
-            width: pdfW,
-            height: pdfH
-          });
         }
       }
 
       const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
       setSignedFileBlob(blob);
       setIsSigned(true);
-      setIsSigningMode(false); // Move to Success Screen
+      setIsSigningMode(false);
 
     } catch (err) {
-      console.error(err);
-      alert("Error saving PDF.");
+      console.error("Finish signing error:", err);
+      alert("Error saving PDF. Check console.");
     }
   };
 
@@ -546,7 +590,7 @@ export default function ESignPdfPage() {
             <button
               onClick={() => setShowSignatureModal(true)}
               style={{
-                width: "100%", padding: "1rem", backgroundColor: "#007bff",
+                width: "100%", padding: "1rem", backgroundColor: "#e11d48",
                 color: "white", border: "none", borderRadius: "8px",
                 cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
                 marginBottom: "1rem"
@@ -579,7 +623,7 @@ export default function ESignPdfPage() {
                           top: sig.y,
                           width: sig.width,
                           height: sig.height,
-                          border: "1px dashed #007bff",
+                          border: "1px dashed #e11d48",
                           cursor: "grab",
                           display: "flex", alignItems: "center", justifyContent: "center"
                         }}
@@ -648,7 +692,7 @@ export default function ESignPdfPage() {
             <div style={{ backgroundColor: "white", borderRadius: "10px", width: "500px", maxWidth: "90%", padding: "1.5rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
                 <h3 style={{ margin: 0 }}>Create Signature</h3>
-                <button onClick={() => setShowSignatureModal(false)} style={{ background: "none", border: "none", cursor: "pointer" }}><PiX size={20} /></button>
+                <button onClick={() => setShowSignatureModal(false)} style={{ background: "none", border: "none", cursor: "pointer" }}><PiX size={18} /></button>
               </div>
 
               {/* Tabs */}
@@ -813,6 +857,7 @@ export default function ESignPdfPage() {
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                   <button
                     onClick={handleDownload}
+                    className="download-button"
                     style={{
                       backgroundColor: "#e11d48", color: "white", padding: "1rem 2.5rem",
                       borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600",
@@ -865,7 +910,7 @@ export default function ESignPdfPage() {
                       ))}
                     </div>
                   )}
-                  <input ref={fileInputRef} type="file" accept="application/pdf" onChange={handleFileChange} style={{ display: "none" }} />
+                  <input ref={fileInputRef} type="file" accept="application/pdf,.pdf" onChange={handleFileChange} style={{ display: "none" }} />
                 </div>
               </div>
             ) : (
@@ -875,7 +920,7 @@ export default function ESignPdfPage() {
                   <button
                     onClick={() => setIsSigningMode(true)}
                     style={{
-                      backgroundColor: "#007bff", color: "white", border: "none", padding: "0.5rem 1rem",
+                      backgroundColor: "#e11d48", color: "white", border: "none", padding: "0.5rem 1rem",
                       borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem",
                       fontSize: "0.85rem", fontWeight: "500"
                     }}
@@ -885,7 +930,7 @@ export default function ESignPdfPage() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <div style={{ backgroundColor: "white", borderRadius: "8px", width: "120px", height: "140px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", position: "relative" }}>
-                    <button onClick={removeFile} style={{ position: "absolute", top: "4px", right: "4px", background: "white", border: "none", borderRadius: "50%", width: "25px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "black" }}><PiX size={35} /></button>
+                    <button onClick={removeFile} style={{ position: "absolute", top: "4px", right: "4px", background: "white", border: "none", borderRadius: "50%", width: "25px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "black" }}><PiX size={18} /></button>
                     <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
                     <span style={{ fontSize: "0.65rem", color: "#666", maxWidth: "100px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 0.5rem" }}>{pdfFile.name}</span>
                   </div>
@@ -927,7 +972,7 @@ export default function ESignPdfPage() {
             <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
               <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#007bff", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
+              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#e11d48", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
             </div>
           </div>
         </div>

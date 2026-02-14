@@ -39,14 +39,17 @@ interface PDFPageProps {
   pdfDocument: pdfjsLib.PDFDocumentProxy | null;
   scale: number;
   onDimensionsChanged: (pageNum: number, width: number, height: number) => void;
+  onTextClick: (item: any) => void;
+  selectedTool: string;
 }
 
-const PDFPage = ({ pageNumber, pdfDocument, scale, onDimensionsChanged }: PDFPageProps) => {
+const PDFPage = ({ pageNumber, pdfDocument, scale, onDimensionsChanged, onTextClick, selectedTool }: PDFPageProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const textLayerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const renderPage = async () => {
-      if (!pdfDocument || !canvasRef.current) return;
+      if (!pdfDocument || !canvasRef.current || !textLayerRef.current) return;
 
       try {
         const page = await pdfDocument.getPage(pageNumber);
@@ -63,6 +66,16 @@ const PDFPage = ({ pageNumber, pdfDocument, scale, onDimensionsChanged }: PDFPag
             canvasContext: context,
             viewport: viewport,
           }).promise;
+
+          // Render Text Layer
+          const textContent = await page.getTextContent();
+          textLayerRef.current.innerHTML = "";
+
+          await pdfjsLib.renderTextLayer({
+            textContent: textContent,
+            container: textLayerRef.current,
+            viewport: viewport,
+          }).promise;
         }
       } catch (error) {
         console.error(`Error rendering page ${pageNumber}:`, error);
@@ -72,8 +85,69 @@ const PDFPage = ({ pageNumber, pdfDocument, scale, onDimensionsChanged }: PDFPag
     renderPage();
   }, [pdfDocument, pageNumber, scale]);
 
-  return <canvas ref={canvasRef} style={{ display: "block", marginBottom: "0" }} />;
+  const handleTextLayerClick = (e: React.MouseEvent) => {
+    // Only intercept if 'text' tool is selected 
+    if (selectedTool !== "text") return;
+
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'SPAN' || target.classList.contains('textItem')) {
+      const text = target.innerText;
+      const rect = target.getBoundingClientRect();
+      const parentRect = textLayerRef.current!.getBoundingClientRect();
+
+      const x = rect.left - parentRect.left;
+      const y = rect.top - parentRect.top;
+      const width = rect.width;
+      const height = rect.height;
+
+      const style = window.getComputedStyle(target);
+      const fs = parseFloat(style.fontSize);
+
+      onTextClick({
+        text, x, y, width, height, fontSize: fs, page: pageNumber
+      });
+
+      e.stopPropagation();
+    }
+  };
+
+  return (
+    <div style={{ position: "relative" }}>
+      <style>{`
+        .textLayer {
+          position: absolute;
+          left: 0;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          overflow: hidden;
+          opacity: 0.2;
+          line-height: 1.0;
+        }
+        .textLayer span {
+          color: transparent;
+          position: absolute;
+          white-space: pre;
+          cursor: text;
+          transform-origin: 0% 0%;
+        }
+        /* Style for highlighting the text when hovered in 'text' tool mode */
+        .textLayer.interactive span:hover {
+          background-color: rgba(0, 123, 255, 0.2);
+          border: 1px solid rgba(0, 123, 255, 0.4);
+        }
+      `}</style>
+      <canvas ref={canvasRef} style={{ display: "block", marginBottom: "0" }} />
+      <div
+        ref={textLayerRef}
+        className={`textLayer ${selectedTool === 'text' ? 'interactive' : ''}`}
+        onClick={handleTextLayerClick}
+        style={{ pointerEvents: selectedTool === 'text' ? 'auto' : 'none' }}
+      />
+    </div>
+  );
 };
+
 
 export default function EditPdfPage() {
   const { token, isLoading } = useAuth();
@@ -98,7 +172,6 @@ export default function EditPdfPage() {
   >([]);
   const [selectedTool, setSelectedTool] = useState<"text" | "highlight" | "rectangle" | "arrow" | "circle" | "whiteout">("text");
   const [selectedColor, setSelectedColor] = useState("#FF0000");
-  const [textContent, setTextContent] = useState("");
   const [fontSize, setFontSize] = useState(14);
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<{ x: number, y: number } | null>(null);
@@ -221,14 +294,14 @@ export default function EditPdfPage() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type === "application/pdf") {
+    if (file && (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
       setPdfFile(file);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type === "application/pdf") {
+    if (file && (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
       setPdfFile(file);
     }
     setIsDropdownOpen(false);
@@ -323,7 +396,7 @@ export default function EditPdfPage() {
       const newAnnotation = {
         id: Date.now().toString(),
         type: "text" as const,
-        content: textContent || "", // Start empty if no predefined text
+        content: "",
         x: x,
         y: y,
         width: 200,
@@ -461,24 +534,12 @@ export default function EditPdfPage() {
     try {
       const arrayBuffer = await pdfFile.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const pages = pdfDoc.getPages();
-
+      const docPages = pdfDoc.getPages();
       for (const annotation of annotations) {
-        if (annotation.page > pages.length || annotation.page < 1) continue;
+        if (annotation.page > docPages.length || annotation.page < 1) continue;
 
-        const page = pages[annotation.page - 1];
+        const page = docPages[annotation.page - 1];
         const { height: pageHeight } = page.getSize();
-
-        const dim = pageDimensions[annotation.page];
-        if (!dim) continue;
-
-        // Calculate Scale Factor
-        // PDF points vs CSS pixels (at assumed scale)
-        // PDF rendering scale was {scale} (e.g. 1.5)
-        // So dimensions stored in annotation are based on 1.5x view.
-        // We need to divide by scale to get back to default PDF point units (roughly).
-        // Note: pdfjs viewport width at scale 1.0 matches standard PDF points (72 DPI).
         const scaleFactor = 1 / scale;
 
         const hexToRgb = (hex: string) => {
@@ -487,7 +548,7 @@ export default function EditPdfPage() {
             r: parseInt(result[1], 16) / 255,
             g: parseInt(result[2], 16) / 255,
             b: parseInt(result[3], 16) / 255
-          } : { r: 1, g: 0, b: 0 };
+          } : { r: 0, g: 0, b: 0 };
         };
 
         const color = hexToRgb(annotation.color);
@@ -501,11 +562,21 @@ export default function EditPdfPage() {
         switch (annotation.type) {
           case "text":
             if (annotation.content) {
+              let fontToEmbed;
+              try {
+                // Professional Font Embedding for Edit PDF (Standard Sans-Serif)
+                const FONT_URL = "https://cdn.jsdelivr.net/npm/@canvas-fonts/arial/Arial.ttf";
+                const fontBytes = await fetch(FONT_URL).then(res => res.arrayBuffer());
+                fontToEmbed = await pdfDoc.embedFont(fontBytes);
+              } catch (e) {
+                fontToEmbed = await pdfDoc.embedFont(StandardFonts.Helvetica);
+              }
+
               page.drawText(annotation.content, {
                 x: pdfX,
-                y: pdfY + pdfH - 5,
-                size: (annotation.fontSize || 14) * scaleFactor,
-                font: font,
+                y: pdfY + (pdfH * 0.15),
+                size: (annotation.fontSize || 14) * scaleFactor * 1.02,
+                font: fontToEmbed,
                 color: rgbColor,
               });
             }
@@ -516,7 +587,7 @@ export default function EditPdfPage() {
               y: pdfY,
               width: pdfW,
               height: pdfH,
-              color: rgb(1, 1, 1), // White
+              color: rgb(1, 1, 1),
               borderColor: rgb(1, 1, 1),
             });
             break;
@@ -562,7 +633,7 @@ export default function EditPdfPage() {
       }
 
       const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
       setEditedFileBlob(blob);
       setIsEdited(true);
       setIsEditingMode(false);
@@ -572,6 +643,7 @@ export default function EditPdfPage() {
       alert("Error generating edited PDF. Please try again.");
     }
   };
+
 
   // Auto-download helper
   useEffect(() => {
@@ -611,6 +683,37 @@ export default function EditPdfPage() {
       ...prev,
       [pageNum]: { width, height }
     }));
+  };
+
+  const handleInbuiltTextClick = (item: any) => {
+    // 1. Create a whiteout annotation at this spot
+    const whiteoutAnn = {
+      id: `wo-${Date.now()}`,
+      type: "whiteout" as const,
+      x: item.x,
+      y: item.y,
+      width: item.width + 1,
+      height: item.height + 1,
+      color: "#FFFFFF",
+      page: item.page,
+    };
+
+    // 2. Create an editable text annotation
+    const textAnn = {
+      id: `edit-${Date.now()}`,
+      type: "text" as const,
+      content: item.text,
+      x: item.x,
+      y: item.y,
+      width: item.width,
+      height: item.height,
+      color: "#000000",
+      fontSize: item.fontSize,
+      page: item.page,
+    };
+
+    setAnnotations([...annotations, whiteoutAnn, textAnn]);
+    setEditingAnnotationId(textAnn.id);
   };
 
   // Editing Mode UI
@@ -777,26 +880,19 @@ export default function EditPdfPage() {
               </div>
             )}
 
-            {/* Text Input - Instructions only now */}
+            {/* Simple Font Size Slider */}
             {isAnnotating && selectedTool === "text" && (
               <div style={{ marginBottom: "2rem" }}>
-                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Text Options</h4>
-                <p style={{ fontSize: "0.8rem", color: "#666", marginBottom: "0.5rem" }}>
-                  Click anywhere on the PDF to start typing. Click existing text to edit.
-                </p>
-                <div style={{ marginBottom: "0.5rem" }}>
-                  <label style={{ fontSize: "clamp(0.8rem, 2vw, 0.9rem)", marginBottom: "0.3rem", display: "block" }}>
-                    Font Size: {fontSize}px
-                  </label>
-                  <input
-                    type="range"
-                    min="8"
-                    max="36"
-                    value={fontSize}
-                    onChange={(e) => setFontSize(parseInt(e.target.value))}
-                    style={{ width: "100%" }}
-                  />
-                </div>
+                <h4 style={{ marginBottom: "0.5rem", fontSize: "0.9rem" }}>Text Size</h4>
+                <input
+                  type="range"
+                  min="8"
+                  max="72"
+                  value={fontSize}
+                  onChange={(e) => setFontSize(parseInt(e.target.value))}
+                  style={{ width: "100%" }}
+                />
+                <div style={{ fontSize: "0.8rem", textAlign: "right", color: "#666" }}>{fontSize}px</div>
               </div>
             )}
 
@@ -847,6 +943,8 @@ export default function EditPdfPage() {
                     pdfDocument={pdfDocument}
                     scale={scale}
                     onDimensionsChanged={onDimensionChanged}
+                    onTextClick={handleInbuiltTextClick}
+                    selectedTool={selectedTool}
                   />
 
                   {/* Overlay for Page */}
@@ -876,7 +974,7 @@ export default function EditPdfPage() {
                                 return {
                                   color: annotation.color,
                                   fontSize: `${annotation.fontSize}px`,
-                                  fontWeight: "bold",
+                                  fontFamily: "sans-serif",
                                   backgroundColor: "rgba(255, 255, 255, 0.7)",
                                   whiteSpace: "nowrap",
                                   padding: "2px 4px",
@@ -944,7 +1042,7 @@ export default function EditPdfPage() {
                                   background: "transparent",
                                   color: annotation.color,
                                   fontSize: `${annotation.fontSize}px`,
-                                  fontFamily: "inherit",
+                                  fontFamily: "sans-serif",
                                   padding: 0,
                                   resize: "none",
                                   overflow: "hidden",
@@ -1117,6 +1215,7 @@ export default function EditPdfPage() {
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                   <button
                     onClick={handleDownload}
+                    className="download-button"
                     style={{
                       backgroundColor: "#e11d48",
                       color: "white",
@@ -1258,7 +1357,7 @@ export default function EditPdfPage() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="application/pdf"
+                    accept="application/pdf,.pdf"
                     onChange={handleFileChange}
                     style={{ display: "none" }}
                   />
@@ -1276,7 +1375,7 @@ export default function EditPdfPage() {
                   <button
                     onClick={handleStartEditing}
                     style={{
-                      backgroundColor: "#007bff",
+                      backgroundColor: "#e11d48",
                       color: "white",
                       border: "none",
                       padding: "0.5rem 1rem",
@@ -1330,7 +1429,7 @@ export default function EditPdfPage() {
                         color: "black",
                       }}
                     >
-                      <PiX size={35} />
+                      <PiX size={18} />
                     </button>
 
                     <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
