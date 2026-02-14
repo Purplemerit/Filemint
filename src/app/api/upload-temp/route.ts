@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getStore } from "@netlify/blobs";
 
 // Initialize S3 client
 const s3Client = new S3Client({
@@ -36,50 +37,62 @@ export async function POST(request: NextRequest) {
 
     // Check if AWS S3 is configured
     const bucketName = process.env.AWS_S3_BUCKET_NAME;
+    const hasS3Config = bucketName && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY;
 
-    if (!bucketName || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-      // Fallback to local storage if AWS is not configured
-      console.warn("AWS S3 not configured. Using local storage fallback.");
+    if (hasS3Config) {
+      // Upload to S3
+      const uploadParams = {
+        Bucket: bucketName,
+        Key: `shared-files/${blobKey}`,
+        Body: buffer,
+        ContentType: file.type || 'application/octet-stream',
+        Metadata: {
+          originalFileName: originalFileName,
+          uploadedAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours
+        },
+        ACL: 'public-read' as any,
+      };
 
-      // Store in memory (temporary solution - not recommended for production)
-      // You should implement a proper local file storage or use a different storage solution
+      await s3Client.send(new PutObjectCommand(uploadParams));
+
+      // Generate shareable URL
+      const s3Url = `https://${bucketName}.s3.${process.env.AWS_REGION || "us-east-1"}.amazonaws.com/shared-files/${blobKey}`;
+      return NextResponse.json({ url: s3Url, fileId });
+    }
+
+    // Fallback to Netlify Blobs if on Netlify or if S3 is missing
+    try {
+      const store = getStore("shared-files");
+      await store.set(blobKey, buffer, {
+        metadata: {
+          originalFileName,
+          uploadedAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+        },
+      });
+
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.headers.get("origin") || "http://localhost:3000";
       const shareUrl = `${baseUrl}/shared/${blobKey}`;
 
-      // Note: This is a temporary solution. The file won't actually be stored.
-      // You need to implement proper storage (filesystem, database, etc.)
       return NextResponse.json({
         url: shareUrl,
         fileId,
-        warning: "AWS S3 not configured. File sharing may not work properly. Please configure AWS credentials."
+        storage: "netlify-blobs"
+      });
+    } catch (blobError) {
+      console.error("Netlify Blobs error:", blobError);
+
+      // If NOT on Netlify and S3 is missing, fall back to the warning logic
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.headers.get("origin") || "http://localhost:3000";
+      const shareUrl = `${baseUrl}/shared/${blobKey}`;
+
+      return NextResponse.json({
+        url: shareUrl,
+        fileId,
+        warning: "AWS S3 and Netlify Blobs not configured. File sharing may not work properly."
       });
     }
-
-    // Upload to S3
-    const uploadParams = {
-      Bucket: bucketName,
-      Key: `shared-files/${blobKey}`,
-      Body: buffer,
-      ContentType: file.type || 'application/octet-stream',
-      Metadata: {
-        originalFileName: originalFileName,
-        uploadedAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours
-      },
-      // Make the file publicly accessible
-      ACL: 'public-read',
-    };
-
-    await s3Client.send(new PutObjectCommand(uploadParams));
-
-    // Generate shareable URL
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.headers.get("origin") || "http://localhost:3000";
-    const s3Url = `https://${bucketName}.s3.${process.env.AWS_REGION || "us-east-1"}.amazonaws.com/shared-files/${blobKey}`;
-
-    // Use the S3 URL directly since we made it public
-    const shareUrl = s3Url;
-
-    return NextResponse.json({ url: shareUrl, fileId });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json({
