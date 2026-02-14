@@ -505,19 +505,61 @@ export default function ESignPdfPage() {
   };
 
   // Drag Handlers for signatures on the page
-  // We need to implement simple drag on the rendered items (simplified for brevity)
-  // For proper drag, we update signature x/y in state.
-  // We can use a simple generic drag handler on container if needed, or per item.
+  const handleStartDrag = (e: any, sig: any) => {
+    // Prevent scrolling when dragging on touch devices
+    if (e.type === 'touchstart') {
+      // e.preventDefault(); // This can cause issues with scrolling if not careful
+    }
+
+    const isTouch = e.type.startsWith('touch');
+    const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+    const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+
+    const startX = clientX;
+    const startY = clientY;
+    const startLeft = sig.x;
+    const startTop = sig.y;
+
+    const onMove = (mv: any) => {
+      const currentX = isTouch ? mv.touches[0].clientX : mv.clientX;
+      const currentY = isTouch ? mv.touches[0].clientY : mv.clientY;
+      const dx = currentX - startX;
+      const dy = currentY - startY;
+
+      setSignatures(prev => prev.map(s =>
+        s.id === sig.id ? { ...s, x: startLeft + dx, y: startTop + dy } : s
+      ));
+    };
+
+    const onUp = () => {
+      if (isTouch) {
+        window.removeEventListener("touchmove", onMove);
+        window.removeEventListener("touchend", onUp);
+      } else {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+      }
+    };
+
+    if (isTouch) {
+      window.addEventListener("touchmove", onMove, { passive: false });
+      window.addEventListener("touchend", onUp);
+    } else {
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    }
+  };
 
   if (isSigningMode) {
     return (
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1rem" }}>
         <style>{`
-           @media (max-width: 768px) {
+         @media (max-width: 768px) {
              .header-controls-sign {
                flex-direction: column !important;
-               gap: 1rem !important;
+               gap: 0.5rem !important;
                align-items: stretch !important;
+               margin-top: 1rem !important;
              }
              .header-controls-sign > * {
                width: 100% !important;
@@ -525,22 +567,28 @@ export default function ESignPdfPage() {
              }
              .main-container-sign {
                flex-direction: column !important;
+               gap: 1rem !important;
              }
              .signature-panel {
                width: 100% !important;
                position: static !important;
-               margin-bottom: 1.5rem;
+               margin-bottom: 0.5rem;
              }
              .pdf-viewer-container {
-               height: 500px !important;
-               padding: 1rem !important;
+               height: 60vh !important;
+               padding: 0.5rem !important;
                overflow-x: auto !important;
                width: 100% !important;
                max-width: 100% !important;
                box-sizing: border-box !important;
              }
              .pdf-pages-wrapper {
-               align-items: flex-start !important;
+               align-items: center !important;
+               width: max-content !important;
+               min-width: 100% !important;
+             }
+             .zoom-controls {
+               display: none !important; /* Hide zoom on small mobile to save space */
              }
            }
          `}</style>
@@ -627,27 +675,8 @@ export default function ESignPdfPage() {
                           cursor: "grab",
                           display: "flex", alignItems: "center", justifyContent: "center"
                         }}
-                        onMouseDown={(e) => {
-                          // Simple drag implementation
-                          const startX = e.clientX;
-                          const startY = e.clientY;
-                          const startLeft = sig.x;
-                          const startTop = sig.y;
-
-                          const onMove = (mv: MouseEvent) => {
-                            const dx = mv.clientX - startX;
-                            const dy = mv.clientY - startY;
-                            setSignatures(prev => prev.map(s =>
-                              s.id === sig.id ? { ...s, x: startLeft + dx, y: startTop + dy } : s
-                            ));
-                          };
-                          const onUp = () => {
-                            window.removeEventListener("mousemove", onMove);
-                            window.removeEventListener("mouseup", onUp);
-                          };
-                          window.addEventListener("mousemove", onMove);
-                          window.addEventListener("mouseup", onUp);
-                        }}
+                        onMouseDown={(e) => handleStartDrag(e, sig)}
+                        onTouchStart={(e) => handleStartDrag(e, sig)}
                       >
                         {sig.type === "text" && (
                           <span style={{

@@ -71,7 +71,7 @@ const PDFPage = ({ pageNumber, pdfDocument, scale, onDimensionsChanged, onTextCl
           const textContent = await page.getTextContent();
           textLayerRef.current.innerHTML = "";
 
-          await pdfjsLib.renderTextLayer({
+          await (pdfjsLib as any).renderTextLayer({
             textContent: textContent,
             container: textLayerRef.current,
             viewport: viewport,
@@ -445,14 +445,16 @@ export default function EditPdfPage() {
     }
   };
 
-  const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageNum: number) => {
+  const handlePageMouseDown = (e: any, pageNum: number) => {
     if (!isAnnotating) return;
 
-    // e.nativeEvent.offsetX is dangerous if clicking on children.
-    // Use getBoundingClientRect to be safe.
+    const isTouch = e.type.startsWith('touch');
+    const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+    const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
 
     if (selectedTool === "rectangle" || selectedTool === "arrow" || selectedTool === "highlight" || selectedTool === "circle" || selectedTool === "whiteout") {
       setStartPoint({ x, y });
@@ -461,12 +463,16 @@ export default function EditPdfPage() {
     }
   };
 
-  const handlePageMouseMove = (e: React.MouseEvent<HTMLDivElement>, pageNum: number) => {
+  const handlePageMouseMove = (e: any, pageNum: number) => {
     if (!isAnnotating || !isDrawing || !startPoint || currentPage !== pageNum) return;
 
+    const isTouch = e.type.startsWith('touch');
+    const clientX = isTouch ? (e.touches ? e.touches[0].clientX : e.clientX) : e.clientX;
+    const clientY = isTouch ? (e.touches ? e.touches[0].clientY : e.clientY) : e.clientY;
+
     const rect = e.currentTarget.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
+    const currentX = clientX - rect.left;
+    const currentY = clientY - rect.top;
 
     const annotation = {
       id: "temp",
@@ -480,6 +486,10 @@ export default function EditPdfPage() {
     };
 
     setCurrentAnnotation(annotation);
+    if (isTouch) {
+      // Prevent scrolling while drawing
+      // Note: passive: false is required for this to work in listeners
+    }
   };
 
   const handlePageMouseUp = () => {
@@ -721,32 +731,30 @@ export default function EditPdfPage() {
     return (
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1rem" }}>
         <style>{`
-          /* Your existing styles ... preserved for simplicity */
           @media (max-width: 768px) {
-            .header-controls-edit { flex-direction: column !important; gap: 1rem !important; }
-            .header-controls-edit > * { width: 100% !important; }
-            .main-container-edit { flex-direction: column !important; }
-            .tools-panel { width: 100% !important; position: static !important; margin-bottom: 1.5rem; }
+            .header-controls-edit { flex-direction: column !important; gap: 0.5rem !important; align-items: stretch !important; margin-top: 1rem !important; }
+            .header-controls-edit > * { width: 100% !important; justify-content: center !important; }
+            .main-container-edit { flex-direction: column !important; gap: 1rem !important; }
+            .tools-panel { 
+              width: 100% !important; 
+              position: static !important; 
+              margin-bottom: 0.5rem; 
+              max-height: none !important;
+            }
             .tool-grid { grid-template-columns: repeat(3, 1fr) !important; }
             .color-grid { grid-template-columns: repeat(4, 1fr) !important; }
             .pdf-viewer-container { 
-              height: 500px !important; 
-              padding: 1rem !important; 
-              overflow-x: auto !important;
-              width: 100% !important;
-              max-width: 100% !important;
-              box-sizing: border-box !important;
-            }
-            .pdf-viewer-container {
-              height: 500px !important;
-              padding: 1rem !important;
+              height: 60vh !important; 
+              padding: 0.5rem !important; 
               overflow-x: auto !important;
               width: 100% !important;
               max-width: 100% !important;
               box-sizing: border-box !important;
             }
             .pdf-pages-wrapper {
-              align-items: flex-start !important;
+              align-items: center !important;
+              width: max-content !important;
+              min-width: 100% !important;
             }
           }
         `}</style>
@@ -936,6 +944,9 @@ export default function EditPdfPage() {
                   onMouseDown={(e) => handlePageMouseDown(e, pageNum)}
                   onMouseMove={(e) => handlePageMouseMove(e, pageNum)}
                   onMouseUp={handlePageMouseUp}
+                  onTouchStart={(e) => handlePageMouseDown(e, pageNum)}
+                  onTouchMove={(e) => handlePageMouseMove(e, pageNum)}
+                  onTouchEnd={handlePageMouseUp}
                   onClick={(e) => handlePageClick(e, pageNum)}
                 >
                   <PDFPage

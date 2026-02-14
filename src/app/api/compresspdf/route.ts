@@ -49,7 +49,7 @@ async function aggressiveCompress(inputBuffer: Buffer): Promise<Buffer> {
 
       let compressedData: Buffer | null = null;
       const isDCT = filter?.toString() === '/DCTDecode' ||
-        (filter instanceof PDFArray && filter.asStringArray().includes('/DCTDecode'));
+        (filter instanceof PDFArray && (filter as any).asArray().map((v: any) => v.toString()).includes('/DCTDecode'));
 
       if (isDCT) {
         // Re-compress existing JPEG
@@ -68,7 +68,7 @@ async function aggressiveCompress(inputBuffer: Buffer): Promise<Buffer> {
 
           // Attempt to wrap as raw pixels. If it fails (e.g. predictor encoding), Sharp will throw and we skip.
           compressedData = await sharp(decompressed, {
-            raw: { width, height, channels: channels }
+            raw: { width, height, channels: channels as 1 | 2 | 3 | 4 }
           })
             .resize(1000, null, { withoutEnlargement: true })
             .jpeg({ quality: 20, mozjpeg: true })
@@ -141,15 +141,12 @@ export async function POST(req: NextRequest) {
       outputBuffer = inputBuffer;
     }
 
-    const reductionPercent = Math.round(((inputBuffer.length - outputBuffer.length) / inputBuffer.length) * 100);
-
     return new NextResponse(outputBuffer as any, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="compressed_${file.name}"`,
         "Content-Length": outputBuffer.length.toString(),
-        "X-Reduction-Percent": reductionPercent.toString(),
       },
     });
 

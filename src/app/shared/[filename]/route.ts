@@ -145,7 +145,7 @@ export async function GET(
     const originalFileName = metadata?.originalfilename || metadata?.originalFileName || filename;
 
     // Return the file with appropriate headers
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(fileBuffer as any, {
       headers: {
         'Content-Type': finalContentType,
         'Content-Disposition': `inline; filename="${originalFileName}"`,
