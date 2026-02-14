@@ -409,14 +409,55 @@ export default function PdfToWordPage() {
     <div>
       <Navbar />
 
-      <div style={{
-        display: "flex",
-        maxWidth: "1400px",
-        margin: "4rem auto",
-        padding: "0 2rem",
-        gap: "2rem",
-        alignItems: "flex-start"
-      }}>
+      <style>{`
+          .main-layout {
+            display: flex;
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            gap: 2rem;
+            align-items: flex-start;
+          }
+          .drop-zone-container {
+            border: 3px solid rgba(216, 121, 253, 0.5);
+            backgroundColor: rgb(243, 230, 255);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+            min-height: 280px;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          @media (max-width: 1024px) {
+            .main-layout {
+              flex-direction: column;
+              margin: 1rem auto;
+            }
+            .ad-column {
+              display: none !important;
+            }
+            h1 {
+              font-size: 1.5rem !important;
+              text-align: center !important;
+            }
+          }
+          @media (max-width: 640px) {
+            .drop-zone-container {
+              padding: 1rem;
+            }
+            .action-buttons {
+              flex-direction: column;
+              width: 100%;
+            }
+            .action-buttons button {
+              width: 100%;
+              justify-content: center;
+            }
+          }
+        `}</style>
+      <div className="main-layout">
         <VerticalAdLeft />
 
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
@@ -434,16 +475,7 @@ export default function PdfToWordPage() {
           <div
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
-            style={{
-              border: "3px solid rgba(216, 121, 253, 0.5)",
-              backgroundColor: "rgb(243, 230, 255)",
-              borderRadius: "12px",
-              padding: "2rem",
-              textAlign: "center",
-              marginBottom: "2rem",
-              position: "relative",
-              minHeight: "280px",
-            }}
+            className="drop-zone-container"
           >
             {isConverted ? (
               <div style={{
@@ -485,7 +517,7 @@ export default function PdfToWordPage() {
                 >
                   Download {files.length > 1 ? "All (ZIP)" : "Word Doc"}
                 </button>
-                <div style={{ display: "flex", gap: "1rem" }}>
+                <div className="action-buttons" style={{ display: "flex", gap: "1rem" }}>
                   <button onClick={handleShare} style={{ background: "transparent", color: "#666", border: "1px solid #ccc", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}><TbShare3 /> Share</button>
                   <button onClick={handleReset} style={{ background: "transparent", color: "#666", border: "1px solid #ccc", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer" }}>Start Over</button>
                 </div>
@@ -511,7 +543,7 @@ export default function PdfToWordPage() {
               </div>
             ) : (
               <div>
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginBottom: "1.5rem" }}>
+                <div className="action-buttons" style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginBottom: "1.5rem" }}>
                   <button onClick={handleFromDevice} style={{ backgroundColor: "white", border: "1px solid #ddd", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}><PiPlus /> Add More</button>
                   <button onClick={handleConvertBatch} disabled={isConvertingBatch} style={{ backgroundColor: "#e11d48", color: "white", border: "none", padding: "0.5rem 1.5rem", borderRadius: "6px", cursor: isConvertingBatch ? "not-allowed" : "pointer", fontSize: "0.85rem", fontWeight: "600", opacity: isConvertingBatch ? 0.7 : 1 }}>
                     {isConvertingBatch ? "Processing..." : `Convert ${files.length} Files`}

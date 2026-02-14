@@ -260,14 +260,7 @@ export default function CompressPdfPage() {
     <div>
       <Navbar />
 
-      <div style={{
-        display: "flex",
-        maxWidth: "1400px",
-        margin: "4rem auto",
-        padding: "0 2rem",
-        gap: "2rem",
-        alignItems: "flex-start"
-      }}>
+      <div className="main-layout">
         {/* Left Ad */}
         <VerticalAdLeft />
 
@@ -288,17 +281,60 @@ export default function CompressPdfPage() {
           <div
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
-            style={{
-              border: "3px solid rgba(144, 238, 144, 0.5)",
-              backgroundColor: "rgba(144, 238, 144, 0.2)",
-              borderRadius: "12px",
-              padding: "2rem",
-              textAlign: "center",
-              marginBottom: "2rem",
-              position: "relative",
-              minHeight: "280px",
-            }}
+            className="drop-zone-container"
           >
+            <style>{`
+              .main-layout {
+                display: flex;
+                max-width: 1400px;
+                margin: 2rem auto;
+                padding: 0 1rem;
+                gap: 2rem;
+                align-items: flex-start;
+              }
+              .drop-zone-container {
+                border: 3px solid rgba(144, 238, 144, 0.5);
+                backgroundColor: rgba(144, 238, 144, 0.2);
+                border-radius: 12px;
+                padding: 2rem;
+                text-align: center;
+                margin-bottom: 2rem;
+                position: relative;
+                min-height: 280px;
+                width: 100%;
+                box-sizing: border-box;
+              }
+              .stats-container {
+                display: none; /* Removed as requested */
+              }
+              @media (max-width: 1024px) {
+                .main-layout {
+                  flex-direction: column;
+                  margin: 1rem auto;
+                }
+                .ad-column {
+                  display: none !important;
+                }
+                h1 {
+                  font-size: 1.5rem !important;
+                  text-align: center !important;
+                }
+              }
+              @media (max-width: 640px) {
+                .drop-zone-container {
+                  padding: 1rem;
+                }
+                .action-buttons {
+                  flex-direction: column;
+                  width: 100%;
+                }
+                .action-buttons button {
+                  width: 100%;
+                  justify-content: center;
+                }
+              }
+            `}</style>
+
             {isCompressed ? (
               /* Success State - Download */
               <div style={{
@@ -322,51 +358,24 @@ export default function CompressPdfPage() {
                 }}>
                   <PiCheckCircle size={48} />
                 </div>
-                <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0, textAlign: "center" }}>
+                <h2 style={{ fontSize: "1.5rem", color: "#333", margin: 0, textAlign: "center" }}>
                   PDF Compressed Successfully!
                 </h2>
-
-                {stats && (
-                  <div style={{
-                    display: "flex",
-                    gap: "2rem",
-                    padding: "1rem 2rem",
-                    backgroundColor: "#f9fafb",
-                    borderRadius: "12px",
-                    border: "1px solid #e5e7eb",
-                    marginTop: "0.5rem"
-                  }}>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: "0.8rem", color: "#6b7280", textTransform: "uppercase" }}>Original</div>
-                      <div style={{ fontSize: "1.1rem", fontWeight: "600", color: "#374151" }}>{formatSize(stats.original)}</div>
-                    </div>
-                    <div style={{ width: "1px", backgroundColor: "#e5e7eb" }}></div>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: "0.8rem", color: "#6b7280", textTransform: "uppercase" }}>Compressed</div>
-                      <div style={{ fontSize: "1.1rem", fontWeight: "600", color: "#e11d48" }}>{formatSize(stats.compressed)}</div>
-                    </div>
-                    <div style={{ width: "1px", backgroundColor: "#e5e7eb" }}></div>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: "0.8rem", color: "#6b7280", textTransform: "uppercase" }}>Savings</div>
-                      <div style={{ fontSize: "1.1rem", fontWeight: "600", color: "#059669" }}>{stats.percent}%</div>
-                    </div>
-                  </div>
-                )}
 
                 <p style={{ color: "#666", textAlign: "center", maxWidth: "400px" }}>
                   Your PDF has been compressed. Download your file below.
                 </p>
 
-                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                <div className="action-buttons" style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                   <button
                     onClick={handleDownload}
                     className="download-button"
                     style={{
                       backgroundColor: "#e11d48", // Brand color
                       color: "white",
-                      padding: "1rem 2.5rem",
+                      padding: "0.8rem 1.5rem",
                       borderRadius: "8px",
-                      fontSize: "1.1rem",
+                      fontSize: "1rem",
                       fontWeight: "600",
                       border: "none",
                       cursor: "pointer",
@@ -376,7 +385,7 @@ export default function CompressPdfPage() {
                       boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)"
                     }}
                   >
-                    Download Compressed PDF
+                    Download PDF
                   </button>
                 </div>
 
