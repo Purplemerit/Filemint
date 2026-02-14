@@ -3,6 +3,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Pacifico&family=Sacramento&display=swap');
+
 /* ==================== CRITICAL CSS ==================== */
 /* These styles load synchronously to prevent FOUC */
 
@@ -509,4 +511,33 @@ main {
   50% {
     transform: translateY(-10px);
   }
+}
+
+/* ==================== INTERACTIVE ELEMENTS ==================== */
+.download-button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.download-button:hover {
+  transform: translateY(-2px);
+  filter: brightness(110%);
+  box-shadow: 0 8px 20px rgba(225, 29, 72, 0.4) !important;
+}
+
+.download-button:active {
+  transform: scale(0.95) translateY(0);
+  box-shadow: 0 4px 10px rgba(225, 29, 72, 0.2) !important;
+}
+
+.secondary-action-button {
+  transition: all 0.2s ease-in-out !important;
+}
+
+.secondary-action-button:hover {
+  background-color: #f8f9fa !important;
+  transform: translateY(-1px);
+}
+
+.secondary-action-button:active {
+  transform: scale(0.98);
 }

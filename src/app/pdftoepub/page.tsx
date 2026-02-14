@@ -5,10 +5,10 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { TbShare3 } from "react-icons/tb";
-import { 
-  PiFiles, 
-  PiLink, 
-  PiClipboard, 
+import {
+  PiFiles,
+  PiLink,
+  PiClipboard,
   PiCaretDown,
   PiUploadSimple,
   PiCheckCircle,
@@ -40,6 +40,7 @@ export default function PdfToEpubPage() {
   const instructionData = toolData["pdf-to-epub"];
 
   const [isConverting, setIsConverting] = useState(false);
+  const [isConverted, setIsConverted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleConvert = async () => {
@@ -64,18 +65,45 @@ export default function PdfToEpubPage() {
 
       const blob = await res.blob();
       setConvertedFileBlob(blob);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "converted.epub";
-      a.click();
-      window.URL.revokeObjectURL(url);
+      setIsConverted(true);
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {
       setIsConverting(false);
     }
   };
+
+  const handleDownload = () => {
+    if (!convertedFileBlob) return;
+    const url = window.URL.createObjectURL(convertedFileBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "converted.epub";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleReset = () => {
+    setFile(null);
+    setConvertedFileBlob(null);
+    setIsConverted(false);
+    setError(null);
+  };
+
+  // Auto-download effect
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    if (isConverted && convertedFileBlob) {
+      timeoutId = setTimeout(() => {
+        handleDownload();
+      }, 7000); // 7 seconds delay
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isConverted, convertedFileBlob]);
 
   const { openPicker: openGoogleDrivePicker } = useGoogleDrivePicker({
     onFilePicked: (file) => {
@@ -134,17 +162,17 @@ export default function PdfToEpubPage() {
 
   const handleUrlSubmit = async () => {
     if (!urlInput.trim()) return;
-    
+
     try {
       setIsUploading(true);
       const response = await fetch(urlInput);
       const blob = await response.blob();
-      
+
       if (blob.type !== "application/pdf") {
         alert("URL must point to a PDF file");
         return;
       }
-      
+
       const fileName = urlInput.split("/").pop() || "downloaded.pdf";
       const file = new File([blob], fileName, { type: "application/pdf" });
       setFile(file);
@@ -179,6 +207,7 @@ export default function PdfToEpubPage() {
   const removeFile = () => {
     setFile(null);
     setConvertedFileBlob(null);
+    setIsConverted(false);
     setError(null);
   };
 
@@ -215,337 +244,425 @@ export default function PdfToEpubPage() {
 
         {/* Main Content */}
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
-        <h1 style={{ 
-          fontSize: "2rem", 
-          fontWeight: "600",
-          marginBottom: "2rem",
-          textAlign: "left",
-          color: "#1a1a1a",
-          fontFamily: 'Georgia, "Times New Roman", serif',
-        }}>
-          PDF to EPUB
-        </h1>
-
-        {/* Drop Zone */}
-        <div
-          onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
-          style={{
-            border: "3px solid rgba(216, 121, 253, 0.5)",
-            backgroundColor: "rgb(243, 230, 255)",
-            borderRadius: "12px",
-            padding: "2rem",
-            textAlign: "center",
+          <h1 style={{
+            fontSize: "2rem",
+            fontWeight: "600",
             marginBottom: "2rem",
-            position: "relative",
-            minHeight: "280px",
-          }}
-        >
-          {!file ? (
-            /* Empty State */
-            <div style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "300px",
-              minHeight: "220px",
-            }}>
-              <div style={{ marginBottom: "1.5rem" }}>
-                <img src="./upload.svg" alt="Upload Icon" />
-              </div>
+            textAlign: "left",
+            color: "#1a1a1a",
+            fontFamily: 'Georgia, "Times New Roman", serif',
+          }}>
+            PDF to EPUB
+          </h1>
 
-              <div ref={dropdownRef} style={{ position: "relative" }}>
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  style={{
-                    backgroundColor: "white",
-                    padding: "0.6rem 1rem",
-                    border: "1px solid #e0e0e0",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.9rem",
-                    fontWeight: "500",
-                    color: "#333",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <PiFiles size={18} />
-                  Select File
-                  <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
-                </button>
-
-                {isDropdownOpen && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 4px)",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      backgroundColor: "white",
-                      border: "1px solid #e0e0e0",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      zIndex: 1000,
-                      minWidth: "180px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {menuItems.map((item, index) => (
-                      <button
-                        key={index}
-                        onClick={item.onClick}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.75rem",
-                          padding: "0.7rem 1rem",
-                          width: "100%",
-                          border: "none",
-                          backgroundColor: "transparent",
-                          cursor: "pointer",
-                          fontSize: "0.85rem",
-                          color: "#333",
-                          textAlign: "left",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f5f5f5";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }}
-                      >
-                        <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
-                          {item.icon}
-                        </span>
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  onChange={handleFileChange}
-                  style={{ display: "none" }}
-                />
-              </div>
-            </div>
-          ) : (
-            /* File Uploaded State */
-            <div>
+          {/* Drop Zone */}
+          <div
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+            style={{
+              border: "3px solid rgba(216, 121, 253, 0.5)",
+              backgroundColor: "rgb(243, 230, 255)",
+              borderRadius: "12px",
+              padding: "2rem",
+              textAlign: "center",
+              marginBottom: "2rem",
+              position: "relative",
+              minHeight: "280px",
+            }}
+          >
+            {!file ? (
+              /* Empty State */
               <div style={{
                 display: "flex",
-                justifyContent: "flex-end",
-                gap: "0.5rem",
-                marginBottom: "1.5rem",
-              }}>
-                <button
-                  onClick={handleConvert}
-                  disabled={isConverting}
-                  style={{
-                    backgroundColor: "#ffffffff",
-                    color: "Black",
-                    border: "none",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    cursor: isConverting ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.85rem",
-                    fontWeight: "500",
-                    opacity: isConverting ? 0.7 : 1,
-                  }}
-                >
-                  {isConverting ? "Converting..." : "Convert & Download"}
-                </button>
-                <button
-                  onClick={handleShare}
-                  style={{
-                    backgroundColor: "white",
-                    color: "#333",
-                    border: "1px solid #e0e0e0",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.85rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  <TbShare3 />
-                  Share
-                </button>
-              </div>
-
-              <div style={{
-                display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
+                height: "300px",
+                minHeight: "220px",
               }}>
-                <div
-                  style={{
-                    backgroundColor: "white",
-                    borderRadius: "8px",
-                    width: "120px",
-                    height: "140px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                    position: "relative",
-                  }}
-                >
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <img src="./upload.svg" alt="Upload Icon" />
+                </div>
+
+                <div ref={dropdownRef} style={{ position: "relative" }}>
                   <button
-                    onClick={removeFile}
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     style={{
-                      position: "absolute",
-                      top: "4px",
-                      right: "4px",
-                      background: "rgba(255, 255, 255, 1)",
-                      border: "none",
-                      borderRadius: "50%",
-                      width: "25px",
-                      height: "25px",
+                      backgroundColor: "white",
+                      padding: "0.6rem 1rem",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: "6px",
+                      cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      color: "black",
+                      gap: "0.5rem",
+                      fontSize: "0.9rem",
+                      fontWeight: "500",
+                      color: "#333",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                     }}
                   >
-                    <PiX size={35} />
+                    <PiFiles size={18} />
+                    Select File
+                    <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
                   </button>
-                  
-                  <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
-                  <span style={{ 
-                    fontSize: "0.65rem", 
-                    color: "#666", 
-                    maxWidth: "100px", 
-                    overflow: "hidden", 
-                    textOverflow: "ellipsis", 
-                    whiteSpace: "nowrap",
-                    padding: "0 0.5rem"
-                  }}>
-                    {file.name}
-                  </span>
+
+                  {isDropdownOpen && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 4px)",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        backgroundColor: "white",
+                        border: "1px solid #e0e0e0",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        zIndex: 1000,
+                        minWidth: "180px",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {menuItems.map((item, index) => (
+                        <button
+                          key={index}
+                          onClick={item.onClick}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.75rem",
+                            padding: "0.7rem 1rem",
+                            width: "100%",
+                            border: "none",
+                            backgroundColor: "transparent",
+                            cursor: "pointer",
+                            fontSize: "0.85rem",
+                            color: "#333",
+                            textAlign: "left",
+                            transition: "background-color 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#f5f5f5";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = "transparent";
+                          }}
+                        >
+                          <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
+                            {item.icon}
+                          </span>
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    onChange={handleFileChange}
+                    style={{ display: "none" }}
+                  />
                 </div>
               </div>
-
-              {error && (
-                <p style={{ 
-                  color: "#dc2626", 
-                  fontSize: "0.85rem", 
-                  marginTop: "1rem",
-                  textAlign: "center"
+            ) : isConverted ? (
+              /* Success State - Download */
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+                padding: "2rem",
+                gap: "1.5rem"
+              }}>
+                <div style={{
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  background: "#e8f5e9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#2e7d32",
+                  marginBottom: "0.5rem"
                 }}>
-                  {error}
+                  <PiCheckCircle size={48} />
+                </div>
+                <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0, textAlign: "center" }}>
+                  Converted Successfully!
+                </h2>
+                <p style={{ color: "#666", textAlign: "center", maxWidth: "400px" }}>
+                  Your PDF has been converted to EPUB. Download your file below.
                 </p>
-              )}
 
-              <div
-                style={{
+                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                  <button
+                    onClick={handleDownload}
+                    className="download-button"
+                    style={{
+                      backgroundColor: "#e11d48", // Brand color
+                      color: "white",
+                      padding: "1rem 2.5rem",
+                      borderRadius: "8px",
+                      fontSize: "1.1rem",
+                      fontWeight: "600",
+                      border: "none",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)"
+                    }}
+                  >
+                    Download EPUB
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                  <button
+                    onClick={handleShare}
+                    style={{
+                      background: "transparent",
+                      color: "#666",
+                      border: "1px solid #ccc",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem"
+                    }}
+                  >
+                    <TbShare3 /> Share
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    style={{
+                      background: "transparent",
+                      color: "#666",
+                      border: "1px solid #ccc",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Convert Another PDF
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* File Uploaded State */
+              <div>
+                <div style={{
                   display: "flex",
                   justifyContent: "flex-end",
-                  gap: "0.75rem",
-                  marginTop: "1.5rem",
+                  gap: "0.5rem",
+                  marginBottom: "1.5rem",
+                }}>
+                  <button
+                    onClick={handleConvert}
+                    disabled={isConverting}
+                    style={{
+                      backgroundColor: "#e11d48", // Brand color
+                      color: "white",
+                      border: "none",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      cursor: isConverting ? "not-allowed" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      fontSize: "0.85rem",
+                      fontWeight: "500",
+                      opacity: isConverting ? 0.7 : 1,
+                    }}
+                  >
+                    {isConverting ? "Converting..." : "Convert to EPUB"}
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    disabled={!convertedFileBlob}
+                    style={{
+                      backgroundColor: "white",
+                      color: "#333",
+                      border: "1px solid #e0e0e0",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      cursor: !convertedFileBlob ? "not-allowed" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      fontSize: "0.85rem",
+                      fontWeight: "500",
+                      opacity: !convertedFileBlob ? 0.5 : 1
+                    }}
+                  >
+                    <TbShare3 />
+                    Share
+                  </button>
+                </div>
+
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <div
+                    style={{
+                      backgroundColor: "white",
+                      borderRadius: "8px",
+                      width: "120px",
+                      height: "140px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      position: "relative",
+                    }}
+                  >
+                    <button
+                      onClick={removeFile}
+                      style={{
+                        position: "absolute",
+                        top: "4px",
+                        right: "4px",
+                        background: "rgba(255, 255, 255, 1)",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: "25px",
+                        height: "25px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        color: "black",
+                      }}
+                    >
+                      <PiX size={18} />
+                    </button>
+
+                    <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+                    <span style={{
+                      fontSize: "0.65rem",
+                      color: "#666",
+                      maxWidth: "100px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      padding: "0 0.5rem"
+                    }}>
+                      {file.name}
+                    </span>
+                  </div>
+                </div>
+
+                {error && (
+                  <p style={{
+                    color: "#dc2626",
+                    fontSize: "0.85rem",
+                    marginTop: "1rem",
+                    textAlign: "center"
+                  }}>
+                    {error}
+                  </p>
+                )}
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: "0.75rem",
+                    marginTop: "1.5rem",
+                    opacity: 0.4,
+                  }}
+                >
+                  <PiUploadSimple size={18} />
+                  <PiLink size={18} />
+                  <FaGoogleDrive size={16} />
+                  <FaDropbox size={16} />
+                  <PiClipboard size={18} />
+                </div>
+              </div>
+            )}
+
+            {!file && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: "1rem",
+                  top: "90%",
+                  transform: "translateY(-50%)",
+                  display: "flex",
+                  gap: "0.5rem",
                   opacity: 0.4,
                 }}
               >
-                <PiUploadSimple size={18} />
-                <PiLink size={18} />
-                <FaGoogleDrive size={16} />
-                <FaDropbox size={16} />
-                <PiClipboard size={18} />
+                <PiUploadSimple size={20} />
+                <PiLink size={20} />
+                <FaGoogleDrive size={18} />
+                <FaDropbox size={18} />
+                <PiClipboard size={20} />
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {!file && (
-            <div
-              style={{
-                position: "absolute",
-                right: "1rem",
-                top: "90%",
-                transform: "translateY(-50%)",
-                display: "flex",
-                gap: "0.5rem",
-                opacity: 0.4,
-              }}
-            >
-              <PiUploadSimple size={20} />
-              <PiLink size={20} />
-              <FaGoogleDrive size={18} />
-              <FaDropbox size={18} />
-              <PiClipboard size={20} />
-            </div>
-          )}
-        </div>
+          {/* Info Section */}
+          <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
+            <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
+              Convert your PDF files to EPUB format for better readability on e-readers and mobile devices.
+            </p>
+            <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
+              {[
+                "Perfect for e-readers and mobile reading apps",
+                "Convert files in seconds with drag-and-drop simplicity",
+                "Trusted by users worldwide for secure and fast conversion"
+              ].map((text, index) => (
+                <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                  <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
+                  {text}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        {/* Info Section */}
-        <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
-          <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
-            Convert your PDF files to EPUB format for better readability on e-readers and mobile devices.
-          </p>
-          <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
-            {[
-              "Perfect for e-readers and mobile reading apps",
-              "Convert files in seconds with drag-and-drop simplicity",
-              "Trusted by users worldwide for secure and fast conversion"
-            ].map((text, index) => (
-              <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
-                {text}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Security Section */}
-        <div
-          style={{
-            marginTop: "3rem",
-            padding: "1.5rem",
-            backgroundColor: "#f0f9ff",
-            border: "1px solid #cce5ff",
-            borderRadius: "10px",
-            fontSize: "0.95rem",
-            fontFamily: 'Georgia, "Times New Roman", serif',
-          }}
-        >
-          <strong>Protected. Encrypted. Automatically Deleted.</strong>
-          <p style={{ marginTop: "0.5rem", color: "#555" }}>
-            For years, our platform has helped users convert and manage files
-            securely—with no file tracking, no storage, and full privacy. Every
-            document you upload is encrypted and automatically deleted after 2
-            hours. Your data stays yours—always.
-          </p>
+          {/* Security Section */}
           <div
             style={{
-              marginTop: "1rem",
-              display: "flex",
-              justifyContent: "space-around",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "1rem",
-              filter: "grayscale(100%)",
+              marginTop: "3rem",
+              padding: "1.5rem",
+              backgroundColor: "#f0f9ff",
+              border: "1px solid #cce5ff",
+              borderRadius: "10px",
+              fontSize: "0.95rem",
+              fontFamily: 'Georgia, "Times New Roman", serif',
             }}
           >
-            <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
-            <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
-            <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
-            <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />          </div>
-        </div>
+            <strong>Protected. Encrypted. Automatically Deleted.</strong>
+            <p style={{ marginTop: "0.5rem", color: "#555" }}>
+              For years, our platform has helped users convert and manage files
+              securely—with no file tracking, no storage, and full privacy. Every
+              document you upload is encrypted and automatically deleted after 2
+              hours. Your data stays yours—always.
+            </p>
+            <div
+              style={{
+                marginTop: "1rem",
+                display: "flex",
+                justifyContent: "space-around",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "1rem",
+                filter: "grayscale(100%)",
+              }}
+            >
+              <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
+              <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
+              <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
+              <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />          </div>
+          </div>
         </div>
 
         {/* Right Ad */}
@@ -628,14 +745,14 @@ export default function PdfToEpubPage() {
         </div>
       )}
 
-      <ToolInstructions 
-        title={instructionData.title} 
-        steps={instructionData.steps} 
+      <ToolInstructions
+        title={instructionData.title}
+        steps={instructionData.steps as any}
       />
-      <Testimonials 
+      <Testimonials
         title="What Our Users Say"
         testimonials={testimonialData.testimonials}
-        autoScrollInterval={3000} 
+        autoScrollInterval={3000}
       />
       <ShareModal
         isOpen={showShareModal}

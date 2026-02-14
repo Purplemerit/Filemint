@@ -146,7 +146,7 @@ export default function DeletePdfPagesPage() {
       copiedPages.forEach(p => newPdf.addPage(p));
 
       const modifiedBytes = await newPdf.save();
-      const blob = new Blob([modifiedBytes], { type: "application/pdf" });
+      const blob = new Blob([modifiedBytes as any], { type: "application/pdf" });
       setModifiedBlob(blob);
       setIsDeleted(true);
       setIsEditingMode(false); // Go to Success Screen
@@ -192,14 +192,14 @@ export default function DeletePdfPagesPage() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
-    if (f && f.type === "application/pdf") {
+    if (f && (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"))) {
       setPdfFile(f);
       renderPdfPages(f);
     }
   };
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f && f.type === "application/pdf") {
+    if (f && (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"))) {
       setPdfFile(f);
       renderPdfPages(f);
     }
@@ -260,7 +260,7 @@ export default function DeletePdfPagesPage() {
                 </div>
                 <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0 }}>Pages Deleted Successfully!</h2>
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                  <button onClick={handleDownload} style={{ backgroundColor: "#e11d48", color: "white", padding: "1rem 2.5rem", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)" }}>
+                  <button onClick={handleDownload} className="download-button" style={{ backgroundColor: "#e11d48", color: "white", padding: "1rem 2.5rem", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)" }}>
                     Download PDF
                   </button>
                 </div>
@@ -348,7 +348,7 @@ export default function DeletePdfPagesPage() {
                           ))}
                         </div>
                       )}
-                      <input ref={fileInputRef} type="file" accept="application/pdf" onChange={handleFileChange} style={{ display: "none" }} />
+                      <input ref={fileInputRef} type="file" accept="application/pdf,.pdf" onChange={handleFileChange} style={{ display: "none" }} />
                     </div>
                   </>
                 )}
@@ -381,7 +381,7 @@ export default function DeletePdfPagesPage() {
             <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
               <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#007bff", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
+              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#e11d48", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
             </div>
           </div>
         </div>

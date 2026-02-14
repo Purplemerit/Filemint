@@ -178,7 +178,7 @@ export default function ImageTextExtractor() {
 
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
           <h1 style={{ fontSize: "2rem", fontWeight: "600", marginBottom: "2rem", display: "flex", alignItems: "center", gap: "0.5rem", color: "#1a1a1a", fontFamily: 'Georgia, "Times New Roman", serif' }}>
-            <PiTextT size={32} style={{ color: "#007bff" }} /> Extract Text from Image (OCR)
+            <PiTextT size={32} style={{ color: "#e11d48" }} /> Extract Text from Image (OCR)
           </h1>
 
           <div
@@ -211,7 +211,7 @@ export default function ImageTextExtractor() {
 
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem", flexWrap: "wrap", justifyContent: "center" }}>
                   <button onClick={handleDownloadPDF} style={{ backgroundColor: "#e11d48", color: "white", padding: "0.8rem 1.5rem", borderRadius: "6px", fontWeight: "600", border: "none", cursor: "pointer" }}>Download PDF</button>
-                  <button onClick={handleDownloadText} style={{ backgroundColor: "#007bff", color: "white", padding: "0.8rem 1.5rem", borderRadius: "6px", fontWeight: "600", border: "none", cursor: "pointer" }}>Download Text</button>
+                  <button onClick={handleDownloadText} style={{ backgroundColor: "#e11d48", color: "white", padding: "0.8rem 1.5rem", borderRadius: "6px", fontWeight: "600", border: "none", cursor: "pointer" }}>Download Text</button>
                 </div>
 
                 <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
@@ -236,7 +236,7 @@ export default function ImageTextExtractor() {
                 {!isProcessing ? (
                   <button
                     onClick={handleExtractText}
-                    style={{ padding: "1rem 2rem", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}
+                    style={{ padding: "1rem 2rem", backgroundColor: "#e11d48", color: "white", border: "none", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}
                   >
                     Start Extraction <PiTextT size={20} />
                   </button>
@@ -246,7 +246,7 @@ export default function ImageTextExtractor() {
                       Extracting Text... {progress}%
                     </div>
                     <div style={{ width: "100%", height: "10px", backgroundColor: "#eee", borderRadius: "5px", overflow: "hidden" }}>
-                      <div style={{ width: `${progress}%`, height: "100%", backgroundColor: "#007bff", transition: "width 0.3s" }} />
+                      <div style={{ width: `${progress}%`, height: "100%", backgroundColor: "#e11d48", transition: "width 0.3s" }} />
                     </div>
                   </div>
                 )}
@@ -303,7 +303,7 @@ export default function ImageTextExtractor() {
             <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
               <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#007bff", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add Image"}</button>
+              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#e11d48", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add Image"}</button>
             </div>
           </div>
         </div>

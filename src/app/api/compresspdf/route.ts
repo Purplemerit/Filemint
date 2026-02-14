@@ -1,28 +1,15 @@
-import { IncomingForm, File } from "formidable";
+import { NextRequest, NextResponse } from "next/server";
+import { PDFDocument, PDFName, PDFRawStream, PDFDict, PDFArray, PDFNumber } from "pdf-lib";
 import fs from "fs/promises";
 import path from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { NextRequest } from "next/server";
-import { Readable } from "stream";
 import os from "os";
-import { PDFDocument } from "pdf-lib";
+import sharp from "sharp";
+import { inflate } from "zlib";
 
 const execAsync = promisify(exec);
-
-class MockIncomingMessage extends Readable {
-  headers: Record<string, string>;
-  constructor(buffer: Buffer, contentType: string) {
-    super();
-    this.headers = {
-      "content-length": buffer.length.toString(),
-      "content-type": contentType,
-    };
-    this.push(buffer);
-    this.push(null);
-  }
-  _read() { }
-}
+const inflateAsync = promisify(inflate);
 
 async function hasQpdf(): Promise<boolean> {
   try {
@@ -33,94 +20,141 @@ async function hasQpdf(): Promise<boolean> {
   }
 }
 
-export async function POST(req: NextRequest) {
-  const uploadDir = os.tmpdir();
-  const form = new IncomingForm({
-    multiples: false,
-    uploadDir,
-    maxFileSize: 50 * 1024 * 1024, // 50MB
-    keepExtensions: true,
-  });
+/**
+ * Aggressively compresses a PDF by enumerating and re-compressing ALL image objects in the file.
+ * This is the most thorough way to reduce size as it catches images hidden in any part of the PDF structure.
+ */
+async function aggressiveCompress(inputBuffer: Buffer): Promise<Buffer> {
+  const pdfDoc = await PDFDocument.load(inputBuffer);
+  const context = pdfDoc.context;
+  const indirectObjects = context.enumerateIndirectObjects();
 
-  try {
-    const buffer = Buffer.from(await req.arrayBuffer());
-    const contentType = req.headers.get("content-type") || "multipart/form-data";
-    const mockReq = new MockIncomingMessage(buffer, contentType);
+  let compressedCount = 0;
 
-    return new Promise((resolve) => {
-      form.parse(mockReq as any, async (err: any, fields: any, files: { file?: File[] }) => {
-        if (err) {
-          console.error("Form parsing error:", err);
-          return resolve(
-            new Response(JSON.stringify({ error: "Failed to parse form data" }), {
-              status: 500,
-              headers: { "Content-Type": "application/json" },
-            })
-          );
-        }
+  for (const [ref, object] of indirectObjects) {
+    if (!(object instanceof PDFRawStream)) continue;
 
-        const file = files.file?.[0];
-        if (!file || !file.mimetype?.includes("pdf")) {
-          return resolve(
-            new Response(JSON.stringify({ error: "Please upload a single PDF file." }), {
-              status: 400,
-              headers: { "Content-Type": "application/json" },
-            })
-          );
-        }
+    const dict = object.dict;
+    const subtype = context.lookup(dict.get(PDFName.of('Subtype')));
+    if (subtype?.toString() !== '/Image') continue;
 
-        const inputPath = file.filepath;
-        const outputPath = path.join(uploadDir, `compressed-${Date.now()}.pdf`);
-        const qpdfAvailable = await hasQpdf();
+    try {
+      const width = Number(context.lookup(dict.get(PDFName.of('Width'))));
+      const height = Number(context.lookup(dict.get(PDFName.of('Height'))));
+      const filter = context.lookup(dict.get(PDFName.of('Filter')));
+      const colorSpace = context.lookup(dict.get(PDFName.of('ColorSpace')));
 
+      const rawData = object.getContents();
+      if (rawData.length < 5000) continue; // Skip tiny icons
+
+      let compressedData: Buffer | null = null;
+      const isDCT = filter?.toString() === '/DCTDecode' ||
+        (filter instanceof PDFArray && filter.asStringArray().includes('/DCTDecode'));
+
+      if (isDCT) {
+        // Re-compress existing JPEG
+        compressedData = await sharp(rawData)
+          .resize(1000, null, { withoutEnlargement: true })
+          .jpeg({ quality: 20, mozjpeg: true })
+          .toBuffer();
+      }
+      else if (filter?.toString() === '/FlateDecode' && width > 0 && height > 0) {
+        // Unpack raw pixels from Flate (common in scans)
         try {
-          let outputBuffer: Buffer;
+          const decompressed = await inflateAsync(rawData);
 
-          if (qpdfAvailable) {
-            // 🧩 Local / Docker mode — use qpdf
-            console.log("Using qpdf compression");
-            await execAsync(`qpdf --linearize --object-streams=generate "${inputPath}" "${outputPath}"`);
-            outputBuffer = await fs.readFile(outputPath);
-          } else {
-            // ☁️ Serverless mode — fallback to pdf-lib compression
-            console.log("qpdf not found, using pdf-lib fallback");
-            const existingPdfBytes = await fs.readFile(inputPath);
-            const pdfDoc = await PDFDocument.load(existingPdfBytes);
-            const optimized = await pdfDoc.save({ useObjectStreams: true });
-            outputBuffer = Buffer.from(optimized);
-          }
+          let channels = 3;
+          if (colorSpace?.toString() === '/DeviceGray') channels = 1;
 
-          return resolve(
-            new Response(outputBuffer as any, {
-              headers: {
-                "Content-Type": "application/pdf",
-                "Content-Disposition": `attachment; filename=compressed_${path.basename(file.originalFilename || "file.pdf")}`,
-              },
-            })
-          );
-        } catch (error) {
-          console.error("Compression error:", error);
-          return resolve(
-            new Response(JSON.stringify({ error: "Compression failed" }), {
-              status: 500,
-              headers: { "Content-Type": "application/json" },
-            })
-          );
-        } finally {
-          try {
-            await fs.unlink(inputPath).catch(() => { });
-            await fs.unlink(outputPath).catch(() => { });
-          } catch (cleanupError) {
-            console.error("Cleanup failed:", cleanupError);
-          }
+          // Attempt to wrap as raw pixels. If it fails (e.g. predictor encoding), Sharp will throw and we skip.
+          compressedData = await sharp(decompressed, {
+            raw: { width, height, channels: channels }
+          })
+            .resize(1000, null, { withoutEnlargement: true })
+            .jpeg({ quality: 20, mozjpeg: true })
+            .toBuffer();
+        } catch (e) {
+          // Decompression or raw parsing failed, skip this image
+          continue;
         }
-      });
+      }
+
+      if (compressedData && compressedData.length < rawData.length * 0.8) {
+        // OVERWRITE the stream content in place
+        (object as any).contents = new Uint8Array(compressedData);
+
+        // Update metadata for the new JPEG format
+        dict.set(PDFName.of('Filter'), PDFName.of('DCTDecode'));
+        dict.set(PDFName.of('ColorSpace'), PDFName.of('DeviceRGB'));
+        dict.set(PDFName.of('BitsPerComponent'), PDFNumber.of(8));
+        dict.delete(PDFName.of('DecodeParams')); // Remove old compression params
+
+        compressedCount++;
+      }
+    } catch (err) {
+      // Silent skip for complex/proprietary image formats
+    }
+  }
+
+  console.log(`[Aggressive] Re-compressed ${compressedCount} image objects.`);
+
+  return Buffer.from(await pdfDoc.save({
+    useObjectStreams: true,
+    addDefaultPage: false,
+    updateFieldAppearances: false,
+  }));
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const formData = await req.formData();
+    const file = formData.get("file") as File;
+
+    if (!file || !file.name) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+
+    const inputBuffer = Buffer.from(await file.arrayBuffer());
+    console.log(`[Compress] Start: ${inputBuffer.length} bytes`);
+
+    let outputBuffer = await aggressiveCompress(inputBuffer);
+
+    // Final structural pass with qpdf if available
+    const qpdfAvailable = await hasQpdf();
+    if (qpdfAvailable && outputBuffer.length < inputBuffer.length) {
+      const uploadDir = os.tmpdir();
+      const tempIn = path.join(uploadDir, `c-in-${Date.now()}.pdf`);
+      const tempOut = path.join(uploadDir, `c-out-${Date.now()}.pdf`);
+      await fs.writeFile(tempIn, outputBuffer);
+      try {
+        await execAsync(`qpdf --compress-streams=y --object-streams=generate "${tempIn}" "${tempOut}"`);
+        outputBuffer = await fs.readFile(tempOut);
+      } catch { } finally {
+        await fs.unlink(tempIn).catch(() => { });
+        await fs.unlink(tempOut).catch(() => { });
+      }
+    }
+
+    // Safety: If somehow it got bigger, force original
+    if (outputBuffer.length >= inputBuffer.length) {
+      console.log("[Compress] No reduction achieved, returning original.");
+      outputBuffer = inputBuffer;
+    }
+
+    const reductionPercent = Math.round(((inputBuffer.length - outputBuffer.length) / inputBuffer.length) * 100);
+
+    return new NextResponse(outputBuffer as any, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="compressed_${file.name}"`,
+        "Content-Length": outputBuffer.length.toString(),
+        "X-Reduction-Percent": reductionPercent.toString(),
+      },
     });
-  } catch (error) {
-    console.error("Request processing error:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+
+  } catch (error: any) {
+    console.error("Compression error:", error);
+    return NextResponse.json({ error: "Compression failed" }, { status: 500 });
   }
 }

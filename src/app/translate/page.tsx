@@ -5,10 +5,10 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { TbShare3 } from "react-icons/tb";
-import { 
-  PiFiles, 
-  PiLink, 
-  PiClipboard, 
+import {
+  PiFiles,
+  PiLink,
+  PiClipboard,
   PiCaretDown,
   PiUploadSimple,
   PiCheckCircle,
@@ -42,7 +42,7 @@ export default function PdfTranslator() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showShareModal, setShowShareModal] = useState(false);
-  const instructionData = toolData["pdf-translator"] ;
+  const instructionData = toolData["pdf-translator"];
 
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -92,7 +92,7 @@ export default function PdfTranslator() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === "application/pdf") {
+    if (droppedFile && (droppedFile.type === "application/pdf" || droppedFile.name.toLowerCase().endsWith(".pdf"))) {
       setFile(droppedFile);
       setError(null);
       setTranslated("");
@@ -103,7 +103,7 @@ export default function PdfTranslator() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
-    if (selected && selected.type === "application/pdf") {
+    if (selected && (selected.type === "application/pdf" || selected.name.toLowerCase().endsWith(".pdf"))) {
       setFile(selected);
       setError(null);
       setTranslated("");
@@ -124,17 +124,17 @@ export default function PdfTranslator() {
 
   const handleUrlSubmit = async () => {
     if (!urlInput.trim()) return;
-    
+
     try {
       setIsUploading(true);
       const response = await fetch(urlInput);
       const blob = await response.blob();
-      
+
       if (blob.type !== "application/pdf") {
         alert("URL must point to a PDF file");
         return;
       }
-      
+
       const fileName = urlInput.split("/").pop() || "downloaded.pdf";
       const file = new File([blob], fileName, { type: "application/pdf" });
       setFile(file);
@@ -249,472 +249,474 @@ export default function PdfTranslator() {
 
         {/* Main Content */}
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
-        <h1 style={{ 
-          fontSize: "2rem", 
-          fontWeight: "600",
-          marginBottom: "2rem",
-          textAlign: "left",
-          color: "#1a1a1a",
-          fontFamily: 'Georgia, "Times New Roman", serif',
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem"
-        }}>
-          <PiGlobe size={32} style={{ color: "#007bff" }} />
-          PDF Translator
-        </h1>
-
-        {/* Drop Zone */}
-        <div
-          onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
-          style={{
-            border: "3px solid rgba(0, 123, 255, 0.4)",
-            backgroundColor: "rgba(0, 123, 255, 0.1)",
-            borderRadius: "12px",
-            padding: "2rem",
-            textAlign: "center",
+          <h1 style={{
+            fontSize: "2rem",
+            fontWeight: "600",
             marginBottom: "2rem",
-            position: "relative",
-            minHeight: "280px",
-          }}
-        >
-          {!file ? (
-            /* Empty State */
-            <div style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "300px",
-              minHeight: "220px",
-            }}>
-              <div style={{ marginBottom: "1.5rem" }}>
-                <img src="./upload.svg" alt="Upload Icon" />
-              </div>
+            textAlign: "left",
+            color: "#1a1a1a",
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem"
+          }}>
+            <PiGlobe size={32} style={{ color: "#e11d48" }} />
+            PDF Translator
+          </h1>
 
-              <div ref={dropdownRef} style={{ position: "relative" }}>
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  style={{
-                    backgroundColor: "white",
-                    padding: "0.6rem 1rem",
-                    border: "1px solid #e0e0e0",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.9rem",
-                    fontWeight: "500",
-                    color: "#333",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <PiFiles size={18} />
-                  Select File
-                  <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
-                </button>
-
-                {isDropdownOpen && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 4px)",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      backgroundColor: "white",
-                      border: "1px solid #e0e0e0",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      zIndex: 1000,
-                      minWidth: "180px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {menuItems.map((item, index) => (
-                      <button
-                        key={index}
-                        onClick={item.onClick}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.75rem",
-                          padding: "0.7rem 1rem",
-                          width: "100%",
-                          border: "none",
-                          backgroundColor: "transparent",
-                          cursor: "pointer",
-                          fontSize: "0.85rem",
-                          color: "#333",
-                          textAlign: "left",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f5f5f5";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }}
-                      >
-                        <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
-                          {item.icon}
-                        </span>
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  onChange={handleFileChange}
-                  style={{ display: "none" }}
-                />
-              </div>
-            </div>
-          ) : (
-            /* File Uploaded State */
-            <div>
+          {/* Drop Zone */}
+          <div
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+            style={{
+              border: "3px solid rgba(0, 123, 255, 0.4)",
+              backgroundColor: "rgba(0, 123, 255, 0.1)",
+              borderRadius: "12px",
+              padding: "2rem",
+              textAlign: "center",
+              marginBottom: "2rem",
+              position: "relative",
+              minHeight: "280px",
+            }}
+          >
+            {!file ? (
+              /* Empty State */
               <div style={{
                 display: "flex",
-                justifyContent: "flex-end",
-                gap: "0.5rem",
-                marginBottom: "1.5rem",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "300px",
+                minHeight: "220px",
               }}>
-                <button
-                  onClick={handleTranslate}
-                  disabled={loading}
-                  style={{
-                    backgroundColor: loading ? "#ccc" : "#007bff",
-                    color: "white",
-                    border: "none",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    cursor: loading ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.85rem",
-                    fontWeight: "500",
-                    opacity: loading ? 0.7 : 1,
-                  }}
-                >
-                  <PiTranslate size={18} />
-                  {loading ? "Translating..." : "Translate PDF"}
-                </button>
-                {translated && (
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <img src="./upload.svg" alt="Upload Icon" />
+                </div>
+
+                <div ref={dropdownRef} style={{ position: "relative" }}>
                   <button
-                    onClick={handleShare}
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     style={{
                       backgroundColor: "white",
-                      color: "#333",
+                      padding: "0.6rem 1rem",
                       border: "1px solid #e0e0e0",
-                      padding: "0.5rem 1rem",
                       borderRadius: "6px",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
-                      fontSize: "0.85rem",
+                      fontSize: "0.9rem",
                       fontWeight: "500",
+                      color: "#333",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                     }}
                   >
-                    <TbShare3 />
-                    Share
+                    <PiFiles size={18} />
+                    Select File
+                    <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
                   </button>
-                )}
-              </div>
 
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "1.5rem",
-              }}>
-                <div
-                  style={{
-                    backgroundColor: "white",
-                    borderRadius: "8px",
-                    width: "120px",
-                    height: "140px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                    position: "relative",
-                  }}
-                >
-                  <button
-                    onClick={removeFile}
-                    style={{
-                      position: "absolute",
-                      top: "4px",
-                      right: "4px",
-                      background: "rgba(255, 255, 255, 1)",
-                      border: "none",
-                      borderRadius: "50%",
-                      width: "25px",
-                      height: "25px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      color: "black",
-                    }}
-                  >
-                    <PiX size={35} />
-                  </button>
-                  
-                  <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
-                  <span style={{ 
-                    fontSize: "0.65rem", 
-                    color: "#666", 
-                    maxWidth: "100px", 
-                    overflow: "hidden", 
-                    textOverflow: "ellipsis", 
-                    whiteSpace: "nowrap",
-                    padding: "0 0.5rem"
-                  }}>
-                    {file.name}
-                  </span>
-                </div>
-              </div>
-
-              {/* Language Selection */}
-              <div style={{ marginBottom: "1.5rem" }}>
-                <label style={{ 
-                  display: "block", 
-                  marginBottom: "0.5rem", 
-                  fontSize: "0.9rem", 
-                  fontWeight: "500",
-                  color: "#333"
-                }}>
-                  Translate to:
-                </label>
-                <input
-                  type="text"
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  placeholder="Enter target language (e.g., French, Hindi)"
-                  list="popular-languages"
-                  style={{
-                    width: "100%",
-                    padding: "0.6rem",
-                    border: "1px solid #ccc",
-                    borderRadius: "6px",
-                    fontSize: "0.9rem",
-                    boxSizing: "border-box",
-                  }}
-                />
-                <datalist id="popular-languages">
-                  {popularLanguages.map((lang) => (
-                    <option key={lang} value={lang} />
-                  ))}
-                </datalist>
-                <div style={{ 
-                  marginTop: "0.5rem", 
-                  display: "flex", 
-                  flexWrap: "wrap", 
-                  gap: "0.5rem" 
-                }}>
-                  {popularLanguages.slice(0, 5).map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => setLanguage(lang)}
+                  {isDropdownOpen && (
+                    <div
                       style={{
-                        padding: "0.25rem 0.5rem",
-                        fontSize: "0.75rem",
-                        backgroundColor: language === lang ? "#007bff" : "#f0f0f0",
-                        color: language === lang ? "white" : "#666",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
+                        position: "absolute",
+                        top: "calc(100% + 4px)",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        backgroundColor: "white",
+                        border: "1px solid #e0e0e0",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        zIndex: 1000,
+                        minWidth: "180px",
+                        overflow: "hidden",
                       }}
                     >
-                      {lang}
-                    </button>
-                  ))}
+                      {menuItems.map((item, index) => (
+                        <button
+                          key={index}
+                          onClick={item.onClick}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.75rem",
+                            padding: "0.7rem 1rem",
+                            width: "100%",
+                            border: "none",
+                            backgroundColor: "transparent",
+                            cursor: "pointer",
+                            fontSize: "0.85rem",
+                            color: "#333",
+                            textAlign: "left",
+                            transition: "background-color 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#f5f5f5";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = "transparent";
+                          }}
+                        >
+                          <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
+                            {item.icon}
+                          </span>
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    onChange={handleFileChange}
+                    style={{ display: "none" }}
+                  />
                 </div>
               </div>
-
-              {error && (
-                <p style={{ 
-                  color: "#dc2626", 
-                  fontSize: "0.85rem", 
-                  marginTop: "1rem",
-                  textAlign: "center"
-                }}>
-                  {error}
-                </p>
-              )}
-
-              <div
-                style={{
+            ) : (
+              /* File Uploaded State */
+              <div>
+                <div style={{
                   display: "flex",
                   justifyContent: "flex-end",
-                  gap: "0.75rem",
-                  marginTop: "1.5rem",
+                  gap: "0.5rem",
+                  marginBottom: "1.5rem",
+                }}>
+                  <button
+                    onClick={handleTranslate}
+                    disabled={loading}
+                    style={{
+                      backgroundColor: loading ? "#ccc" : "#e11d48",
+                      color: "white",
+                      border: "none",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      cursor: loading ? "not-allowed" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      fontSize: "0.85rem",
+                      fontWeight: "500",
+                      opacity: loading ? 0.7 : 1,
+                    }}
+                  >
+                    <PiTranslate size={18} />
+                    {loading ? "Translating..." : "Translate PDF"}
+                  </button>
+                  {translated && (
+                    <button
+                      onClick={handleShare}
+                      className="secondary-action-button"
+                      style={{
+                        backgroundColor: "white",
+                        color: "#333",
+                        border: "1px solid #e0e0e0",
+                        padding: "0.5rem 1rem",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.85rem",
+                        fontWeight: "500",
+                      }}
+                    >
+                      <TbShare3 />
+                      Share
+                    </button>
+                  )}
+                </div>
+
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "1.5rem",
+                }}>
+                  <div
+                    style={{
+                      backgroundColor: "white",
+                      borderRadius: "8px",
+                      width: "120px",
+                      height: "140px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      position: "relative",
+                    }}
+                  >
+                    <button
+                      onClick={removeFile}
+                      style={{
+                        position: "absolute",
+                        top: "4px",
+                        right: "4px",
+                        background: "rgba(255, 255, 255, 1)",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: "25px",
+                        height: "25px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        color: "black",
+                      }}
+                    >
+                      <PiX size={18} />
+                    </button>
+
+                    <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+                    <span style={{
+                      fontSize: "0.65rem",
+                      color: "#666",
+                      maxWidth: "100px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      padding: "0 0.5rem"
+                    }}>
+                      {file.name}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Language Selection */}
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <label style={{
+                    display: "block",
+                    marginBottom: "0.5rem",
+                    fontSize: "0.9rem",
+                    fontWeight: "500",
+                    color: "#333"
+                  }}>
+                    Translate to:
+                  </label>
+                  <input
+                    type="text"
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    placeholder="Enter target language (e.g., French, Hindi)"
+                    list="popular-languages"
+                    style={{
+                      width: "100%",
+                      padding: "0.6rem",
+                      border: "1px solid #ccc",
+                      borderRadius: "6px",
+                      fontSize: "0.9rem",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <datalist id="popular-languages">
+                    {popularLanguages.map((lang) => (
+                      <option key={lang} value={lang} />
+                    ))}
+                  </datalist>
+                  <div style={{
+                    marginTop: "0.5rem",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "0.5rem"
+                  }}>
+                    {popularLanguages.slice(0, 5).map((lang) => (
+                      <button
+                        key={lang}
+                        onClick={() => setLanguage(lang)}
+                        style={{
+                          padding: "0.25rem 0.5rem",
+                          fontSize: "0.75rem",
+                          backgroundColor: language === lang ? "#e11d48" : "#f0f0f0",
+                          color: language === lang ? "white" : "#666",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {lang}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {error && (
+                  <p style={{
+                    color: "#dc2626",
+                    fontSize: "0.85rem",
+                    marginTop: "1rem",
+                    textAlign: "center"
+                  }}>
+                    {error}
+                  </p>
+                )}
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: "0.75rem",
+                    marginTop: "1.5rem",
+                    opacity: 0.4,
+                  }}
+                >
+                  <PiUploadSimple size={18} />
+                  <PiLink size={18} />
+                  <FaGoogleDrive size={16} />
+                  <FaDropbox size={16} />
+                  <PiClipboard size={18} />
+                </div>
+              </div>
+            )}
+
+            {!file && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: "1rem",
+                  top: "90%",
+                  transform: "translateY(-50%)",
+                  display: "flex",
+                  gap: "0.5rem",
                   opacity: 0.4,
                 }}
               >
-                <PiUploadSimple size={18} />
-                <PiLink size={18} />
-                <FaGoogleDrive size={16} />
-                <FaDropbox size={16} />
-                <PiClipboard size={18} />
+                <PiUploadSimple size={20} />
+                <PiLink size={20} />
+                <FaGoogleDrive size={18} />
+                <FaDropbox size={18} />
+                <PiClipboard size={20} />
+              </div>
+            )}
+          </div>
+
+          {/* Translation Display */}
+          {translated && (
+            <div
+              style={{
+                marginTop: "2rem",
+                backgroundColor: "#f8faff",
+                padding: "1.5rem",
+                borderRadius: "10px",
+                border: "1px solid #e0e6f5",
+              }}
+            >
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "1rem"
+              }}>
+                <h3
+                  style={{
+                    fontSize: "1.2rem",
+                    color: "#1a1a1a",
+                    margin: 0,
+                    fontFamily: 'Georgia, "Times New Roman", serif',
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem"
+                  }}
+                >
+                  <PiTranslate size={24} style={{ color: "#e11d48" }} />
+                  Translated Text ({language})
+                </h3>
+                <button
+                  onClick={handleCopyTranslation}
+                  className="secondary-action-button"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.5rem 1rem",
+                    backgroundColor: copied ? "#28a745" : "white",
+                    color: copied ? "white" : "#333",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "0.85rem",
+                    fontWeight: "500",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <PiCopy size={16} />
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+              <div
+                style={{
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  fontSize: "0.95rem",
+                  lineHeight: "1.7",
+                  color: "#333",
+                  backgroundColor: "#ffffff",
+                  padding: "1.5rem",
+                  borderRadius: "6px",
+                  border: "1px solid #eaeaea",
+                  maxHeight: "500px",
+                  overflowY: "auto",
+                }}
+              >
+                {translated}
               </div>
             </div>
           )}
 
-          {!file && (
-            <div
-              style={{
-                position: "absolute",
-                right: "1rem",
-                top: "90%",
-                transform: "translateY(-50%)",
-                display: "flex",
-                gap: "0.5rem",
-                opacity: 0.4,
-              }}
-            >
-              <PiUploadSimple size={20} />
-              <PiLink size={20} />
-              <FaGoogleDrive size={18} />
-              <FaDropbox size={18} />
-              <PiClipboard size={20} />
-            </div>
-          )}
-        </div>
-
-        {/* Translation Display */}
-        {translated && (
-          <div
-            style={{
-              marginTop: "2rem",
-              backgroundColor: "#f8faff",
-              padding: "1.5rem",
-              borderRadius: "10px",
-              border: "1px solid #e0e6f5",
-            }}
-          >
-            <div style={{ 
-              display: "flex", 
-              justifyContent: "space-between", 
-              alignItems: "center",
-              marginBottom: "1rem"
-            }}>
-              <h3
-                style={{
-                  fontSize: "1.2rem",
-                  color: "#1a1a1a",
-                  margin: 0,
-                  fontFamily: 'Georgia, "Times New Roman", serif',
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem"
-                }}
-              >
-                <PiTranslate size={24} style={{ color: "#007bff" }} />
-                Translated Text ({language})
-              </h3>
-              <button
-                onClick={handleCopyTranslation}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  padding: "0.5rem 1rem",
-                  backgroundColor: copied ? "#28a745" : "white",
-                  color: copied ? "white" : "#333",
-                  border: "1px solid #e0e0e0",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "0.85rem",
-                  fontWeight: "500",
-                  transition: "all 0.2s",
-                }}
-              >
-                <PiCopy size={16} />
-                {copied ? "Copied!" : "Copy"}
-              </button>
-            </div>
-            <div
-              style={{
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-                fontSize: "0.95rem",
-                lineHeight: "1.7",
-                color: "#333",
-                backgroundColor: "#ffffff",
-                padding: "1.5rem",
-                borderRadius: "6px",
-                border: "1px solid #eaeaea",
-                maxHeight: "500px",
-                overflowY: "auto",
-              }}
-            >
-              {translated}
-            </div>
+          {/* Info Section */}
+          <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
+            <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
+              Translate your PDF documents into any language with AI-powered precision.
+            </p>
+            <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
+              {[
+                "Support for 100+ languages worldwide",
+                "AI-powered translation for accuracy",
+                "Copy or share translations easily",
+                "Works on any device — desktop, tablet, or mobile"
+              ].map((text, index) => (
+                <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                  <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
+                  {text}
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
 
-        {/* Info Section */}
-        <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
-          <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
-            Translate your PDF documents into any language with AI-powered precision.
-          </p>
-          <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
-            {[
-              "Support for 100+ languages worldwide",
-              "AI-powered translation for accuracy",
-              "Copy or share translations easily",
-              "Works on any device — desktop, tablet, or mobile"
-            ].map((text, index) => (
-              <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
-                {text}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Security Section */}
-        <div
-          style={{
-            marginTop: "3rem",
-            padding: "1.5rem",
-            backgroundColor: "#f0f9ff",
-            border: "1px solid #cce5ff",
-            borderRadius: "10px",
-            fontSize: "0.95rem",
-            fontFamily: 'Georgia, "Times New Roman", serif',
-          }}
-        >
-          <strong>Protected. Encrypted. Automatically Deleted.</strong>
-          <p style={{ marginTop: "0.5rem", color: "#555" }}>
-            Your files are encrypted during upload and automatically deleted after processing. No storage. No tracking.
-          </p>
+          {/* Security Section */}
           <div
             style={{
-              marginTop: "1rem",
-              display: "flex",
-              justifyContent: "space-around",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "1rem",
-              filter: "grayscale(100%)",
+              marginTop: "3rem",
+              padding: "1.5rem",
+              backgroundColor: "#f0f9ff",
+              border: "1px solid #cce5ff",
+              borderRadius: "10px",
+              fontSize: "0.95rem",
+              fontFamily: 'Georgia, "Times New Roman", serif',
             }}
           >
-            <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
-            <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
-            <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
-            <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />          </div>
-        </div>
+            <strong>Protected. Encrypted. Automatically Deleted.</strong>
+            <p style={{ marginTop: "0.5rem", color: "#555" }}>
+              Your files are encrypted during upload and automatically deleted after processing. No storage. No tracking.
+            </p>
+            <div
+              style={{
+                marginTop: "1rem",
+                display: "flex",
+                justifyContent: "space-around",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "1rem",
+                filter: "grayscale(100%)",
+              }}
+            >
+              <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
+              <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
+              <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
+              <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />          </div>
+          </div>
         </div>
 
         {/* Right Ad */}
@@ -784,7 +786,7 @@ export default function PdfTranslator() {
                   padding: "0.5rem 1rem",
                   border: "none",
                   borderRadius: "6px",
-                  backgroundColor: "#007bff",
+                  backgroundColor: "#e11d48",
                   color: "white",
                   cursor: isUploading ? "not-allowed" : "pointer",
                   opacity: isUploading ? 0.7 : 1,
@@ -797,14 +799,14 @@ export default function PdfTranslator() {
         </div>
       )}
 
-      <ToolInstructions 
-        title={instructionData.title} 
-        steps={instructionData.steps} 
+      <ToolInstructions
+        title={instructionData.title}
+        steps={instructionData.steps as any}
       />
-      <Testimonials 
+      <Testimonials
         title="What Our Users Say"
         testimonials={testimonialData.testimonials}
-        autoScrollInterval={3000} 
+        autoScrollInterval={3000}
       />
       <ShareModal
         isOpen={showShareModal}

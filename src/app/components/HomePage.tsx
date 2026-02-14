@@ -81,7 +81,9 @@ export default function HomePage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          minHeight: "60vh",
+
+          minHeight: "90vh",
+
           gap: 0,
           flexWrap: "wrap",
           position: "relative",

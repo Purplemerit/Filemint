@@ -77,7 +77,7 @@ export default function PdfWatermarkPage() {
       });
 
       const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
       setWatermarkedBlob(blob);
       setIsApplied(true);
     } catch (err) {
@@ -119,11 +119,11 @@ export default function PdfWatermarkPage() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
-    if (f && f.type === "application/pdf") setFile(f);
+    if (f && (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"))) setFile(f);
   };
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f && f.type === "application/pdf") setFile(f);
+    if (f && (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"))) setFile(f);
     setIsDropdownOpen(false);
   };
   const handleFromDevice = () => fileInputRef.current?.click();
@@ -159,7 +159,7 @@ export default function PdfWatermarkPage() {
 
         <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
           <h1 style={{ fontSize: "2rem", fontWeight: "600", marginBottom: "2rem", display: "flex", alignItems: "center", gap: "0.5rem", color: "#1a1a1a", fontFamily: 'Georgia, "Times New Roman", serif' }}>
-            <PiDropHalfBottom size={32} style={{ color: "#007bff" }} /> Add Watermark
+            <PiDropHalfBottom size={32} style={{ color: "#e11d48" }} /> Add Watermark
           </h1>
 
           <div
@@ -184,7 +184,7 @@ export default function PdfWatermarkPage() {
                 </div>
                 <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0 }}>Watermark Added!</h2>
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                  <button onClick={handleDownload} style={{ backgroundColor: "#e11d48", color: "white", padding: "1rem 2.5rem", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)" }}>
+                  <button onClick={handleDownload} className="download-button" style={{ backgroundColor: "#e11d48", color: "white", padding: "1rem 2.5rem", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)" }}>
                     Download PDF
                   </button>
                 </div>
@@ -225,7 +225,7 @@ export default function PdfWatermarkPage() {
                   <button
                     onClick={applyWatermark}
                     disabled={isProcessing}
-                    style={{ width: "100%", padding: "0.8rem", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", opacity: isProcessing ? 0.7 : 1 }}
+                    style={{ width: "100%", padding: "0.8rem", backgroundColor: "#e11d48", color: "white", border: "none", borderRadius: "6px", fontWeight: "bold", cursor: isProcessing ? "not-allowed" : "pointer", opacity: isProcessing ? 0.7 : 1 }}
                   >
                     {isProcessing ? "Processing..." : "Apply Watermark"}
                   </button>
@@ -269,7 +269,7 @@ export default function PdfWatermarkPage() {
                       ))}
                     </div>
                   )}
-                  <input ref={fileInputRef} type="file" accept="application/pdf" onChange={handleFileChange} style={{ display: "none" }} />
+                  <input ref={fileInputRef} type="file" accept="application/pdf,.pdf" onChange={handleFileChange} style={{ display: "none" }} />
                 </div>
               </div>
             )}
@@ -300,7 +300,7 @@ export default function PdfWatermarkPage() {
             <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
               <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#007bff", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
+              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#e11d48", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
             </div>
           </div>
         </div>
