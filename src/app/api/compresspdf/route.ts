@@ -25,7 +25,7 @@ async function hasQpdf(): Promise<boolean> {
  * This is the most thorough way to reduce size as it catches images hidden in any part of the PDF structure.
  */
 async function aggressiveCompress(inputBuffer: Buffer): Promise<Buffer> {
-  const pdfDoc = await PDFDocument.load(inputBuffer);
+  const pdfDoc = await PDFDocument.load(inputBuffer, { ignoreEncryption: true });
   const context = pdfDoc.context;
   const indirectObjects = context.enumerateIndirectObjects();
 
@@ -152,6 +152,8 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error("Compression error:", error);
-    return NextResponse.json({ error: "Compression failed" }, { status: 500 });
+    return NextResponse.json({
+      error: `Compression failed: ${error.message || "Invalid or protected PDF"}. Try removing security or optimizing the PDF first.`
+    }, { status: 500 });
   }
 }

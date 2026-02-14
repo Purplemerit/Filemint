@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument } from "pdf-lib";
 
-export const runtime = "nodejs"; // ensure Node.js environment
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const files = formData.getAll("files") as File[];
+    const files = formData.getAll("files");
 
     if (!files || files.length < 2) {
       return NextResponse.json(
@@ -15,35 +15,56 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ✅ Create a new empty PDF document
+    // Create a new empty PDF document
     const mergedPdf = await PDFDocument.create();
+    let totalPages = 0;
 
-    for (const file of files) {
-      if (!file.type.includes("pdf")) continue;
+    for (const fileItem of files) {
+      if (!(fileItem instanceof Blob)) continue;
 
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await PDFDocument.load(arrayBuffer);
-      const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+      const fileName = (fileItem as any).name || "unknown.pdf";
 
-      copiedPages.forEach((page) => mergedPdf.addPage(page));
+      try {
+        const arrayBuffer = await fileItem.arrayBuffer();
+
+        // ignoreEncryption: true is CRITICAL for many restricted PDFs
+        const pdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+
+        copiedPages.forEach((page) => {
+          mergedPdf.addPage(page);
+          totalPages++;
+        });
+      } catch (loadErr: any) {
+        console.error(`Error processing file ${fileName}:`, loadErr);
+        return NextResponse.json(
+          { error: `Error processing "${fileName}": ${loadErr.message || "Invalid PDF structure"}. Try ensuring the file is not corrupted or password-protected.` },
+          { status: 500 }
+        );
+      }
     }
 
-    // ✅ Serialize merged PDF
+    if (totalPages === 0) {
+      return NextResponse.json(
+        { error: "No valid PDF pages were found to merge." },
+        { status: 400 }
+      );
+    }
+
     const mergedPdfBytes = await mergedPdf.save();
 
-    // ✅ Return as binary (not corrupted)
-    return new NextResponse(mergedPdfBytes, {
+    return new NextResponse(mergedPdfBytes as any, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": 'attachment; filename="merged.pdf"',
+        "Content-Disposition": 'attachment; filename="merged_filemint.pdf"',
         "Content-Length": mergedPdfBytes.length.toString(),
       },
     });
   } catch (err: any) {
-    console.error("Merge error:", err);
+    console.error("Global merge error:", err);
     return NextResponse.json(
-      { error: `Merge failed: ${err.message || "Unknown error"}` },
+      { error: `Merge process failed: ${err.message || "Unknown error"}` },
       { status: 500 }
     );
   }

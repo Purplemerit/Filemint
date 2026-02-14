@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     // Read the PDF into memory
     const buffer = Buffer.from(await pdfFile.arrayBuffer());
-    const pdfDoc = await PDFDocument.load(buffer);
+    const pdfDoc = await PDFDocument.load(buffer, { ignoreEncryption: true });
     const totalPages = pdfDoc.getPageCount();
 
     // Create a ZIP file to collect all images
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     const zipData = await zip.generateAsync({ type: "nodebuffer" });
 
-    return new NextResponse(zipData, {
+    return new NextResponse(zipData as any, {
       status: 200,
       headers: {
         "Content-Type": "application/zip",

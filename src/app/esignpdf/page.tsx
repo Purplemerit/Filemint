@@ -359,7 +359,7 @@ export default function ESignPdfPage() {
 
     try {
       const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
+      const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
       const pdfPages = pdfDoc.getPages();
 
       const hexToRgb = (hex: string) => {

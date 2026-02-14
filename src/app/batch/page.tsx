@@ -45,30 +45,32 @@ const batchTools = [
 export default function BatchProcessingSection() {
   return (<>
     <Navbar />
-    <section style={{ padding: "3rem 1rem", textAlign: "center" }}>
-      <h2 style={{ fontSize: "1.75rem", marginBottom: "2rem" }}>
+    <section className="main-layout" style={{ flexDirection: 'column', alignItems: 'center' }}>
+      <h1 className="tool-title" style={{ textAlign: 'center', width: '100%' }}>
         Batch Processing
-      </h2>
-      <p style={{ marginBottom: "2rem", color: "#555" }}>
+      </h1>
+      <p style={{ marginBottom: "2rem", color: "#555", textAlign: 'center', fontFamily: 'Georgia, serif' }}>
         Apply actions to multiple PDFs in one go.
       </p>
       <div
+        className="tools-grid"
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "1.5rem",
-          maxWidth: "600px",
+          maxWidth: "800px",
           margin: "0 auto",
+          width: '100%'
         }}
       >
         {batchTools.map((tool, index) => (
-          <Link href={tool.route} key={index} style={{ textDecoration: "none" }}>
+          <Link href={tool.route} key={index} style={{ textDecoration: "none", display: 'flex', justifyContent: 'center' }}>
             <div
+              className="batch-tool-card"
               style={{
                 backgroundColor: tool.color,
                 color: "#666",
                 borderRadius: "16px",
                 padding: "2rem 1.5rem",
+                width: '100%',
+                maxWidth: '220px',
                 aspectRatio: "1 / 1",
                 display: "flex",
                 flexDirection: "column",
@@ -77,15 +79,13 @@ export default function BatchProcessingSection() {
                 textAlign: "center",
                 cursor: "pointer",
                 transition: "transform 0.2s ease",
-                maxWidth: "160px",
-                minHeight: "140px",
               }}
             >
               <div style={{ marginBottom: "1rem" }}>
                 <i
                   className={tool.icon}
                   style={{
-                    fontSize: "2rem",
+                    fontSize: "2.5rem",
                     color: "#666",
                   }}
                 ></i>
@@ -93,9 +93,10 @@ export default function BatchProcessingSection() {
               <h3
                 style={{
                   marginBottom: "0",
-                  fontSize: "0.95rem",
+                  fontSize: "1.1rem",
                   fontWeight: "600",
                   lineHeight: "1.2",
+                  fontFamily: 'Georgia, serif'
                 }}
               >
                 {tool.title}
@@ -105,6 +106,6 @@ export default function BatchProcessingSection() {
         ))}
       </div>
     </section>
-    </>
+  </>
   );
 }

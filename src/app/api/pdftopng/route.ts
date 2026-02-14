@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await pdfFile.arrayBuffer());
 
     // Load PDF
-    const pdfDoc = await PDFDocument.load(buffer);
+    const pdfDoc = await PDFDocument.load(buffer, { ignoreEncryption: true });
     const totalPages = pdfDoc.getPageCount();
 
     // Prepare ZIP
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
 
-    return new NextResponse(zipBuffer, {
+    return new NextResponse(zipBuffer as any, {
       status: 200,
       headers: {
         "Content-Type": "application/zip",
