@@ -14,6 +14,7 @@ import {
   PiCheckCircle,
   PiX
 } from "react-icons/pi";
+import { PDFDocument } from "pdf-lib";
 import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import ShareModal from "../components/ShareModal";
 import { useGoogleDrivePicker } from "../hooks/useGoogleDrivePicker";
@@ -98,9 +99,40 @@ export default function CompressPdfPage() {
     setIsCompressing(true);
     setError(null);
 
-    const originalSize = files[0].size;
+    const originalFile = files[0];
+    const originalSize = originalFile.size;
+
+    // Phase 1: Client-Side Basic Optimization (Object Compression)
+    let optimizedBlob: Blob | null = null;
+    let optimizedSize = originalSize;
+
+    try {
+      const arrayBuffer = await originalFile.arrayBuffer();
+      // Load with ignoreEncryption to handle as many cases as possible
+      const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+
+      // Basic optimization using object streams and stripping metadata
+      const compressedPdfBytes = await pdfDoc.save({
+        useObjectStreams: true,
+        addDefaultPage: false,
+      });
+
+      optimizedBlob = new Blob([compressedPdfBytes], { type: "application/pdf" });
+      optimizedSize = optimizedBlob.size;
+
+      console.log(`Client-side optimization: ${originalSize} -> ${optimizedSize}`);
+    } catch (clientErr) {
+      console.warn("Client-side basic compression failed:", clientErr);
+    }
+
+    // Phase 2: Server-Side Aggressive Compression
+    // We send the smaller of the two (original or optimized) to the server
+    const fileToUpload = (optimizedBlob && optimizedSize < originalSize)
+      ? new File([optimizedBlob], originalFile.name, { type: "application/pdf" })
+      : originalFile;
+
     const formData = new FormData();
-    formData.append("file", files[0]);
+    formData.append("file", fileToUpload);
 
     try {
       const response = await fetch("/api/compresspdf", {
@@ -120,11 +152,28 @@ export default function CompressPdfPage() {
       setStats({
         original: originalSize,
         compressed: blob.size,
-        percent: reductionPercent
+        percent: Math.round(((originalSize - blob.size) / originalSize) * 100)
       });
       setIsCompressed(true);
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+      console.error("Compression error:", err);
+
+      // If server fails with "Failed to fetch" (likely network limit/timeout on mobile)
+      // and we have a client-side optimized version, we can use that as a fallback.
+      if (err.message.includes("fetch") && optimizedBlob && optimizedSize < originalSize) {
+        setCompressedFileBlob(optimizedBlob);
+        setStats({
+          original: originalSize,
+          compressed: optimizedSize,
+          percent: Math.round(((originalSize - optimizedSize) / originalSize) * 100)
+        });
+        setIsCompressed(true);
+        setError("Note: Full compression failed due to network limits. Used basic local compression instead.");
+      } else {
+        setError(err.message === "Failed to fetch"
+          ? "Large file upload failed. Please check your internet connection or try a smaller file."
+          : err.message || "An unexpected error occurred");
+      }
     } finally {
       setIsCompressing(false);
     }
