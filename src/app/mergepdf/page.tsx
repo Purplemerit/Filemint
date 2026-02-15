@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 import { TbShare3 } from "react-icons/tb";
+import { PDFDocument } from "pdf-lib";
 import {
   PiFiles,
   PiLink,
@@ -393,7 +394,31 @@ export default function MergePdfPage() {
       return;
     }
 
-    setIsUploading(true); // Reuse uploading state for processing
+    setIsUploading(true);
+
+    // Attempt Client-Side Merge first for better mobile performance and to avoid upload limits
+    try {
+      const mergedPdf = await PDFDocument.create();
+      for (const item of files) {
+        const arrayBuffer = await item.file.arrayBuffer();
+        // Load with ignoreEncryption to handle as many cases as possible on client
+        const pdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        copiedPages.forEach((page) => mergedPdf.addPage(page));
+      }
+      const mergedPdfBytes = await mergedPdf.save();
+      const blob = new Blob([mergedPdfBytes], { type: "application/pdf" });
+      setMergedFileBlob(blob);
+      setIsMerged(true);
+      setIsUploading(false);
+      return;
+    } catch (clientErr) {
+      console.warn("Client-side merge failed, falling back to server-side merge:", clientErr);
+      // If client-side fails (e.g. complex encryption, memory limit, or malformed PDF), 
+      // we proceed to the server fallback below.
+    }
+
+    // Server-Side Fallback
     const formData = new FormData();
     files.forEach((item) => formData.append("files", item.file));
 
@@ -411,7 +436,7 @@ export default function MergePdfPage() {
 
       const blob = await response.blob();
       setMergedFileBlob(blob);
-      setIsMerged(true); // Switch to success view
+      setIsMerged(true);
     } catch (error) {
       alert("An error occurred during merge. Please check your internet connection or try with smaller files.");
     } finally {
