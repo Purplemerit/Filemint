@@ -14,7 +14,8 @@ import {
   PiCheckCircle,
   PiX,
   PiArrowCounterClockwise,
-  PiArrowClockwise
+  PiArrowClockwise,
+  PiDownloadSimple
 } from "react-icons/pi";
 import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import ShareModal from "../components/ShareModal";
@@ -314,7 +315,7 @@ export default function RotatePdfPage() {
                       disabled={loading}
                       style={{ width: "100%", padding: "1rem", backgroundColor: "#e11d48", color: "white", border: "none", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "bold", cursor: loading ? "wait" : "pointer", display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem" }}
                     >
-                      {loading ? "Processing..." : "Rotate PDF"} <PiArrowClockwise size={20} />
+                      {loading ? "Processing..." : "Save & Download"} <PiDownloadSimple size={20} />
                     </button>
                   </div>
                 </div>

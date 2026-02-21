@@ -44,11 +44,6 @@ export async function POST(req: NextRequest) {
         .png()
         .toBuffer();
 
-      // Embed page text as raster (placeholder visual)
-      // pdf-lib cannot render directly to image,
-      // so this version creates a placeholder per page
-      // (You can later replace this with pdf-renderer like pdf2pic if needed)
-
       const jpgBuffer = await sharp(blankImage).jpeg({ quality: 90 }).toBuffer();
       zip.file(`page-${i + 1}.jpg`, jpgBuffer);
     }

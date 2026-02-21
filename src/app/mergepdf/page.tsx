@@ -44,6 +44,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import FilePreview from "../components/FilePreview";
 // Interface for File with ID
 interface FileWithId {
   id: string;
@@ -127,10 +128,9 @@ function SortableFileCard({
           <PiX size={20} />
         </button>
 
-        <img
-          src="./pdf.svg"
-          alt="PDF Icon"
-          style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }}
+        <FilePreview
+          file={item.file}
+          style={{ width: "80px", height: "100px", marginBottom: "0.5rem" }}
         />
         <p
           style={{
@@ -407,7 +407,7 @@ export default function MergePdfPage() {
         copiedPages.forEach((page) => mergedPdf.addPage(page));
       }
       const mergedPdfBytes = await mergedPdf.save();
-      const blob = new Blob([mergedPdfBytes], { type: "application/pdf" });
+      const blob = new Blob([mergedPdfBytes as any], { type: "application/pdf" });
       setMergedFileBlob(blob);
       setIsMerged(true);
       setIsUploading(false);

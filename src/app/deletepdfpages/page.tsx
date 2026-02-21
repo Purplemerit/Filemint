@@ -12,7 +12,8 @@ import {
   PiUploadSimple,
   PiCheckCircle,
   PiX,
-  PiTrash
+  PiTrash,
+  PiDownloadSimple
 } from "react-icons/pi";
 import { TbShare3 } from "react-icons/tb";
 import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
@@ -147,9 +148,15 @@ export default function DeletePdfPagesPage() {
 
       const modifiedBytes = await newPdf.save();
       const blob = new Blob([modifiedBytes as any], { type: "application/pdf" });
+
+      // Update working state with the new PDF
+      const newFile = new File([blob], pdfFile.name, { type: "application/pdf" });
+      setPdfFile(newFile);
       setModifiedBlob(blob);
-      setIsDeleted(true);
-      setIsEditingMode(false); // Go to Success Screen
+      setSelectedPages(new Set());
+
+      // Refresh thumbnails to show the new state
+      await renderPdfPages(newFile);
 
     } catch (error) {
       console.error(error);
@@ -157,6 +164,21 @@ export default function DeletePdfPagesPage() {
     } finally {
       setIsProcessing(false);
     }
+  };
+  const handleFinish = () => {
+    if (!modifiedBlob) {
+      // If they haven't deleted anything yet, use the original file
+      if (pdfFile) {
+        pdfFile.arrayBuffer().then(buf => {
+          setModifiedBlob(new Blob([buf], { type: "application/pdf" }));
+          setIsDeleted(true);
+          setIsEditingMode(false);
+        });
+      }
+      return;
+    }
+    setIsDeleted(true);
+    setIsEditingMode(false);
   };
 
   // --- Utils ---
@@ -285,18 +307,34 @@ export default function DeletePdfPagesPage() {
                     <span style={{ display: "flex", alignItems: "center", marginLeft: "1rem", color: "#666" }}>{selectedPages.size} pages selected</span>
                   </div>
 
-                  <button
-                    onClick={deleteSelectedPages}
-                    disabled={selectedPages.size === 0}
-                    style={{
-                      backgroundColor: selectedPages.size > 0 ? "#dc3545" : "#ccc",
-                      color: "white", border: "none", padding: "0.7rem 1.5rem",
-                      borderRadius: "6px", cursor: selectedPages.size > 0 ? "pointer" : "not-allowed",
-                      fontWeight: "bold", display: "flex", alignItems: "center", gap: "0.5rem"
-                    }}
-                  >
-                    <PiTrash size={20} /> Remove Selected
-                  </button>
+                  <div style={{ display: "flex", gap: "0.75rem" }}>
+                    <button
+                      onClick={deleteSelectedPages}
+                      disabled={selectedPages.size === 0 || isProcessing}
+                      style={{
+                        backgroundColor: (selectedPages.size > 0 && !isProcessing) ? "#dc3545" : "#ccc",
+                        color: "white", border: "none", padding: "0.7rem 1.5rem",
+                        borderRadius: "6px", cursor: (selectedPages.size > 0 && !isProcessing) ? "pointer" : "not-allowed",
+                        fontWeight: "bold", display: "flex", alignItems: "center", gap: "0.5rem"
+                      }}
+                    >
+                      {isProcessing ? "Processing..." : <><PiTrash size={20} /> Delete Selected</>}
+                    </button>
+
+                    <button
+                      onClick={handleFinish}
+                      disabled={isProcessing}
+                      style={{
+                        backgroundColor: "#e11d48",
+                        color: "white", border: "none", padding: "0.7rem 1.5rem",
+                        borderRadius: "6px", cursor: isProcessing ? "not-allowed" : "pointer",
+                        fontWeight: "bold", display: "flex", alignItems: "center", gap: "0.5rem",
+                        boxShadow: "0 4px 12px rgba(225, 29, 72, 0.2)"
+                      }}
+                    >
+                      <PiDownloadSimple size={20} /> Download PDF
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid-container" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", maxHeight: "60vh", overflowY: "auto", padding: "10px" }}>

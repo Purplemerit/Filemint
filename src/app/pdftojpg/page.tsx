@@ -22,6 +22,7 @@ import ToolInstructions from "../components/ToolInstructions";
 import toolData from "../data/toolInstructions.json";
 import Testimonials from "../components/Testimonials";
 import testimonialData from "../data/testimonials.json";
+import FilePreview from "../components/FilePreview";
 import Footer from "../components/footer";
 import * as pdfjsLib from "pdfjs-dist";
 import JSZip from "jszip";
@@ -622,7 +623,7 @@ export default function PdfToJpgPage() {
                     <PiX size={18} />
                   </button>
 
-                  <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+                  <FilePreview file={file} style={{ width: "80px", height: "100px", marginBottom: "0.5rem" }} />
                   <span style={{
                     fontSize: "0.65rem",
                     color: "#666",

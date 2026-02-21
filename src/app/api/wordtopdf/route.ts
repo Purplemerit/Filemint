@@ -1,14 +1,50 @@
-import { NextRequest, NextResponse } from "next/server";
+import { exec } from "child_process";
 import fs from "fs";
 import path from "path";
 import { tmpdir } from "os";
-import puppeteer from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
+import { promisify } from "util";
+import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
+const execAsync = promisify(exec);
+
+// ── Locate the LibreOffice / soffice binary ───────────────────────────────────
+async function findLibreOffice(): Promise<string> {
+  const candidates = [
+    // Linux (Ubuntu / Amazon Linux / Debian)
+    "libreoffice",
+    "soffice",
+    "/usr/bin/libreoffice",
+    "/usr/bin/soffice",
+    "/usr/lib/libreoffice/program/soffice",
+    "/opt/libreoffice/program/soffice",
+    // Windows (local development)
+    "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
+    "C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe",
+  ];
+
+  for (const cmd of candidates) {
+    try {
+      await execAsync(`"${cmd}" --version`, { timeout: 5000 });
+      return cmd;
+    } catch {
+      continue;
+    }
+  }
+
+  throw new Error(
+    "LibreOffice not found.\n" +
+    "On EC2/Ubuntu: sudo apt-get install -y libreoffice\n" +
+    "On Windows:    https://www.libreoffice.org/download/download/"
+  );
+}
+
+// ── Main Route ────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  let tempDocxPath = "";
+  const timestamp = Date.now();
+  const tempDir = path.join(tmpdir(), `wordtopdf-${timestamp}`);
 
   try {
     const formData = await req.formData();
@@ -18,179 +54,60 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No files uploaded" }, { status: 400 });
     }
 
-    const docxFile = files[0];
-    const buffer = Buffer.from(await docxFile.arrayBuffer());
-    tempDocxPath = path.join(tmpdir(), `input-${Date.now()}.docx`);
-    await fs.promises.writeFile(tempDocxPath, buffer);
+    const file = files[0];
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const baseName = file.name.replace(/\.[^/.]+$/, "");
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
 
-    const docxBase64 = buffer.toString("base64");
+    // Create isolated temp directory for this conversion
+    await fs.promises.mkdir(tempDir, { recursive: true });
 
-    // "ULTRA-FIDELITY" TEMPLATE
-    // Focused on preventing line overlap by fixing font metrics and layout synchronization
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/docx-preview@0.3.2/dist/docx-preview.js"></script>
-        <style>
-          /* 1. Metric-Perfect Font Mapping */
-          @font-face { font-family: 'Calibri'; src: local('Calibri'), local('Carlito'), local('Open Sans'), sans-serif; }
-          @font-face { font-family: 'Cambria'; src: local('Cambria'), local('Caladea'), local('Lora'), serif; }
-          @font-face { font-family: 'Arial'; src: local('Arial'), local('Arimo'), sans-serif; }
-          @font-face { font-family: 'Times New Roman'; src: local('Times New Roman'), local('Tinos'), serif; }
+    const inputPath = path.join(tempDir, safeName);
+    const outputPath = path.join(tempDir, `${path.parse(safeName).name}.pdf`);
 
-          html, body { 
-            margin: 0; 
-            padding: 0; 
-            background: white; 
-            -webkit-print-color-adjust: exact;
-            /* Prevents the browser from 'averaging' letter widths which causes overlap */
-            text-rendering: geometricPrecision;
-            -webkit-font-smoothing: initial;
-          }
+    // Write the DOCX to disk
+    await fs.promises.writeFile(inputPath, buffer);
 
-          /* 2. Zero-Shift Container */
-          .docx-wrapper { 
-            background: transparent !important; 
-            padding: 0 !important; 
-            margin: 0 !important;
-            display: block !important;
-          }
-          
-          .docx-wrapper > section.docx {
-            box-shadow: none !important;
-            border: none !important;
-            margin: 0 !important;
-            /* DO NOT override padding - it represents the Word margins */
-            display: block !important;
-            page-break-after: always !important;
-            position: relative !important;
-            overflow: visible !important;
-          }
+    // Find LibreOffice binary
+    const soffice = await findLibreOffice();
 
-          /* Force precise line-height to prevent vertical overlapping */
-          p, span, div {
-            line-height: 1.15; /* Word default fallback */
-          }
+    // Run: libreoffice --headless --convert-to pdf --outdir /tmp/xxx /tmp/xxx/file.docx
+    const cmd = `"${soffice}" --headless --nologo --norestore --convert-to pdf --outdir "${tempDir}" "${inputPath}"`;
 
-          @page {
-            margin: 0;
-            size: auto;
-          }
-          * { box-sizing: border-box; }
-        </style>
-      </head>
-      <body>
-        <div id="container"></div>
-        <script>
-          async function renderUltraFidelity() {
-            try {
-              const base64 = "${docxBase64}";
-              const binaryString = atob(base64);
-              const bytes = new Uint8Array(binaryString.length);
-              for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-              }
-              const container = document.getElementById("container");
-              
-              // HIGH-ACCURACY RENDER
-              await docx.renderAsync(bytes, container, null, {
-                ignoreWidth: false,
-                ignoreHeight: false,
-                ignoreLastRenderedPageBreak: false,
-                experimental: true,
-                useBase64URL: true,
-                trimXmlDeclaration: true,
-                renderHeaders: true,
-                renderFooters: true,
-                renderEmptyPargraphs: true,
-                breakPages: true
-              });
-              
-              // Wait for every glyph to load its physical width
-              await document.fonts.ready;
-              
-              // Final check for image/layout stability
-              setTimeout(() => {
-                window.conversionReady = true;
-              }, 1000);
-            } catch (err) {
-              window.conversionError = err.message;
-            }
-          }
-          renderUltraFidelity();
-        </script>
-      </body>
-      </html>
-    `;
+    console.log(`🔄 Converting: ${file.name} → PDF`);
+    const { stdout, stderr } = await execAsync(cmd, { timeout: 55000 });
 
-    const isLocal = process.env.NODE_ENV === "development";
+    if (stdout) console.log("LibreOffice stdout:", stdout);
+    if (stderr) console.warn("LibreOffice stderr:", stderr);
 
-    const browser = await puppeteer.launch(
-      isLocal
-        ? {
-          headless: true,
-          args: [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-font-subpixel-positioning",
-            "--font-render-hinting=none"
-          ],
-          executablePath:
-            process.platform === "win32"
-              ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-              : "/usr/bin/google-chrome",
-        }
-        : {
-          args: [
-            ...chromium.args,
-            "--disable-font-subpixel-positioning",
-            "--font-render-hinting=none"
-          ],
-          defaultViewport: chromium.defaultViewport,
-          executablePath: await chromium.executablePath(),
-          headless: chromium.headless,
-        }
-    );
+    // Find the output PDF (LibreOffice names it after the input file)
+    let pdfPath = outputPath;
+    if (!fs.existsSync(pdfPath)) {
+      // Fallback: scan the temp dir for any .pdf
+      const entries = await fs.promises.readdir(tempDir);
+      const pdfFile = entries.find(e => e.endsWith(".pdf"));
+      if (!pdfFile) throw new Error("LibreOffice did not produce a PDF.");
+      pdfPath = path.join(tempDir, pdfFile);
+    }
 
-    const page = await browser.newPage();
-    // Use high DPI to prevent rounding errors that cause overlaps
-    await page.setViewport({ width: 800, height: 1200, deviceScaleFactor: 2 });
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    const pdfBuffer = await fs.promises.readFile(pdfPath);
+    console.log(`✅ Converted: ${file.name} → ${baseName}.pdf (${pdfBuffer.length} bytes)`);
 
-    await page.waitForFunction('window.conversionReady === true || window.conversionError', { timeout: 60000 });
-
-    const renderError = await page.evaluate(() => (window as any).conversionError);
-    if (renderError) throw new Error("Core Conversion Error: " + renderError);
-
-    const pdfBuffer = await page.pdf({
-      printBackground: true,
-      margin: { top: 0, right: 0, bottom: 0, left: 0 },
-      preferCSSPageSize: true, // This locks the PDF to the Word doc's internal size
-      scale: 1,
-      displayHeaderFooter: false
-    });
-
-    await browser.close();
-
-    return new NextResponse(pdfBuffer as any, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": 'attachment; filename="converted_fidelity.pdf"',
+        "Content-Disposition": `attachment; filename="${baseName}.pdf"`,
       },
     });
   } catch (err: any) {
-    console.error("❌ Conversion Error:", err);
+    console.error("❌ Word-to-PDF Error:", err.message);
     return NextResponse.json(
-      { error: `High-fidelity conversion failed: ${err.message}` },
+      { error: err.message },
       { status: 500 }
     );
   } finally {
-    if (tempDocxPath && fs.existsSync(tempDocxPath)) {
-      try { await fs.promises.unlink(tempDocxPath); } catch (e) { }
-    }
+    // Always clean up temp files
+    fs.promises.rm(tempDir, { recursive: true, force: true }).catch(() => { });
   }
 }
