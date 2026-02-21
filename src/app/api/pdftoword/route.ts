@@ -22,7 +22,7 @@ async function findPython(): Promise<string> {
     try {
       await execAsync(`${bin} -c "import pdf2docx"`);
       return bin; // This python has pdf2docx installed
-    } catch { }
+    } catch (err) { }
   }
   throw new Error(
     "pdf2docx not found. On EC2 run: pip3 install pdf2docx --break-system-packages\n" +
@@ -108,7 +108,7 @@ except Exception as e:
     );
   } finally {
     // Cleanup temp files
-    try { fs.unlinkSync(inputPath); } catch { }
-    try { fs.unlinkSync(outputPath); } catch { }
+    try { fs.unlinkSync(inputPath); } catch (err) { }
+    try { fs.unlinkSync(outputPath); } catch (err) { }
   }
 }

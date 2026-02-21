@@ -287,7 +287,7 @@ export default function ESignPdfPage() {
       const file = new File([blob], "downloaded.pdf", { type: "application/pdf" });
       setPdfFile(file);
       setShowUrlModal(false);
-    } catch { alert("Failed to fetch PDF"); } finally { setIsUploading(false); }
+    } catch (err) { alert("Failed to fetch PDF"); } finally { setIsUploading(false); }
   };
 
   // Drawing Canvas Logic

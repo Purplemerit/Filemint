@@ -88,7 +88,7 @@ export async function POST(req: Request) {
     // --- Path 1: Multipart Form Data (File Upload) ---
     if (contentType.includes("multipart/form-data")) {
       const formData = await req.formData();
-      
+
       // 1. Get File and Extract Text
       const file = formData.get("file") as File | null;
       if (!file) {
@@ -105,11 +105,11 @@ export async function POST(req: Request) {
           { status: 400 }
         );
       }
-      
+
       // 2. Get Action and Language (from frontend field names)
       const frontendType = formData.get("type") as string | null;
       targetLanguage = (formData.get("targetLang") as string | null) || undefined;
-      
+
       // Map frontend 'type' to backend 'action'
       action = mapFrontendTypeToAction(frontendType);
 
@@ -122,19 +122,19 @@ export async function POST(req: Request) {
       prompt = result.prompt;
       promptError = result.error;
 
-    } 
+    }
     // --- Path 2: JSON Request ---
     else if (contentType.includes("application/json")) {
       let body: any = {};
       try {
         body = await req.json();
-      } catch {
+      } catch (err) {
         return NextResponse.json(
           { error: "Request body is not valid JSON." },
           { status: 400 }
         );
       }
-      
+
       // 1. Get Text, Action, and Language (from frontend field names)
       textToProcess = body.text;
       const jsonFrontendType = body.type;
@@ -146,7 +146,7 @@ export async function POST(req: Request) {
           { status: 400 }
         );
       }
-       if (!action) {
+      if (!action) {
         return NextResponse.json(
           { error: "Missing 'action' in JSON body. Must be 'summarize', 'generateQuestions', or 'translate'." },
           { status: 400 }
@@ -156,7 +156,7 @@ export async function POST(req: Request) {
       // Map frontend 'type' to backend 'action'
       action = mapFrontendTypeToAction(jsonFrontendType);
 
-       if (!action) {
+      if (!action) {
         return NextResponse.json(
           { error: "Missing or invalid 'type' in JSON body. Must be 'summarizer', 'translator', or 'question'." },
           { status: 400 }
@@ -173,22 +173,22 @@ export async function POST(req: Request) {
     }
 
     // --- Common Logic: Handle Prompt Generation and AI Call ---
-    
+
     // Check for errors from getPromptForAction
     if (promptError) {
       return NextResponse.json({ error: promptError }, { status: 400 });
     }
-    
+
     if (!prompt) {
-       // This should not happen if promptError is not set, but as a safeguard:
-       console.error("❌ [PDF Tools API Error]: Prompt was not generated, but no error was caught.");
-       return NextResponse.json({ error: "Internal Server Error: Could not generate prompt." }, { status: 500 });
+      // This should not happen if promptError is not set, but as a safeguard:
+      console.error("❌ [PDF Tools API Error]: Prompt was not generated, but no error was caught.");
+      return NextResponse.json({ error: "Internal Server Error: Could not generate prompt." }, { status: 500 });
     }
 
     // Call the Generative AI Model
     const result = await model.generateContent(prompt);
     const output = result.response?.text?.() || `No response generated for action: ${action}.`;
-    
+
     return NextResponse.json({ result: output, action: action }, { status: 200 });
 
   } catch (error: any) {

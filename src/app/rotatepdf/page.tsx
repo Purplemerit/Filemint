@@ -183,7 +183,7 @@ export default function RotatePdfPage() {
       setRotation(0);
       setIsRotated(false);
       setShowUrlModal(false);
-    } catch { alert("Failed"); } finally { setIsUploading(false); }
+    } catch (err) { alert("Failed"); } finally { setIsUploading(false); }
   };
   const removeFile = () => {
     setFile(null);

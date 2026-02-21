@@ -235,7 +235,7 @@ export default function DeletePdfPagesPage() {
       setPdfFile(f);
       setShowUrlModal(false);
       renderPdfPages(f);
-    } catch { alert("Failed"); } finally { setIsUploading(false); }
+    } catch (err) { alert("Failed"); } finally { setIsUploading(false); }
   };
 
   // Pickers

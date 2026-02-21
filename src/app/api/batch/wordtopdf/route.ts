@@ -15,7 +15,7 @@ async function libreOfficeExists() {
   try {
     await execAsync("libreoffice --version");
     return true;
-  } catch {
+  } catch (error) {
     return false;
   }
 }

@@ -219,7 +219,7 @@ export default function ShareModal({
         try {
           const json = await response.json();
           reason = json.error || json.message || reason;
-        } catch {
+        } catch (_e) {
           /* non-JSON body */
         }
         throw new Error(reason);
@@ -304,7 +304,7 @@ export default function ShareModal({
         message: "The share link has been copied to your clipboard.",
       });
       setTimeout(() => dismiss(), 3000);
-    } catch {
+    } catch (_e) {
       showNotif({
         type: "error",
         title: "Clipboard access denied",

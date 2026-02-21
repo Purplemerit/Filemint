@@ -226,7 +226,7 @@ export default function ReorderPdfPage() {
       setPdfFile(f);
       setShowUrlModal(false);
       renderPdfPages(f);
-    } catch { alert("Failed"); } finally { setIsUploading(false); }
+    } catch (err) { alert("Failed"); } finally { setIsUploading(false); }
   };
 
   const { openPicker: openGoogleDrivePicker } = useGoogleDrivePicker({ onFilePicked: (f) => { setPdfFile(f); renderPdfPages(f); setIsDropdownOpen(false); } });

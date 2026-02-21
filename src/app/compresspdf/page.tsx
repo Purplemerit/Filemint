@@ -170,7 +170,7 @@ export default function CompressPdfPage() {
       const fileName = urlInput.split("/").pop() || "downloaded.pdf";
       setFiles([new File([blob], fileName, { type: "application/pdf" })]);
       setUrlInput(""); setShowUrlModal(false); setError(null);
-    } catch { alert("Failed to fetch PDF from URL."); }
+    } catch (err) { alert("Failed to fetch PDF from URL."); }
     finally { setIsUploading(false); }
   };
 
@@ -185,7 +185,7 @@ export default function CompressPdfPage() {
           break;
         }
       }
-    } catch { alert("No PDF found in clipboard or clipboard access denied."); }
+    } catch (err) { alert("No PDF found in clipboard or clipboard access denied."); }
     setIsDropdownOpen(false);
   };
 
