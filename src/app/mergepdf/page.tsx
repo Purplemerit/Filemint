@@ -21,6 +21,7 @@ import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import ShareModal from "../components/ShareModal";
 import { useGoogleDrivePicker } from "../hooks/useGoogleDrivePicker";
 import { useDropboxPicker } from "../hooks/useDropboxPicker";
+import { useAutoDownload } from "../hooks/useAutoDownload";
 import ToolInstructions from "../components/ToolInstructions";
 import toolData from "../data/toolInstructions.json";
 import Testimonials from "../components/Testimonials";
@@ -200,6 +201,18 @@ export default function MergePdfPage() {
     setFiles(prev => [...prev, ...filesWithIds]);
   };
 
+  const handleDownload = () => {
+    if (!mergedFileBlob) return;
+    const url = window.URL.createObjectURL(mergedFileBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "merged_documents.pdf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
   // Close dropdown when clicking outside
   const { openPicker: openGoogleDrivePicker, isLoaded: isGoogleLoaded } = useGoogleDrivePicker({
     onFilePicked: (file) => {
@@ -228,27 +241,8 @@ export default function MergePdfPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Auto-download effect
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    if (isMerged && mergedFileBlob) {
-      timeoutId = setTimeout(() => {
-        const url = window.URL.createObjectURL(mergedFileBlob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "merged_documents.pdf";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      }, 7000); // 7 seconds delay
-    }
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [isMerged, mergedFileBlob]);
+  // Smart auto-download: fires after 10s only if user hasn't clicked manually
+  const triggerDownload = useAutoDownload(isMerged && !!mergedFileBlob, handleDownload, 10000);
 
   // Helper to traverse directories
   const traverseFileTree = async (item: any, fileList: File[]) => {
@@ -632,7 +626,7 @@ export default function MergePdfPage() {
 
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                   <button
-                    onClick={handleDownload}
+                    onClick={triggerDownload}
                     className="download-button"
                     style={{
                       backgroundColor: "#e11d48", // iLovePDF-like red/brand color or theme color
@@ -714,9 +708,10 @@ export default function MergePdfPage() {
                       ))}
 
                       {/* Add Files Card (Fixed, not sortable) */}
-                      <div ref={addDropdownRef} style={{ position: "relative" }}>
+                      <div ref={addDropdownRef} style={{ position: "relative" }} onPointerDown={(e) => e.stopPropagation()}>
                         <div
                           onClick={() => setIsAddDropdownOpen(!isAddDropdownOpen)}
+                          onPointerDown={(e) => e.stopPropagation()}
                           style={{
                             backgroundColor: "white",
                             borderRadius: "8px",

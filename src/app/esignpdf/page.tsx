@@ -134,7 +134,7 @@ export default function ESignPdfPage() {
   // PDF Rendering States
   const [pages, setPages] = useState<number[]>([]);
   const [pdfDocument, setPdfDocument] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
-  const [scale, setScale] = useState(1.5);
+  const [scale, setScale] = useState(1.0);
   const [pageDimensions, setPageDimensions] = useState<Record<number, { width: number; height: number }>>({});
 
   // Modal & Selection States
@@ -202,7 +202,7 @@ export default function ESignPdfPage() {
         } else if (width < 900) {
           setScale(0.8);
         } else {
-          setScale(1.5);
+          setScale(1.0);
         }
       }
     };

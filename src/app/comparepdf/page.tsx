@@ -7,16 +7,13 @@ import Navbar from "../components/Navbar";
 import {
   PiFiles,
   PiLink,
-  PiClipboard,
   PiCaretDown,
   PiUploadSimple,
-  PiCheckCircle,
-  PiX,
-  PiArrowsLeftRight,
+  PiCaretLeft,
+  PiCaretRight,
   PiMagnifyingGlassPlus,
   PiMagnifyingGlassMinus,
-  PiCaretLeft,
-  PiCaretRight
+  PiX,
 } from "react-icons/pi";
 import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import { useGoogleDrivePicker } from "../hooks/useGoogleDrivePicker";
@@ -30,8 +27,7 @@ import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
 import * as pdfjsLib from "pdfjs-dist";
 
-// PDF.js worker setup
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 }
 
@@ -43,14 +39,14 @@ export default function ComparePdfPage() {
   const [pdf1, setPdf1] = useState<File | null>(null);
   const [pdf2, setPdf2] = useState<File | null>(null);
 
-  // Viewer States
+  // Viewer States — INDIVIDUAL per PDF
   const [isComparing, setIsComparing] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage1, setCurrentPage1] = useState(1);
+  const [currentPage2, setCurrentPage2] = useState(1);
   const [totalPages1, setTotalPages1] = useState(0);
   const [totalPages2, setTotalPages2] = useState(0);
-  const [scale, setScale] = useState(1.0);
-  const [viewMode, setViewMode] = useState<"side-by-side" | "overlay">("side-by-side");
-  const [overlayOpacity, setOverlayOpacity] = useState(0.5);
+  const [scale1, setScale1] = useState(1.0);
+  const [scale2, setScale2] = useState(1.0);
 
   // Canvas Refs
   const canvas1Ref = useRef<HTMLCanvasElement>(null);
@@ -71,25 +67,23 @@ export default function ComparePdfPage() {
   const instructionData = toolData["compare-pdf"];
 
   // --- Rendering Logic ---
-  const renderPage = async (file: File, pageNum: number, canvas: HTMLCanvasElement) => {
+  const renderPage = async (
+    file: File,
+    pageNum: number,
+    canvas: HTMLCanvasElement,
+    scale: number
+  ) => {
     try {
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-
-      if (pageNum > pdf.numPages) return; // Page doesn't exist
-
+      if (pageNum > pdf.numPages) return;
       const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale: scale });
+      const viewport = page.getViewport({ scale });
       const context = canvas.getContext("2d");
-
       canvas.height = viewport.height;
       canvas.width = viewport.width;
-
       if (context) {
-        await page.render({
-          canvasContext: context,
-          viewport: viewport,
-        }).promise;
+        await page.render({ canvasContext: context, viewport }).promise;
       }
     } catch (error) {
       console.error("Render error:", error);
@@ -98,51 +92,63 @@ export default function ComparePdfPage() {
 
   useEffect(() => {
     if (isComparing && pdf1 && canvas1Ref.current) {
-      renderPage(pdf1, currentPage, canvas1Ref.current);
+      renderPage(pdf1, currentPage1, canvas1Ref.current, scale1);
     }
+  }, [isComparing, currentPage1, scale1, pdf1]);
+
+  useEffect(() => {
     if (isComparing && pdf2 && canvas2Ref.current) {
-      renderPage(pdf2, currentPage, canvas2Ref.current);
+      renderPage(pdf2, currentPage2, canvas2Ref.current, scale2);
     }
-  }, [isComparing, currentPage, scale, pdf1, pdf2]);
+  }, [isComparing, currentPage2, scale2, pdf2]);
 
   // Init page counts
   useEffect(() => {
     if (pdf1) {
-      pdf1.arrayBuffer().then(b => pdfjsLib.getDocument(b).promise).then(p => setTotalPages1(p.numPages));
+      pdf1
+        .arrayBuffer()
+        .then((b) => pdfjsLib.getDocument(b).promise)
+        .then((p) => setTotalPages1(p.numPages));
     }
     if (pdf2) {
-      pdf2.arrayBuffer().then(b => pdfjsLib.getDocument(b).promise).then(p => setTotalPages2(p.numPages));
+      pdf2
+        .arrayBuffer()
+        .then((b) => pdfjsLib.getDocument(b).promise)
+        .then((p) => setTotalPages2(p.numPages));
     }
   }, [pdf1, pdf2]);
 
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdown1Ref.current && !dropdown1Ref.current.contains(e.target as Node))
+        setIsDropdown1Open(false);
+      if (dropdown2Ref.current && !dropdown2Ref.current.contains(e.target as Node))
+        setIsDropdown2Open(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
-  // --- Controls ---
   const startComparison = () => {
     if (pdf1 && pdf2) {
       setIsComparing(true);
-      setCurrentPage(1);
-      setScale(1.0);
+      setCurrentPage1(1);
+      setCurrentPage2(1);
     }
-  };
-
-  const changePage = (delta: number) => {
-    const maxPages = Math.max(totalPages1, totalPages2);
-    const newPage = Math.min(Math.max(1, currentPage + delta), maxPages);
-    setCurrentPage(newPage);
-  };
-
-  const zoom = (delta: number) => {
-    setScale(prev => Math.max(0.5, Math.min(3.0, prev + delta)));
   };
 
   const reset = () => {
     setIsComparing(false);
     setPdf1(null);
     setPdf2(null);
-    setCurrentPage(1);
+    setCurrentPage1(1);
+    setCurrentPage2(1);
+    setScale1(1.0);
+    setScale2(1.0);
   };
 
-  // --- Upload Handlers (Shared) ---
+  // --- Upload Handlers ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2) => {
     const f = e.target.files?.[0];
     if (f && (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"))) {
@@ -150,6 +156,7 @@ export default function ComparePdfPage() {
     }
     num === 1 ? setIsDropdown1Open(false) : setIsDropdown2Open(false);
   };
+
   const handleDrop = (e: React.DragEvent, num: 1 | 2) => {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
@@ -157,148 +164,376 @@ export default function ComparePdfPage() {
       num === 1 ? setPdf1(f) : setPdf2(f);
     }
   };
+
   const handleUrlSubmit = async () => {
     if (!urlInput.trim()) return;
     setIsUploading(true);
     try {
       const res = await fetch(urlInput);
       const blob = await res.blob();
-      if (blob.type !== "application/pdf") return alert("Not PDF");
+      if (blob.type !== "application/pdf") return alert("Not a PDF");
       const f = new File([blob], "downloaded.pdf", { type: "application/pdf" });
       activeUpload === 1 ? setPdf1(f) : setPdf2(f);
       setShowUrlModal(false);
-    } catch { alert("Failed"); }
+      setUrlInput("");
+    } catch {
+      alert("Failed to fetch PDF");
+    }
     setIsUploading(false);
   };
 
   // Pickers
-  const { openPicker: openGD1 } = useGoogleDrivePicker({ onFilePicked: (f) => { setPdf1(f); setIsDropdown1Open(false); } });
-  const { openPicker: openGD2 } = useGoogleDrivePicker({ onFilePicked: (f) => { setPdf2(f); setIsDropdown2Open(false); } });
-  const { openPicker: openDB1 } = useDropboxPicker({ onFilePicked: (f) => { setPdf1(f); setIsDropdown1Open(false); } });
-  const { openPicker: openDB2 } = useDropboxPicker({ onFilePicked: (f) => { setPdf2(f); setIsDropdown2Open(false); } });
+  const { openPicker: openGD1 } = useGoogleDrivePicker({
+    onFilePicked: (f) => { setPdf1(f); setIsDropdown1Open(false); },
+  });
+  const { openPicker: openGD2 } = useGoogleDrivePicker({
+    onFilePicked: (f) => { setPdf2(f); setIsDropdown2Open(false); },
+  });
+  const { openPicker: openDB1 } = useDropboxPicker({
+    onFilePicked: (f) => { setPdf1(f); setIsDropdown1Open(false); },
+  });
+  const { openPicker: openDB2 } = useDropboxPicker({
+    onFilePicked: (f) => { setPdf2(f); setIsDropdown2Open(false); },
+  });
 
+  // --- Per-PDF Navigation Controls Component ---
+  const PdfNavBar = ({
+    label,
+    file,
+    currentPage,
+    totalPages,
+    scale,
+    onPrev,
+    onNext,
+    onZoomIn,
+    onZoomOut,
+  }: {
+    label: string;
+    file: File | null;
+    currentPage: number;
+    totalPages: number;
+    scale: number;
+    onPrev: () => void;
+    onNext: () => void;
+    onZoomIn: () => void;
+    onZoomOut: () => void;
+  }) => (
+    <div style={{
+      backgroundColor: "#1e1e2e",
+      padding: "0.6rem 1rem",
+      borderRadius: "8px 8px 0 0",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "0.5rem",
+      flexWrap: "wrap",
+    }}>
+      {/* Label + filename */}
+      <div style={{ color: "white", fontSize: "0.85rem", fontWeight: 600, minWidth: 0 }}>
+        <span style={{ opacity: 0.6, marginRight: "0.4rem" }}>{label}</span>
+        <span style={{
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          maxWidth: "140px",
+          display: "inline-block",
+          verticalAlign: "bottom",
+        }}>
+          {file?.name || "—"}
+        </span>
+      </div>
 
+      {/* Page navigation */}
+      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+        <button
+          onClick={onPrev}
+          disabled={currentPage <= 1}
+          style={{
+            background: currentPage <= 1 ? "#444" : "#e11d48",
+            border: "none", color: "white", borderRadius: "4px",
+            width: 28, height: 28, cursor: currentPage <= 1 ? "not-allowed" : "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
+          <PiCaretLeft size={14} />
+        </button>
+        <span style={{ color: "white", fontSize: "0.8rem", minWidth: "60px", textAlign: "center" }}>
+          {currentPage} / {totalPages || "?"}
+        </span>
+        <button
+          onClick={onNext}
+          disabled={currentPage >= totalPages}
+          style={{
+            background: currentPage >= totalPages ? "#444" : "#e11d48",
+            border: "none", color: "white", borderRadius: "4px",
+            width: 28, height: 28, cursor: currentPage >= totalPages ? "not-allowed" : "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
+          <PiCaretRight size={14} />
+        </button>
+      </div>
+
+      {/* Zoom controls */}
+      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+        <button onClick={onZoomOut} style={{ background: "transparent", border: "1px solid #555", color: "white", borderRadius: "4px", width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <PiMagnifyingGlassMinus size={14} />
+        </button>
+        <span style={{ color: "white", fontSize: "0.75rem", minWidth: "36px", textAlign: "center" }}>
+          {Math.round(scale * 100)}%
+        </span>
+        <button onClick={onZoomIn} style={{ background: "transparent", border: "1px solid #555", color: "white", borderRadius: "4px", width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <PiMagnifyingGlassPlus size={14} />
+        </button>
+      </div>
+    </div>
+  );
+
+  // --- Upload Box ---
   const renderUploadBox = (num: 1 | 2) => {
     const file = num === 1 ? pdf1 : pdf2;
     const isOpen = num === 1 ? isDropdown1Open : isDropdown2Open;
     const setOpen = num === 1 ? setIsDropdown1Open : setIsDropdown2Open;
     const ref = num === 1 ? dropdown1Ref : dropdown2Ref;
     const inputRef = num === 1 ? fileInput1Ref : fileInput2Ref;
+    const openGD = num === 1 ? openGD1 : openGD2;
+    const openDB = num === 1 ? openDB1 : openDB2;
 
     return (
-      <div onDrop={(e) => handleDrop(e, num)} onDragOver={e => e.preventDefault()} style={{ flex: 1, minWidth: "300px", border: "2px dashed #ccc", borderRadius: "12px", padding: "2rem", textAlign: "center", backgroundColor: "#f8f9fa" }}>
-        <h3 style={{ marginBottom: "1rem" }}>PDF {num}</h3>
+      <div
+        onDrop={(e) => handleDrop(e, num)}
+        onDragOver={(e) => e.preventDefault()}
+        style={{
+          flex: 1,
+          minWidth: "280px",
+          border: "2px dashed #d1bfff",
+          borderRadius: "12px",
+          padding: "2rem 1rem",
+          textAlign: "center",
+          backgroundColor: "rgb(243, 230, 255)",
+          position: "relative",
+        }}
+      >
+        <p style={{ fontWeight: 600, marginBottom: "1rem", color: "#333", fontSize: "1rem" }}>
+          PDF {num}
+        </p>
+
         {file ? (
-          <div style={{ padding: "1rem", background: "white", borderRadius: "8px", boxShadow: "0 2px 5px rgba(0,0,0,0.1)", display: "inline-block", position: "relative" }}>
-            <button onClick={() => num === 1 ? setPdf1(null) : setPdf2(null)} style={{ position: "absolute", top: -10, right: -10, background: "red", color: "white", borderRadius: "50%", width: 24, height: 24, border: "none", cursor: "pointer" }}>×</button>
-            <img src="./pdf.svg" style={{ width: 40, height: 50 }} />
-            <div style={{ fontSize: "0.8rem", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</div>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: "0.75rem",
+            background: "white", padding: "0.75rem 1rem",
+            borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            maxWidth: "100%",
+          }}>
+            <img src="./pdf.svg" style={{ width: 32, height: 40, flexShrink: 0 }} alt="pdf" />
+            <span style={{
+              fontSize: "0.8rem", color: "#333",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px",
+            }}>
+              {file.name}
+            </span>
+            <button
+              onClick={() => num === 1 ? setPdf1(null) : setPdf2(null)}
+              style={{
+                background: "#fee2e2", border: "none", color: "#e11d48",
+                borderRadius: "50%", width: 24, height: 24, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}
+            >
+              <PiX size={14} />
+            </button>
           </div>
         ) : (
           <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
-            <button onClick={() => setOpen(!isOpen)} style={{ padding: "0.8rem 1.5rem", background: "#e11d48", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <PiUploadSimple size={20} /> Select File <PiCaretDown />
+            <button
+              onClick={() => setOpen(!isOpen)}
+              style={{
+                padding: "0.7rem 1.4rem", background: "#e11d48", color: "white",
+                border: "none", borderRadius: "8px", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 500,
+              }}
+            >
+              <PiUploadSimple size={18} /> Select PDF <PiCaretDown size={14} />
             </button>
             {isOpen && (
-              <div style={{ position: "absolute", top: "110%", left: "50%", transform: "translateX(-50%)", width: "180px", background: "white", boxShadow: "0 5px 15px rgba(0,0,0,0.2)", borderRadius: "8px", overflow: "hidden", zIndex: 10 }}>
-                <button onClick={() => inputRef.current?.click()} style={{ display: "block", width: "100%", padding: "10px", textAlign: "left", border: "none", background: "white", cursor: "pointer", borderBottom: "1px solid #eee" }}>Device</button>
-                <button onClick={() => { setActiveUpload(num); setShowUrlModal(true); setOpen(false); }} style={{ display: "block", width: "100%", padding: "10px", textAlign: "left", border: "none", background: "white", cursor: "pointer", borderBottom: "1px solid #eee" }}>URL</button>
-                <button onClick={num === 1 ? openGD1 : openGD2} style={{ display: "block", width: "100%", padding: "10px", textAlign: "left", border: "none", background: "white", cursor: "pointer", borderBottom: "1px solid #eee" }}>Google Drive</button>
-                <button onClick={num === 1 ? openDB1 : openDB2} style={{ display: "block", width: "100%", padding: "10px", textAlign: "left", border: "none", background: "white", cursor: "pointer" }}>Dropbox</button>
+              <div style={{
+                position: "absolute", top: "110%", left: "50%", transform: "translateX(-50%)",
+                width: "180px", background: "white", boxShadow: "0 5px 20px rgba(0,0,0,0.15)",
+                borderRadius: "8px", overflow: "hidden", zIndex: 100, border: "1px solid #eee",
+              }}>
+                {[
+                  { label: "From Device", action: () => inputRef.current?.click() },
+                  { label: "Paste URL", action: () => { setActiveUpload(num); setShowUrlModal(true); setOpen(false); } },
+                  { label: "Google Drive", action: openGD },
+                  { label: "Dropbox", action: openDB },
+                ].map((item, i) => (
+                  <button
+                    key={i}
+                    onClick={item.action}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "0.5rem",
+                      width: "100%", padding: "0.7rem 1rem", border: "none",
+                      background: "white", cursor: "pointer", fontSize: "0.85rem",
+                      color: "#333", textAlign: "left", borderBottom: i < 3 ? "1px solid #f0f0f0" : "none",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fef2f2")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
             )}
-            <input ref={inputRef} type="file" accept="application/pdf,.pdf" onChange={(e) => handleFileChange(e, num)} style={{ display: "none" }} />
+            <input
+              ref={inputRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              onChange={(e) => handleFileChange(e, num)}
+              style={{ display: "none" }}
+            />
           </div>
         )}
+        <p style={{ fontSize: "0.75rem", color: "#888", marginTop: "1rem" }}>
+          or drag & drop a PDF here
+        </p>
       </div>
     );
   };
 
   return (
     <div>
+      <style>{`
+        @media (max-width: 768px) {
+          .compare-viewer-grid { flex-direction: column !important; }
+          .compare-pdf-panel { min-width: 0 !important; }
+          .compare-upload-grid { flex-direction: column !important; }
+          .compare-canvas { max-width: 100% !important; height: auto !important; }
+        }
+        .compare-canvas-wrap { overflow: auto; background: #e8e8e8; border-radius: 0 0 8px 8px; max-height: 75vh; display: flex; align-items: flex-start; justify-content: center; padding: 1rem; }
+        .compare-pdf-panel { flex: 1; min-width: 280px; display: flex; flex-direction: column; }
+      `}</style>
+
       <Navbar />
-      <div style={{ display: "flex", maxWidth: "1400px", margin: "4rem auto", padding: "0 2rem", gap: "2rem", alignItems: "flex-start" }}>
+
+      <div style={{
+        display: "flex",
+        maxWidth: "1400px",
+        margin: "3rem auto",
+        padding: "0 1rem",
+        gap: "1.5rem",
+        alignItems: "flex-start",
+      }}>
         <VerticalAdLeft />
-        <div style={{ flex: 1, maxWidth: "1200px", margin: "0 auto" }}>
-          <h1 style={{ fontSize: "2rem", fontWeight: "600", marginBottom: "2rem", color: "#333" }}>Compare PDF Files</h1>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1 style={{ fontSize: "1.8rem", fontWeight: 700, marginBottom: "1.5rem", color: "#1a1a1a" }}>
+            Compare PDF Files
+          </h1>
 
           {!isComparing ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-              <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", justifyContent: "center" }}>
+            /* ── Upload Phase ── */
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+              <div className="compare-upload-grid" style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
                 {renderUploadBox(1)}
                 {renderUploadBox(2)}
               </div>
+
               <div style={{ textAlign: "center" }}>
                 <button
                   onClick={startComparison}
                   disabled={!pdf1 || !pdf2}
-                  style={{ padding: "1rem 3rem", fontSize: "1.2rem", backgroundColor: pdf1 && pdf2 ? "#28a745" : "#ccc", color: "white", border: "none", borderRadius: "8px", cursor: pdf1 && pdf2 ? "pointer" : "not-allowed", fontWeight: "bold" }}
+                  style={{
+                    padding: "0.85rem 3rem",
+                    fontSize: "1.1rem",
+                    backgroundColor: pdf1 && pdf2 ? "#e11d48" : "#ccc",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "50px",
+                    cursor: pdf1 && pdf2 ? "pointer" : "not-allowed",
+                    fontWeight: 600,
+                    boxShadow: pdf1 && pdf2 ? "0 4px 14px rgba(225,29,72,0.4)" : "none",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => { if (pdf1 && pdf2) e.currentTarget.style.transform = "scale(1.04)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
                 >
-                  Compare PDFs
+                  Compare PDFs →
                 </button>
+                {(!pdf1 || !pdf2) && (
+                  <p style={{ color: "#999", fontSize: "0.85rem", marginTop: "0.5rem" }}>
+                    Upload both PDFs to enable comparison
+                  </p>
+                )}
               </div>
             </div>
           ) : (
+            /* ── Comparison Phase ── */
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {/* Controls Toolbar */}
+              {/* Top toolbar */}
               <div style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "1rem", backgroundColor: "#333", borderRadius: "8px", color: "white",
-                flexWrap: "wrap", gap: "1rem"
+                padding: "0.75rem 1rem", backgroundColor: "#111827", borderRadius: "8px",
+                color: "white", flexWrap: "wrap", gap: "0.75rem",
               }}>
-                <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-                  <button onClick={reset} style={{ background: "transparent", border: "1px solid #666", color: "white", padding: "0.5rem 1rem", borderRadius: "4px", cursor: "pointer" }}>Upload New</button>
-                  <div style={{ display: "flex", backgroundColor: "#444", borderRadius: "4px", overflow: "hidden" }}>
-                    <button onClick={() => setViewMode("side-by-side")} style={{ padding: "0.5rem", background: viewMode === "side-by-side" ? "#e11d48" : "transparent", color: "white", border: "none", cursor: "pointer" }}>Side by Side</button>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                  <button onClick={() => changePage(-1)} disabled={currentPage <= 1} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}><PiCaretLeft size={24} /></button>
-                  <span>Page {currentPage} / {Math.max(totalPages1, totalPages2)}</span>
-                  <button onClick={() => changePage(1)} disabled={currentPage >= Math.max(totalPages1, totalPages2)} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}><PiCaretRight size={24} /></button>
-                </div>
-
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                  <button onClick={() => zoom(-0.1)} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}><PiMagnifyingGlassMinus size={24} /></button>
-                  <span>{Math.round(scale * 100)}%</span>
-                  <button onClick={() => zoom(0.1)} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}><PiMagnifyingGlassPlus size={24} /></button>
-                </div>
+                <button
+                  onClick={reset}
+                  style={{
+                    background: "transparent", border: "1px solid #555", color: "white",
+                    padding: "0.4rem 1rem", borderRadius: "4px", cursor: "pointer", fontSize: "0.85rem",
+                  }}
+                >
+                  ← Upload New
+                </button>
+                <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>
+                  Use individual controls below each PDF to navigate pages
+                </span>
+                {/* Sync page button */}
+                <button
+                  onClick={() => { setCurrentPage2(currentPage1); }}
+                  style={{
+                    background: "#e11d48", border: "none", color: "white",
+                    padding: "0.4rem 1rem", borderRadius: "4px", cursor: "pointer", fontSize: "0.85rem",
+                  }}
+                >
+                  Sync to PDF 1
+                </button>
               </div>
 
-              {/* Viewer Area */}
-              <div style={{
-                display: "flex",
-                gap: "1rem",
-                backgroundColor: "#e2e2e2",
-                padding: "1rem",
-                borderRadius: "8px",
-                height: "80vh",
-                overflow: "auto",
-                flexDirection: viewMode === "side-by-side" ? "row" : "column",
-                justifyContent: "center",
-                position: "relative"
-              }}>
-                <style>{`
-                                @media (max-width: 768px) {
-                                    div[style*="flex-direction: row"] { flex-direction: column !important; }
-                                    canvas { width: 100% !important; height: auto !important; }
-                                }
-                             `}</style>
-
-                {/* Viewer 1 */}
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ marginBottom: "0.5rem", fontWeight: "bold", color: "#555" }}>{pdf1?.name}</div>
-                  <div style={{ boxShadow: "0 4px 10px rgba(0,0,0,0.2)", background: "white" }}>
-                    <canvas ref={canvas1Ref} />
+              {/* Side-by-side viewer */}
+              <div className="compare-viewer-grid" style={{ display: "flex", gap: "1rem" }}>
+                {/* PDF 1 Panel */}
+                <div className="compare-pdf-panel">
+                  <PdfNavBar
+                    label="PDF 1"
+                    file={pdf1}
+                    currentPage={currentPage1}
+                    totalPages={totalPages1}
+                    scale={scale1}
+                    onPrev={() => setCurrentPage1((p) => Math.max(1, p - 1))}
+                    onNext={() => setCurrentPage1((p) => Math.min(totalPages1, p + 1))}
+                    onZoomIn={() => setScale1((s) => Math.min(3, +(s + 0.15).toFixed(2)))}
+                    onZoomOut={() => setScale1((s) => Math.max(0.4, +(s - 0.15).toFixed(2)))}
+                  />
+                  <div className="compare-canvas-wrap">
+                    <canvas ref={canvas1Ref} className="compare-canvas" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.2)" }} />
                   </div>
                 </div>
 
-                {/* Viewer 2 */}
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ marginBottom: "0.5rem", fontWeight: "bold", color: "#555" }}>{pdf2?.name}</div>
-                  <div style={{ boxShadow: "0 4px 10px rgba(0,0,0,0.2)", background: "white" }}>
-                    <canvas ref={canvas2Ref} />
+                {/* PDF 2 Panel */}
+                <div className="compare-pdf-panel">
+                  <PdfNavBar
+                    label="PDF 2"
+                    file={pdf2}
+                    currentPage={currentPage2}
+                    totalPages={totalPages2}
+                    scale={scale2}
+                    onPrev={() => setCurrentPage2((p) => Math.max(1, p - 1))}
+                    onNext={() => setCurrentPage2((p) => Math.min(totalPages2, p + 1))}
+                    onZoomIn={() => setScale2((s) => Math.min(3, +(s + 0.15).toFixed(2)))}
+                    onZoomOut={() => setScale2((s) => Math.max(0.4, +(s - 0.15).toFixed(2)))}
+                  />
+                  <div className="compare-canvas-wrap">
+                    <canvas ref={canvas2Ref} className="compare-canvas" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.2)" }} />
                   </div>
                 </div>
               </div>
@@ -310,19 +545,40 @@ export default function ComparePdfPage() {
             <Testimonials title="What Our Users Say" testimonials={testimonialData.testimonials} autoScrollInterval={3000} />
           </div>
         </div>
+
         <VerticalAdRight />
       </div>
       <Footer />
 
       {/* URL Modal */}
       {showUrlModal && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }} onClick={() => setShowUrlModal(false)}>
-          <div style={{ backgroundColor: "white", padding: "2rem", borderRadius: "10px", width: "90%", maxWidth: "500px" }} onClick={e => e.stopPropagation()}>
+        <div
+          style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }}
+          onClick={() => setShowUrlModal(false)}
+        >
+          <div
+            style={{ backgroundColor: "white", padding: "2rem", borderRadius: "12px", width: "90%", maxWidth: "480px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 style={{ marginBottom: "1rem" }}>Paste PDF URL</h3>
-            <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
-            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-              <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#e11d48", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
+            <input
+              type="url"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="https://example.com/document.pdf"
+              style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem", fontSize: "0.9rem" }}
+            />
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+              <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>
+                Cancel
+              </button>
+              <button
+                onClick={handleUrlSubmit}
+                disabled={isUploading}
+                style={{ padding: "0.5rem 1.5rem", border: "none", background: "#e11d48", color: "white", borderRadius: "6px", cursor: "pointer" }}
+              >
+                {isUploading ? "Loading..." : "Add PDF"}
+              </button>
             </div>
           </div>
         </div>

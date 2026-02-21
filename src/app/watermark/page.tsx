@@ -28,6 +28,11 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import * as pdfjsLib from "pdfjs-dist";
+
+if (typeof window !== "undefined") {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+}
 
 export default function PdfWatermarkPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -35,6 +40,7 @@ export default function PdfWatermarkPage() {
   const [fontSize, setFontSize] = useState<number>(40);
   const [opacity, setOpacity] = useState<number>(0.5);
   const [rotation, setRotation] = useState<number>(-45);
+  const [color, setColor] = useState<string>("#808080");
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Success / Download State
@@ -48,11 +54,47 @@ export default function PdfWatermarkPage() {
   const [urlInput, setUrlInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
+  // PDF Preview State
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [previewReady, setPreviewReady] = useState(false);
+
   const { token } = useAuth();
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const instructionData = toolData["add-watermark"];
+
+  // Render first page of PDF onto preview canvas
+  useEffect(() => {
+    if (!file || !previewCanvasRef.current) return;
+    setPreviewReady(false);
+    const renderPreview = async () => {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+        const page = await pdf.getPage(1);
+        const canvas = previewCanvasRef.current!;
+        const containerWidth = canvas.parentElement?.clientWidth || 400;
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        const scale = containerWidth / unscaledViewport.width;
+        const viewport = page.getViewport({ scale });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d")!;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        setPreviewReady(true);
+      } catch (e) {
+        console.error("Preview render error:", e);
+      }
+    };
+    renderPreview();
+  }, [file]);
+
+  // Helper: hex to rgb (0-1 range)
+  const hexToRgb01 = (hex: string) => {
+    const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return r ? { r: parseInt(r[1], 16) / 255, g: parseInt(r[2], 16) / 255, b: parseInt(r[3], 16) / 255 } : { r: 0.5, g: 0.5, b: 0.5 };
+  };
 
   // --- Watermark Logic ---
   const applyWatermark = async () => {
@@ -63,15 +105,16 @@ export default function PdfWatermarkPage() {
       const arrayBuffer = await file.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       const pages = pdfDoc.getPages();
+      const c = hexToRgb01(color);
 
       pages.forEach((page) => {
         const { width, height } = page.getSize();
         page.drawText(watermark, {
-          x: width / 2 - watermark.length * (fontSize / 3), // Rough center approximation
+          x: width / 2 - watermark.length * (fontSize / 3),
           y: height / 2,
           size: fontSize,
           rotate: degrees(rotation),
-          color: rgb(0.5, 0.5, 0.5), // Grey
+          color: rgb(c.r, c.g, c.b),
           opacity: opacity,
         });
       });
@@ -217,9 +260,24 @@ export default function PdfWatermarkPage() {
                     <input type="range" min="0" max="1" step="0.1" value={opacity} onChange={e => setOpacity(parseFloat(e.target.value))} style={{ width: "100%" }} />
                   </div>
 
-                  <div style={{ marginBottom: "1.5rem" }}>
+                  <div style={{ marginBottom: "1rem" }}>
                     <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Rotation ({rotation}°)</label>
                     <input type="range" min="-90" max="90" value={rotation} onChange={e => setRotation(parseInt(e.target.value))} style={{ width: "100%" }} />
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>Color</label>
+                    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+                      {["#808080", "#e11d48", "#1d4ed8", "#16a34a", "#000000"].map(c => (
+                        <button key={c} onClick={() => setColor(c)}
+                          style={{ width: 28, height: 28, borderRadius: "50%", background: c, border: color === c ? "3px solid #333" : "2px solid #ccc", cursor: "pointer" }}
+                        />
+                      ))}
+                      <input type="color" value={color} onChange={e => setColor(e.target.value)}
+                        style={{ width: 32, height: 28, border: "1px solid #ccc", borderRadius: "4px", cursor: "pointer", padding: 2 }}
+                        title="Custom color"
+                      />
+                    </div>
                   </div>
 
                   <button
@@ -231,21 +289,43 @@ export default function PdfWatermarkPage() {
                   </button>
                 </div>
 
-                {/* Visual Preview Box */}
-                <div className="preview-box" style={{ flex: 1, backgroundColor: "#f9f9f9", border: "1px dashed #ccc", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "300px", position: "relative", overflow: "hidden" }}>
-                  <div style={{ position: "absolute", top: 10, left: 10, color: "#999", fontSize: "0.8rem" }}>Text Preview</div>
-                  <div style={{
-                    fontSize: `${fontSize}px`,
-                    opacity: opacity,
-                    transform: `rotate(${rotation}deg)`,
-                    color: "rgba(0,0,0,0.5)",
-                    fontWeight: "bold",
-                    textAlign: "center",
-                    wordBreak: "break-all",
-                    maxWidth: "80%"
-                  }}>
-                    {watermark}
-                  </div>
+                {/* Live PDF Preview Box */}
+                <div className="preview-box" style={{ flex: 1, borderRadius: "8px", overflow: "hidden", position: "relative", minHeight: "300px", background: "#e8e8e8", border: "1px solid #ddd", boxShadow: "0 2px 10px rgba(0,0,0,0.08)" }}>
+                  {/* Label */}
+                  <div style={{ position: "absolute", top: 8, left: 8, zIndex: 10, background: "rgba(0,0,0,0.55)", color: "white", fontSize: "0.72rem", padding: "2px 8px", borderRadius: "4px", pointerEvents: "none" }}>Live Preview — Page 1</div>
+
+                  {/* PDF canvas */}
+                  <canvas ref={previewCanvasRef} style={{ display: "block", width: "100%", height: "auto" }} />
+
+                  {/* Watermark overlay */}
+                  {previewReady && (
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      pointerEvents: "none",
+                    }}>
+                      <span style={{
+                        fontSize: `${Math.max(12, fontSize * 0.55)}px`,
+                        opacity: opacity,
+                        transform: `rotate(${rotation}deg)`,
+                        color: color,
+                        fontWeight: "bold",
+                        whiteSpace: "nowrap",
+                        textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                        userSelect: "none",
+                        letterSpacing: "0.05em",
+                      }}>
+                        {watermark || "Watermark"}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Loading spinner */}
+                  {!previewReady && (
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#999", fontSize: "0.9rem" }}>
+                      Rendering preview…
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

@@ -18,6 +18,7 @@ import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import ShareModal from "../components/ShareModal";
 import { useGoogleDrivePicker } from "../hooks/useGoogleDrivePicker";
 import { useDropboxPicker } from "../hooks/useDropboxPicker";
+import { useAutoDownload } from "../hooks/useAutoDownload";
 import ToolInstructions from "../components/ToolInstructions";
 import toolData from "../data/toolInstructions.json";
 import Testimonials from "../components/Testimonials";
@@ -97,20 +98,8 @@ export default function PdfToHtmlPage() {
     setError(null);
   };
 
-  // Auto-download effect
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    if (isConverted && htmlResult) {
-      timeoutId = setTimeout(() => {
-        handleDownload();
-      }, 7000); // 7 seconds delay
-    }
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [isConverted, htmlResult]);
+  // Smart auto-download: fires after 10s only if user hasn't clicked manually
+  const triggerDownload = useAutoDownload(isConverted && !!htmlResult, handleDownload, 10000);
 
   const downloadHtml = () => {
     if (!htmlResult) return;
@@ -418,7 +407,7 @@ export default function PdfToHtmlPage() {
                   {htmlResult && (
                     <>
                       <button
-                        onClick={downloadHtml}
+                        onClick={triggerDownload}
                         className="download-button"
                         style={{
                           backgroundColor: "#28a745",

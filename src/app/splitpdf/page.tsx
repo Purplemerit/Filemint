@@ -19,6 +19,7 @@ import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import ShareModal from "../components/ShareModal";
 import { useGoogleDrivePicker } from "../hooks/useGoogleDrivePicker";
 import { useDropboxPicker } from "../hooks/useDropboxPicker";
+import { useAutoDownload } from "../hooks/useAutoDownload";
 import ToolInstructions from "../components/ToolInstructions";
 import toolData from "../data/toolInstructions.json";
 import Testimonials from "../components/Testimonials";
@@ -312,20 +313,8 @@ export default function SplitPdfPage() {
     }
   };
 
-  // Auto-download effect
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    if (isSplit && splitBlobs.length > 0) {
-      timeoutId = setTimeout(() => {
-        handleDownload();
-      }, 7000); // 7 seconds delay
-    }
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [isSplit, splitBlobs]); // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Smart auto-download: fires after 10s only if user hasn't clicked manually
+  const triggerDownload = useAutoDownload(isSplit && splitBlobs.length > 0, handleDownload, 10000);
 
   const handleReset = () => {
     setSplitBlobs([]);
@@ -614,7 +603,7 @@ export default function SplitPdfPage() {
 
             <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
               <button
-                onClick={handleDownload}
+                onClick={triggerDownload}
                 className="download-button"
                 style={{
                   backgroundColor: "#e11d48",

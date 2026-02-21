@@ -19,6 +19,7 @@ import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import ShareModal from "../components/ShareModal";
 import { useGoogleDrivePicker } from "../hooks/useGoogleDrivePicker";
 import { useDropboxPicker } from "../hooks/useDropboxPicker";
+import { useAutoDownload } from "../hooks/useAutoDownload";
 import ToolInstructions from "../components/ToolInstructions";
 import toolData from "../data/toolInstructions.json";
 import Testimonials from "../components/Testimonials";
@@ -64,20 +65,8 @@ export default function PdfToPngPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Auto-download effect
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    if (isConverted && convertedFileBlob) {
-      timeoutId = setTimeout(() => {
-        handleDownload();
-      }, 7000); // 7 seconds delay
-    }
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [isConverted, convertedFileBlob]);
+  // Smart auto-download: fires after 10s only if user hasn't clicked manually
+  const triggerDownload = useAutoDownload(isConverted && !!convertedFileBlob, handleDownload, 10000);
 
   const handleReset = () => {
     setFile(null);
@@ -404,7 +393,7 @@ export default function PdfToPngPage() {
 
                   <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                     <button
-                      onClick={handleDownload}
+                      onClick={triggerDownload}
                       className="download-button"
                       style={{
                         backgroundColor: "#e11d48", // Brand color
@@ -913,6 +902,7 @@ export default function PdfToPngPage() {
         onClose={() => setShowShareModal(false)}
         fileBlob={convertedFileBlob}
         fileName={file?.name.replace(".pdf", "-images.zip") || "converted.zip"}
+        onDownload={triggerDownload}
       />
       <Footer />
     </div>

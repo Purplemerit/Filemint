@@ -215,7 +215,7 @@ export default function EditPdfPage() {
   // New State for PDF.js Rendering
   const [pages, setPages] = useState<number[]>([]);
   const [pdfDocument, setPdfDocument] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
-  const [scale, setScale] = useState(1.5);
+  const [scale, setScale] = useState(1.0);
   const [pageDimensions, setPageDimensions] = useState<Record<number, { width: number; height: number }>>({});
   const [currentPage, setCurrentPage] = useState<number>(1); // Currently active page for drawing
   const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null);
@@ -261,7 +261,7 @@ export default function EditPdfPage() {
         } else if (width < 900) {
           setScale(0.8);
         } else {
-          setScale(1.5);
+          setScale(1.0);
         }
       }
     };

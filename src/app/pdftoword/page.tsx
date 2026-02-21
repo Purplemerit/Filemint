@@ -589,7 +589,7 @@ export default function PdfToWordPage() {
 
       <ToolInstructions title={instructionData.title} steps={instructionData.steps as any} />
       <Testimonials title="What Our Users Say" testimonials={testimonialData.testimonials} autoScrollInterval={3000} />
-      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} fileBlob={zipBlob} fileName={files.length > 1 ? "converted_files.zip" : "converted.docx"} />
+      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} fileBlob={zipBlob} fileName={files.length > 1 ? "converted_files.zip" : "converted.docx"} onDownload={handleDownload} />
       <Footer />
     </div>
   );
