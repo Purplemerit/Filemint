@@ -2,6 +2,7 @@
 
 import Navbar from "../components/Navbar";
 import { useState, useEffect, useRef } from "react";
+import { generateId } from "@/lib/generateId";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { TbShare3 } from "react-icons/tb";
@@ -246,7 +247,7 @@ export default function HtmlToPdfPage() {
 
   const addFiles = (newFiles: File[]) => {
     const filesWithIds = newFiles.map(file => ({
-      id: crypto.randomUUID(),
+      id: generateId(),
       file
     }));
     setFiles(prev => [...prev, ...filesWithIds]);

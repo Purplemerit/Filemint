@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { generateId } from "@/lib/generateId";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
@@ -193,7 +194,7 @@ export default function MergePdfPage() {
 
   const addFiles = (newFiles: File[]) => {
     const filesWithIds = newFiles.map(file => ({
-      id: crypto.randomUUID(),
+      id: generateId(),
       file
     }));
     setFiles(prev => [...prev, ...filesWithIds]);
