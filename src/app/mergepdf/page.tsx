@@ -19,6 +19,7 @@ import {
 } from "react-icons/pi";
 import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import ShareModal from "../components/ShareModal";
+import RecommendedTools from "../components/RecommendedTools";
 import { useGoogleDrivePicker } from "../hooks/useGoogleDrivePicker";
 import { useDropboxPicker } from "../hooks/useDropboxPicker";
 import { useAutoDownload } from "../hooks/useAutoDownload";
@@ -666,6 +667,7 @@ export default function MergePdfPage() {
                     Merge More Files
                   </button>
                 </div>
+                <RecommendedTools />
               </div>
             ) : (
               /* Files Uploaded State - Sortable List */

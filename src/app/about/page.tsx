@@ -2,17 +2,18 @@
 import React from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
+import Footer from "../components/footer";
 import { useEffect, useState } from "react";
 const AboutPage = () => {
-   const [isMobile, setIsMobile] = useState(false);
-    useEffect(() => {
-        const checkWidth = () => setIsMobile(window.innerWidth <= 720);
-        checkWidth();
-        window.addEventListener("resize", checkWidth);
-        return () => window.removeEventListener("resize", checkWidth);
-      }, []);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkWidth = () => setIsMobile(window.innerWidth <= 720);
+    checkWidth();
+    window.addEventListener("resize", checkWidth);
+    return () => window.removeEventListener("resize", checkWidth);
+  }, []);
   return (
-   
+
     <div style={{ margin: "0 auto", fontFamily: "Georgia, Times New Roman, serif" }}>
       <Navbar />
 
@@ -32,7 +33,7 @@ const AboutPage = () => {
             color: "#222",
           }}
         >
-          Why Choose<a style={{color:"#082988"}}> FileMint.com</a>
+          Why Choose<a style={{ color: "#082988" }}> FileMint.com</a>
         </h1>
         <h3
           style={{
@@ -105,7 +106,7 @@ const AboutPage = () => {
               style={{
                 width: "48px",
                 height: "48px",
-              
+
                 borderRadius: "12px",
                 display: "flex",
                 alignItems: "center",
@@ -113,7 +114,7 @@ const AboutPage = () => {
                 fontSize: "24px",
               }}
             >
-             <img src={"./images/image1.svg"}/>
+              <img src={"./images/image1.svg"} />
             </div>
             <h2 style={{ fontSize: "1.25rem", marginBottom: "0.25rem", fontWeight: "600" }}>
               Smart Conversion Tools
@@ -140,7 +141,7 @@ const AboutPage = () => {
               style={{
                 width: "48px",
                 height: "48px",
-               
+
                 borderRadius: "12px",
                 display: "flex",
                 alignItems: "center",
@@ -148,7 +149,7 @@ const AboutPage = () => {
                 fontSize: "24px",
               }}
             >
-             <img src={"./images/image2.svg"}/>
+              <img src={"./images/image2.svg"} />
             </div>
             <h2 style={{ fontSize: "1.25rem", marginBottom: "0.25rem", fontWeight: "600" }}>
               Privacy First
@@ -177,7 +178,7 @@ const AboutPage = () => {
               style={{
                 width: "48px",
                 height: "48px",
-                
+
                 borderRadius: "12px",
                 display: "flex",
                 alignItems: "center",
@@ -185,7 +186,7 @@ const AboutPage = () => {
                 fontSize: "24px",
               }}
             >
-             <img src={"./images/image3.svg"}/>
+              <img src={"./images/image3.svg"} />
             </div>
             <h2 style={{ fontSize: "1.25rem", marginBottom: "0.25rem", fontWeight: "600" }}>
               Built for Everyone
@@ -195,21 +196,21 @@ const AboutPage = () => {
               Compress a report before emailing, merge invoices in a click, or convert scanned
               images into editable documents.
             </p>
-            <div style={{ 
+            <div style={{
               width: "100%",
               height: "250px",
-              
+
               borderRadius: "12px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               marginTop: "1rem",
             }}>
-              <div style={{ 
+              <div style={{
                 fontSize: "80px",
                 opacity: 0.5,
               }}>
-                <img src={"./images/main.svg"}/>
+                <img src={"./images/main.svg"} />
               </div>
             </div>
           </div>
@@ -232,7 +233,7 @@ const AboutPage = () => {
               style={{
                 width: "48px",
                 height: "48px",
-               
+
                 borderRadius: "12px",
                 display: "flex",
                 alignItems: "center",
@@ -240,7 +241,7 @@ const AboutPage = () => {
                 fontSize: "24px",
               }}
             >
-             <img src={"./images/image4.svg"}/>
+              <img src={"./images/image4.svg"} />
             </div>
             <h2 style={{ fontSize: "1.25rem", marginBottom: "0.25rem", fontWeight: "600" }}>
               Cloud-Ready
@@ -253,122 +254,7 @@ const AboutPage = () => {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer
-  style={{
-    backgroundColor: "white",
-    padding: "1rem 0 2rem 0", // reduced padding
-    borderTop: "1px solid #e5e7eb",
-    width: "100%",
-    overflowX: "hidden",
-    backgroundImage: "url('/images/footer-bg.png')",
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: isMobile ? "top center" : "center right",
-    backgroundSize: isMobile ? "cover" : "contain",
-  }}
->
-  <div
-    style={{
-      maxWidth: "1200px",
-      margin: "0 auto",
-      padding: isMobile ? "0 1rem" : "0 2rem",
-      width: "100%",
-      position: "relative",
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: isMobile ? "flex-start" : "space-between",
-        alignItems: isMobile ? "flex-start" : "center",
-        flexDirection: isMobile ? "column" : "row",
-        flexWrap: "wrap",
-        gap: isMobile ? "1rem" : "2rem",
-        width: "100%",
-      }}
-    >
-      {/* Logo */}
-      <div
-        style={{
-          position: "relative",
-          width: isMobile ? "100%" : "auto",
-          zIndex: 2,
-        }}
-      >
-        <a href="/">
-          <img
-            src="/Group-14.svg"
-            alt="Logo"
-            style={{ height: "20px", cursor: "pointer" }}
-          />
-        </a>
-      </div>
-
-      {/* Navigation */}
-      <nav
-        style={{
-          display: "flex",
-          gap: isMobile ? "1rem" : "2rem",
-          fontSize: "0.85rem",
-          flexDirection: isMobile ? "column" : "row",
-          width: isMobile ? "100%" : "auto",
-          marginLeft: isMobile ? "0" : "auto",
-          marginRight: isMobile ? "0" : "auto",
-          zIndex: 2,
-        }}
-      >
-        <a href="/about" style={{ color: "#000000ff", textDecoration: "none" }}>About</a>
-        <a href="/blogs" style={{ color: "#000000ff", textDecoration: "none" }}>Blog Posts</a>
-        <a href="/faq" style={{ color: "#000000ff", textDecoration: "none" }}>FAQ</a>
-        <a href="/terms" style={{ color: "#000000ff", textDecoration: "none" }}>Terms & Conditions</a>
-        <a href="/privacy-policy" style={{ color: "#000000ff", textDecoration: "none" }}>Privacy Policy</a>
-      </nav>
-    </div>
-
-    {/* Bottom Row: centered text + icons right */}
-    <div
-      style={{
-        marginTop: "1.5rem",
-        width: "100%",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        flexDirection: isMobile ? "column" : "row",
-      }}
-    >
-      {/* Center text */}
-      <div
-        style={{
-          color: "#000000ff",
-          fontSize: "0.8rem",
-          textAlign: isMobile ? "center" : "center",
-          flex: 1,
-          marginLeft: isMobile ?"0px":"250px"
-        }}
-      >
-        © 2025 FileMint. All rights reserved. Powered by PurpleMerit.
-      </div>
-
-      {/* Icons Right */}
-      <div
-        style={{
-          display: "flex",
-          gap: "1rem",
-          justifyContent: "flex-end",
-          fontSize: "1.6rem",
-          color: "#666",
-          flexShrink: 0,
-          marginTop: isMobile ? "1rem" : "0",
-        }}
-      >
-        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-facebook"></i></a>
-        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-instagram"></i></a>
-        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-x-twitter"></i></a>
-        <a href="#" style={{ color: "#000000ff" }}><i className="fab fa-youtube"></i></a>
-      </div>
-    </div>
-  </div>
-</footer>
+      <Footer />
     </div>
   );
 };

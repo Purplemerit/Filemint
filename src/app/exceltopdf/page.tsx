@@ -26,6 +26,7 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import RecommendedTools from "../components/RecommendedTools";
 export default function ExcelToPdfPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -362,6 +363,7 @@ export default function ExcelToPdfPage() {
                     Convert Another File
                   </button>
                 </div>
+                <RecommendedTools />
               </div>
             ) : files.length === 0 ? (
               /* Empty State - Show upload UI */
