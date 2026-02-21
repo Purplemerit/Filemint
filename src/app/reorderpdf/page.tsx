@@ -18,6 +18,7 @@ import { TbShare3 } from "react-icons/tb";
 import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import { useGoogleDrivePicker } from "../hooks/useGoogleDrivePicker";
 import { useDropboxPicker } from "../hooks/useDropboxPicker";
+import { useAutoDownload } from "../hooks/useAutoDownload";
 import ToolInstructions from "../components/ToolInstructions";
 import toolData from "../data/toolInstructions.json";
 import Testimonials from "../components/Testimonials";
@@ -183,14 +184,8 @@ export default function ReorderPdfPage() {
     URL.revokeObjectURL(url);
   };
 
-  // Auto-download
-  useEffect(() => {
-    let tm: NodeJS.Timeout;
-    if (isReordered && modifiedBlob) {
-      tm = setTimeout(handleDownload, 7000);
-    }
-    return () => clearTimeout(tm);
-  }, [isReordered, modifiedBlob]);
+  // Smart auto-download: fires after 10s only if user hasn't clicked manually
+  const triggerDownload = useAutoDownload(isReordered && !!modifiedBlob, handleDownload, 10000);
 
   const reset = () => {
     setPdfFile(null);
@@ -263,7 +258,7 @@ export default function ReorderPdfPage() {
                 </div>
                 <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0 }}>Reordered Successfully!</h2>
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                  <button onClick={handleDownload} className="download-button" style={{ backgroundColor: "#e11d48", color: "white", padding: "1rem 2.5rem", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)" }}>
+                  <button onClick={triggerDownload} className="download-button" style={{ backgroundColor: "#e11d48", color: "white", padding: "1rem 2.5rem", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)" }}>
                     Download PDF
                   </button>
                 </div>

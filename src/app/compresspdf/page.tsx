@@ -19,6 +19,7 @@ import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import ShareModal from "../components/ShareModal";
 import { useGoogleDrivePicker } from "../hooks/useGoogleDrivePicker";
 import { useDropboxPicker } from "../hooks/useDropboxPicker";
+import { useAutoDownload } from "../hooks/useAutoDownload";
 import ToolInstructions from "../components/ToolInstructions";
 import toolData from "../data/toolInstructions.json";
 import Testimonials from "../components/Testimonials";
@@ -60,14 +61,8 @@ export default function CompressPdfPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Auto-download
-  useEffect(() => {
-    let tid: NodeJS.Timeout;
-    if (isCompressed && compressedFileBlob) {
-      tid = setTimeout(handleDownload, 7000);
-    }
-    return () => clearTimeout(tid);
-  }, [isCompressed, compressedFileBlob]);
+  // Smart auto-download: fires after 10s only if user hasn't clicked manually
+  const triggerDownload = useAutoDownload(isCompressed && !!compressedFileBlob, handleDownload, 10000);
 
   const handleReset = () => {
     setFiles([]);
@@ -463,7 +458,7 @@ export default function CompressPdfPage() {
                   </>
                 )}
 
-                <button className="cp-btn-primary" style={{ marginBottom: "0.75rem" }} onClick={handleDownload}>
+                <button className="cp-btn-primary" style={{ marginBottom: "0.75rem" }} onClick={triggerDownload}>
                   ⬇&nbsp;&nbsp;Download Compressed PDF
                 </button>
                 <div className="cp-action-row">

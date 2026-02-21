@@ -18,6 +18,7 @@ import { FaGoogleDrive, FaDropbox } from "react-icons/fa";
 import ShareModal from "../components/ShareModal";
 import { useGoogleDrivePicker } from "../hooks/useGoogleDrivePicker";
 import { useDropboxPicker } from "../hooks/useDropboxPicker";
+import { useAutoDownload } from "../hooks/useAutoDownload";
 import ToolInstructions from "../components/ToolInstructions";
 import toolData from "../data/toolInstructions.json";
 import Testimonials from "../components/Testimonials";
@@ -233,20 +234,8 @@ export default function TiffToPdfPage() {
     document.body.removeChild(a);
   };
 
-  // Auto-download effect
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    if (isConverted && convertedBlobUrl) {
-      timeoutId = setTimeout(() => {
-        downloadConvertedPdf();
-      }, 7000); // 7 seconds delay
-    }
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [isConverted, convertedBlobUrl]);
+  // Smart auto-download: fires after 10s only if user hasn't clicked manually
+  const triggerDownload = useAutoDownload(isConverted && !!convertedBlobUrl, downloadConvertedPdf, 10000);
 
   const handleShare = () => {
     if (!convertedBlob) {
@@ -437,7 +426,7 @@ export default function TiffToPdfPage() {
 
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                   <button
-                    onClick={downloadConvertedPdf}
+                    onClick={triggerDownload}
                     className="download-button"
                     style={{
                       backgroundColor: "#e11d48", // Brand color
