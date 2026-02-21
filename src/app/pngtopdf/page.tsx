@@ -43,6 +43,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { PiPlus } from "react-icons/pi";
+import FilePreview from "../components/FilePreview";
 
 // Interface for File with ID
 interface FileWithId {
@@ -127,7 +128,7 @@ function SortableFileCard({
           <PiX size={18} />
         </button>
 
-        <img src="./png.png" alt="PNG Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+        <FilePreview file={item.file} defaultIcon="./png.png" style={{ width: "80px", height: "100px", marginBottom: "0.5rem" }} />
         <p
           style={{
             fontSize: "0.75rem",

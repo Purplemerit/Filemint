@@ -45,6 +45,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import FilePreview from "../components/FilePreview";
 
 interface FileWithId {
   id: string;
@@ -129,11 +130,7 @@ function SortableFileCard({
           <PiX size={14} />
         </button>
 
-        <img
-          src="./word.svg"
-          alt="Word"
-          style={{ width: "35px", height: "45px", marginBottom: "0.5rem" }}
-        />
+        <FilePreview file={item.file} defaultIcon="./word.svg" style={{ width: "80px", height: "100px", marginBottom: "0.5rem" }} />
         <span
           style={{
             fontSize: "0.65rem",
@@ -452,9 +449,15 @@ export default function WordToPdfPage() {
             <ul style={{ listStyleType: "none", padding: 0 }}>
               {["Convert multiple files at once", "Perfect layout fidelity", "Secure and private processing"].map((t, i) => <li key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}><PiCheckCircle size={18} style={{ color: "green" }} /> {t}</li>)}
             </ul>
+            <div style={{ marginTop: "3rem", padding: "1.5rem", backgroundColor: "#fffbeb", border: "1px solid #fde68a", borderRadius: "10px", fontSize: "0.95rem" }}>
+              <h4 style={{ marginBottom: "0.5rem", color: "#92400e" }}>💡 Technical Insight</h4>
+              <p style={{ color: "#92400e", lineHeight: "1.5", margin: 0 }}>
+                Unlike your local computer which has the full Microsoft Office suite installed, web tools must "re-draw" the Word document's XML structure into a High-Fidelity PDF.
+                <strong> Why can't we just change the extension?</strong> A .docx file is a collection of XML data, while a .pdf is a fixed-layout binary file. We use a professional rendering engine to ensure your text and layout are reconstructed with pixel-perfect intent.
+              </p>
+            </div>
           </div>
         </div>
-
         <VerticalAdRight />
       </div>
 

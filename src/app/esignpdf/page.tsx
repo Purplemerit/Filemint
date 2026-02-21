@@ -80,6 +80,35 @@ const PDFPage = ({ pageNumber, pdfDocument, scale, onDimensionsChanged }: PDFPag
   return <canvas ref={canvasRef} style={{ display: "block", marginBottom: "0" }} />;
 };
 
+const PDFThumbnail = ({ pdfDocument }: { pdfDocument: pdfjsLib.PDFDocumentProxy | null }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const renderThumbnail = async () => {
+      if (!pdfDocument || !canvasRef.current) return;
+      try {
+        const page = await pdfDocument.getPage(1);
+        const viewport = page.getViewport({ scale: 0.3 });
+        const canvas = canvasRef.current;
+        const context = canvas.getContext("2d");
+        if (context) {
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          await page.render({
+            canvasContext: context,
+            viewport: viewport,
+          }).promise;
+        }
+      } catch (e) {
+        console.error("Error rendering thumbnail", e);
+      }
+    };
+    renderThumbnail();
+  }, [pdfDocument]);
+
+  return <canvas ref={canvasRef} style={{ maxWidth: "80px", maxHeight: "110px", objectFit: "contain", borderRadius: "2px", border: "1px solid #eee" }} />;
+};
+
 export default function ESignPdfPage() {
   const { token, isLoading } = useAuth();
   const router = useRouter();
@@ -120,7 +149,8 @@ export default function ESignPdfPage() {
   const [isDrawing, setIsDrawing] = useState(false);
 
   // Drag & Drop State
-  const [draggedItem, setDraggedItem] = useState<any>(null); // temporary item being created from modal
+  const [stagedSignature, setStagedSignature] = useState<any>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   // Success & Download States
   const [isSigned, setIsSigned] = useState(false);
@@ -328,24 +358,46 @@ export default function ESignPdfPage() {
       type = "image";
     }
 
-    // Instead of dragging, let's just place it on the center of the first visible page for simplicity, 
-    // or set it as a "staged" item that follows mouse?
-    // Let's create it at a default position on Page 1 (or current view page)
-    const newSignature = {
-      id: Date.now().toString(),
+    // Set as staged item that will be placed on click
+    const sigData = {
       type,
       content,
-      x: 100, // Default Position
-      y: 100,
       width: type === "text" ? 200 : 150,
       height: type === "text" ? 60 : 80,
-      page: 1, // Default to page 1
       fontFamily: activeTab === "type" ? selectedFont : undefined,
       color: selectedColor
     };
 
-    setSignatures([...signatures, newSignature]);
+    setStagedSignature(sigData);
     setShowSignatureModal(false);
+  };
+
+  const handlePageClick = (e: React.MouseEvent, pageNum: number) => {
+    if (!stagedSignature) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const newSignature = {
+      ...stagedSignature,
+      id: Date.now().toString(),
+      x: x - stagedSignature.width / 2,
+      y: y - stagedSignature.height / 2,
+      page: pageNum
+    };
+
+    setSignatures([...signatures, newSignature]);
+    setStagedSignature(null);
+  };
+
+  const handleContainerMouseMove = (e: React.MouseEvent) => {
+    if (!stagedSignature) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left + e.currentTarget.scrollLeft,
+      y: e.clientY - rect.top + e.currentTarget.scrollTop
+    });
   };
 
   // Remove Signature
@@ -648,16 +700,72 @@ export default function ESignPdfPage() {
             </button>
             <div style={{ backgroundColor: "#f8f9fa", padding: "1rem", borderRadius: "8px" }}>
               <p style={{ fontSize: "0.9rem", color: "#666", marginTop: 0 }}>
-                Click "Add Signature" to create a new signature, then drag/move it on the document.
+                {stagedSignature
+                  ? "Signature ready! Now CLICK anywhere on the document to place it."
+                  : 'Click "Add Signature" to create one, then click on the page to place it.'}
               </p>
             </div>
           </div>
 
           {/* Document Viewer */}
-          <div className="pdf-viewer-container" style={{ flex: 1, backgroundColor: "#e2e2e2", padding: "2rem", borderRadius: "8px", height: "80vh", overflowY: "auto", position: "relative" }}>
+          <div
+            className="pdf-viewer-container"
+            onMouseMove={handleContainerMouseMove}
+            style={{
+              flex: 1,
+              backgroundColor: "#e2e2e2",
+              padding: "2rem",
+              borderRadius: "8px",
+              height: "80vh",
+              overflowY: "auto",
+              position: "relative"
+            }}
+          >
+            {/* Ghost Preview */}
+            {stagedSignature && (
+              <div style={{
+                position: "absolute",
+                left: mousePos.x,
+                top: mousePos.y,
+                width: stagedSignature.width * (activeTab === "type" ? 1 : 1), // Optional adjustments
+                height: stagedSignature.height,
+                pointerEvents: "none",
+                opacity: 0.6,
+                zIndex: 1000,
+                transform: "translate(-50%, -50%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "2px dashed #e11d48",
+                backgroundColor: "rgba(255, 255, 255, 0.4)"
+              }}>
+                {stagedSignature.type === "text" ? (
+                  <span style={{
+                    fontFamily: stagedSignature.fontFamily,
+                    color: stagedSignature.color,
+                    fontSize: "1.5rem",
+                    whiteSpace: "nowrap"
+                  }}>
+                    {stagedSignature.content}
+                  </span>
+                ) : (
+                  <img src={stagedSignature.content} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                )}
+              </div>
+            )}
+
             <div className="pdf-pages-wrapper" style={{ display: "flex", flexDirection: "column", gap: "2rem", alignItems: "center" }}>
               {pages.map(pageNum => (
-                <div key={pageNum} style={{ position: "relative", backgroundColor: "white", boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}>
+                <div
+                  key={pageNum}
+                  onClick={(e) => handlePageClick(e, pageNum)}
+                  style={{
+                    position: "relative",
+                    backgroundColor: "white",
+                    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                    cursor: stagedSignature ? "crosshair" : "default"
+                  }}
+                >
                   <PDFPage pageNumber={pageNum} pdfDocument={pdfDocument} scale={scale} onDimensionsChanged={onDimensionChanged} />
 
                   {/* Overlay for Signatures */}
@@ -959,8 +1067,10 @@ export default function ESignPdfPage() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <div style={{ backgroundColor: "white", borderRadius: "8px", width: "120px", height: "140px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", position: "relative" }}>
-                    <button onClick={removeFile} style={{ position: "absolute", top: "4px", right: "4px", background: "white", border: "none", borderRadius: "50%", width: "25px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "black" }}><PiX size={18} /></button>
-                    <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+                    <button onClick={removeFile} style={{ position: "absolute", top: "4px", right: "4px", background: "white", border: "none", borderRadius: "50%", width: "25px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "black", zIndex: 10 }}><PiX size={18} /></button>
+                    <div style={{ marginBottom: "0.5rem" }}>
+                      <PDFThumbnail pdfDocument={pdfDocument} />
+                    </div>
                     <span style={{ fontSize: "0.65rem", color: "#666", maxWidth: "100px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 0.5rem" }}>{pdfFile.name}</span>
                   </div>
                 </div>

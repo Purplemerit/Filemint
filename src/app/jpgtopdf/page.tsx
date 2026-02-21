@@ -43,6 +43,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import FilePreview from "../components/FilePreview";
 
 // Interface for File with ID
 interface FileWithId {
@@ -127,7 +128,7 @@ function SortableFileCard({
           <PiX size={18} />
         </button>
 
-        <img src="./jpg.png" alt="Image Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+        <FilePreview file={item.file} defaultIcon="./jpg.png" style={{ width: "80px", height: "100px", marginBottom: "0.5rem" }} />
         <p
           style={{
             fontSize: "0.75rem",

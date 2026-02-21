@@ -7,9 +7,22 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # Needed so @sparticuz/chromium knows it is running in a Lambda/serverless context
+  AWS_LAMBDA_FUNCTION_NAME = "netlify-functions"
 
-# Enable Netlify Blobs and configure serverless functions
+# Serverless function configuration (applies to Next.js API routes via plugin)
 [functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["sharp", "canvas", "@sparticuz/chromium", "puppeteer-core"]
-  included_files = ["node_modules/@sparticuz/chromium/bin/*"]
+  node_bundler      = "esbuild"
+  # These heavy native modules must NOT be bundled — they are used as-is
+  external_node_modules = [
+    "sharp",
+    "canvas",
+    "mammoth",
+    "jszip",
+    "@sparticuz/chromium",
+    "puppeteer-core"
+  ]
+  # Include the Chromium binary that @sparticuz/chromium needs at runtime
+  included_files = [
+    "node_modules/@sparticuz/chromium/bin/**"
+  ]

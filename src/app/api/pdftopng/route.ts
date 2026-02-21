@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument } from "pdf-lib";
 import { createCanvas } from "canvas";
-import fs from "fs";
-import path from "path";
-import { tmpdir } from "os";
 import JSZip from "jszip";
 
 export async function POST(req: NextRequest) {
-  let tempPdfPath = "";
   try {
     const formData = await req.formData();
     const files = formData.getAll("files") as File[];

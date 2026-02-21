@@ -25,6 +25,7 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import FilePreview from "../components/FilePreview";
 export default function PdfToExcelPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -551,7 +552,7 @@ export default function PdfToExcelPage() {
                       <PiX size={18} />
                     </button>
 
-                    <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+                    <FilePreview file={files[0]} style={{ width: "80px", height: "100px", marginBottom: "0.5rem" }} />
                     <span style={{
                       fontSize: "0.65rem",
                       color: "#666",

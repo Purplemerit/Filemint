@@ -148,6 +148,35 @@ const PDFPage = ({ pageNumber, pdfDocument, scale, onDimensionsChanged, onTextCl
   );
 };
 
+const PDFThumbnail = ({ pdfDocument }: { pdfDocument: pdfjsLib.PDFDocumentProxy | null }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const renderThumbnail = async () => {
+      if (!pdfDocument || !canvasRef.current) return;
+      try {
+        const page = await pdfDocument.getPage(1);
+        const viewport = page.getViewport({ scale: 0.3 });
+        const canvas = canvasRef.current;
+        const context = canvas.getContext("2d");
+        if (context) {
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          await page.render({
+            canvasContext: context,
+            viewport: viewport,
+          }).promise;
+        }
+      } catch (e) {
+        console.error("Error rendering thumbnail", e);
+      }
+    };
+    renderThumbnail();
+  }, [pdfDocument]);
+
+  return <canvas ref={canvasRef} style={{ maxWidth: "80px", maxHeight: "110px", objectFit: "contain", borderRadius: "2px", border: "1px solid #eee" }} />;
+};
+
 
 export default function EditPdfPage() {
   const { token, isLoading } = useAuth();
@@ -159,7 +188,7 @@ export default function EditPdfPage() {
   const [annotations, setAnnotations] = useState<
     Array<{
       id: string;
-      type: "text" | "highlight" | "rectangle" | "arrow" | "circle" | "whiteout";
+      type: "text" | "highlight" | "rectangle" | "arrow" | "circle" | "whiteout" | "image" | "draw";
       content?: string;
       x: number;
       y: number;
@@ -168,14 +197,20 @@ export default function EditPdfPage() {
       color: string;
       fontSize?: number;
       page: number;
+      imageData?: string; // Base64 or Blob URL for images
+      points?: Array<{ x: number; y: number }>; // For freehand drawing
     }>
   >([]);
-  const [selectedTool, setSelectedTool] = useState<"text" | "highlight" | "rectangle" | "arrow" | "circle" | "whiteout">("text");
+  const [selectedTool, setSelectedTool] = useState<"text" | "highlight" | "rectangle" | "arrow" | "circle" | "whiteout" | "image" | "draw">("text");
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [selectedColor, setSelectedColor] = useState("#FF0000");
   const [fontSize, setFontSize] = useState(14);
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<{ x: number, y: number } | null>(null);
   const [currentAnnotation, setCurrentAnnotation] = useState<any>(null);
+  const [hasMoved, setHasMoved] = useState(false);
+  const [movingAnnotationId, setMovingAnnotationId] = useState<string | null>(null);
+  const [moveOffset, setMoveOffset] = useState<{ x: number, y: number } | null>(null);
 
   // New State for PDF.js Rendering
   const [pages, setPages] = useState<number[]>([]);
@@ -273,10 +308,12 @@ export default function EditPdfPage() {
 
   const tools = [
     { name: "Text", value: "text", icon: "📝" },
+    { name: "Image", value: "image", icon: "🖼️" },
     { name: "Highlight", value: "highlight", icon: "🖍️" },
     { name: "Rectangle", value: "rectangle", icon: "⬜" },
     { name: "Circle", value: "circle", icon: "⭕" },
     { name: "Arrow", value: "arrow", icon: "➡️" },
+    { name: "Draw", value: "draw", icon: "✏️" },
     { name: "Whiteout", value: "whiteout", icon: "🌫️" },
   ];
 
@@ -383,96 +420,96 @@ export default function EditPdfPage() {
     setShowShareModal(true);
   };
 
-  // --- Handlers for Page Interaction ---
-
-  const handlePageClick = (e: React.MouseEvent<HTMLDivElement>, pageNum: number) => {
-    if (!isAnnotating) return;
-
-    if (selectedTool === "text") {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      const newAnnotation = {
-        id: Date.now().toString(),
-        type: "text" as const,
-        content: "",
-        x: x,
-        y: y,
-        width: 200,
-        height: 30,
-        color: selectedColor,
-        fontSize: fontSize,
-        page: pageNum,
-      };
-      setAnnotations([...annotations, newAnnotation]);
-      setEditingAnnotationId(newAnnotation.id);
-    } else if (selectedTool === "whiteout" && !isDrawing) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      const newAnnotation = {
-        id: Date.now().toString(),
-        type: "whiteout" as const,
-        x: x,
-        y: y,
-        width: 100,
-        height: 30, // Default whiteout size
-        color: "#FFFFFF",
-        page: pageNum,
-      };
-      setAnnotations([...annotations, newAnnotation]);
-    } else if (selectedTool === "circle" && !isDrawing) {
-      // Only if simple click for circle, though typically circle is drawn. 
-      // Keeping logic for click-to-place fixed circle if desired, but 
-      // usually shapes are dragged. Let's support click-to-place for simplicity if not dragging.
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      const newAnnotation = {
-        id: Date.now().toString(),
-        type: "circle" as const,
-        x: x - 25,
-        y: y - 25,
-        width: 50,
-        height: 50,
-        color: selectedColor,
-        page: pageNum,
-      };
-      setAnnotations([...annotations, newAnnotation]);
-    }
-  };
-
   const handlePageMouseDown = (e: any, pageNum: number) => {
-    if (!isAnnotating) return;
-
     const isTouch = e.type.startsWith('touch');
-    const clientX = isTouch ? e.touches[0].clientX : e.clientX;
-    const clientY = isTouch ? e.touches[0].clientY : e.clientY;
-
+    const clientX = isTouch ? (e.touches ? e.touches[0].clientX : e.clientX) : e.clientX;
+    const clientY = isTouch ? (e.touches ? e.touches[0].clientY : e.clientY) : e.clientY;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = clientX - rect.left;
     const y = clientY - rect.top;
 
-    if (selectedTool === "rectangle" || selectedTool === "arrow" || selectedTool === "highlight" || selectedTool === "circle" || selectedTool === "whiteout") {
-      setStartPoint({ x, y });
-      setIsDrawing(true);
-      setCurrentPage(pageNum);
+    // Check if we clicked an annotation (prefer this over starting a new one)
+    const clickedAnn = annotations.find(ann =>
+      ann.page === pageNum &&
+      x >= ann.x * scale && x <= (ann.x + ann.width) * scale &&
+      y >= ann.y * scale && y <= (ann.y + ann.height) * scale
+    );
+
+    if (clickedAnn && (!isAnnotating || annotationCanBeMoved(clickedAnn.type))) {
+      setMovingAnnotationId(clickedAnn.id);
+      setMoveOffset({ x: x - clickedAnn.x * scale, y: y - clickedAnn.y * scale });
+      return;
     }
+
+    if (!isAnnotating) return;
+
+    setStartPoint({ x, y });
+    setIsDrawing(true);
+    setHasMoved(false);
+    setCurrentPage(pageNum);
   };
 
-  const handlePageMouseMove = (e: any, pageNum: number) => {
-    if (!isAnnotating || !isDrawing || !startPoint || currentPage !== pageNum) return;
+  const annotationCanBeMoved = (type: string) => ["image", "text", "rectangle", "circle", "whiteout", "arrow", "draw"].includes(type);
 
+  const handlePageMouseMove = (e: any, pageNum: number) => {
     const isTouch = e.type.startsWith('touch');
     const clientX = isTouch ? (e.touches ? e.touches[0].clientX : e.clientX) : e.clientX;
     const clientY = isTouch ? (e.touches ? e.touches[0].clientY : e.clientY) : e.clientY;
-
     const rect = e.currentTarget.getBoundingClientRect();
     const currentX = clientX - rect.left;
     const currentY = clientY - rect.top;
+
+    if (movingAnnotationId && moveOffset) {
+      setAnnotations(annotations.map(ann => {
+        if (ann.id === movingAnnotationId) {
+          const newX = (currentX - moveOffset.x) / scale;
+          const newY = (currentY - moveOffset.y) / scale;
+
+          // If it's a 'draw' type, we need to shift all points (but 'draw' isn't in my type list for moving yet)
+          if (ann.type === "draw" && ann.points) {
+            const dx = newX - ann.x;
+            const dy = newY - ann.y;
+            return {
+              ...ann,
+              x: newX,
+              y: newY,
+              points: ann.points.map(p => ({ x: p.x + dx, y: p.y + dy }))
+            }
+          }
+
+          return { ...ann, x: newX, y: newY };
+        }
+        return ann;
+      }));
+      return;
+    }
+
+    if (!isDrawing || !startPoint || currentPage !== pageNum) return;
+
+    if (Math.abs(currentX - startPoint.x) > 3 || Math.abs(currentY - startPoint.y) > 3) {
+      setHasMoved(true);
+    }
+
+    if (selectedTool === "draw") {
+      const newPoint = { x: currentX, y: currentY };
+      const previousPoints = currentAnnotation?.points || [{ x: startPoint.x, y: startPoint.y }];
+
+      const annotationIndices = annotations.length; // Just for temp ID
+
+      setCurrentAnnotation({
+        id: "temp",
+        type: "draw",
+        points: [...previousPoints, newPoint],
+        color: selectedColor,
+        page: pageNum,
+        // Calculate bounding box for the container
+        x: Math.min(...[...previousPoints, newPoint].map(p => p.x)),
+        y: Math.min(...[...previousPoints, newPoint].map(p => p.y)),
+        width: Math.max(...[...previousPoints, newPoint].map(p => p.x)) - Math.min(...[...previousPoints, newPoint].map(p => p.x)),
+        height: Math.max(...[...previousPoints, newPoint].map(p => p.y)) - Math.min(...[...previousPoints, newPoint].map(p => p.y)),
+      });
+      return;
+    }
 
     const annotation = {
       id: "temp",
@@ -484,24 +521,81 @@ export default function EditPdfPage() {
       color: selectedColor,
       page: pageNum,
     };
-
     setCurrentAnnotation(annotation);
-    if (isTouch) {
-      // Prevent scrolling while drawing
-      // Note: passive: false is required for this to work in listeners
-    }
   };
 
-  const handlePageMouseUp = () => {
-    if (!isAnnotating) return;
-
-    if (isDrawing && currentAnnotation && currentAnnotation.width > 5 && currentAnnotation.height > 5) {
-      const newAnnotation = {
-        ...currentAnnotation,
-        id: Date.now().toString(),
-      };
-      setAnnotations([...annotations, newAnnotation]);
+  const handlePageMouseUp = (e: any) => {
+    if (movingAnnotationId) {
+      setMovingAnnotationId(null);
+      setMoveOffset(null);
+      return;
     }
+
+    if (!isDrawing || !startPoint) return;
+
+    if (!hasMoved) {
+      // Handle as a Click
+      const { x, y } = startPoint;
+      if (selectedTool === "text") {
+        const newAnnotation = {
+          id: Date.now().toString(),
+          type: "text" as const,
+          content: "",
+          x: x / scale,
+          y: y / scale,
+          width: 250 / scale,
+          height: Math.max(40, fontSize * 1.5) / scale,
+          color: selectedColor,
+          fontSize: fontSize, // Point size is already unscaled in state
+          page: currentPage,
+        };
+        setAnnotations([...annotations, newAnnotation]);
+        setEditingAnnotationId(newAnnotation.id);
+      } else if (selectedTool === "image") {
+        imageInputRef.current?.click();
+      } else {
+        // Default size for other tools on click
+        const defaultWidth = selectedTool === "whiteout" ? 80 : 50;
+        const defaultHeight = selectedTool === "whiteout" ? 30 : 50;
+        const newAnnotation = {
+          id: Date.now().toString(),
+          type: selectedTool as any,
+          x: (x - defaultWidth / 2) / scale,
+          y: (y - defaultHeight / 2) / scale,
+          width: defaultWidth / scale,
+          height: defaultHeight / scale,
+          color: selectedColor,
+          page: currentPage,
+        };
+        setAnnotations([...annotations, newAnnotation]);
+      }
+    } else if (currentAnnotation) {
+      if (selectedTool === "draw") {
+        const unscaledAnnotation = {
+          ...currentAnnotation,
+          id: Date.now().toString(),
+          points: currentAnnotation.points.map((p: any) => ({ x: p.x / scale, y: p.y / scale })),
+          x: currentAnnotation.x / scale,
+          y: currentAnnotation.y / scale,
+          width: currentAnnotation.width / scale,
+          height: currentAnnotation.height / scale,
+        };
+        setAnnotations([...annotations, unscaledAnnotation]);
+      } else {
+        // Scale currentAnnotation back to 1.0 before saving
+        const unscaledAnnotation = {
+          ...currentAnnotation,
+          id: Date.now().toString(),
+          x: currentAnnotation.x / scale,
+          y: currentAnnotation.y / scale,
+          width: currentAnnotation.width / scale,
+          height: currentAnnotation.height / scale,
+          fontSize: currentAnnotation.type === 'text' ? fontSize : undefined
+        };
+        setAnnotations([...annotations, unscaledAnnotation]);
+      }
+    }
+
     setIsDrawing(false);
     setStartPoint(null);
     setCurrentAnnotation(null);
@@ -511,6 +605,50 @@ export default function EditPdfPage() {
 
   const removeAnnotation = (id: string) => {
     setAnnotations(annotations.filter((ann) => ann.id !== id));
+  };
+
+  const handleImageSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processImageFile(file, startPoint?.x, startPoint?.y, currentPage);
+    }
+    e.target.value = "";
+    setStartPoint(null);
+  };
+
+  const processImageFile = (file: File, x?: number, y?: number, pageNum?: number) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const fullDataUrl = event.target?.result as string;
+      const xPos = x !== undefined ? x : 100;
+      const yPos = y !== undefined ? y : 100;
+      const pg = pageNum !== undefined ? pageNum : 1;
+
+      const newAnnotation = {
+        id: Date.now().toString(),
+        type: "image" as const,
+        imageData: fullDataUrl,
+        x: xPos / scale,
+        y: yPos / scale,
+        width: 150 / scale,
+        height: 150 / scale,
+        color: "transparent",
+        page: pg,
+      };
+      setAnnotations([...annotations, newAnnotation]);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleWorkspaceDrop = (e: React.DragEvent<HTMLDivElement>, pageNum: number) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      processImageFile(file, x, y, pageNum);
+    }
   };
 
   const updateAnnotationText = (id: string, newText: string) => {
@@ -550,7 +688,8 @@ export default function EditPdfPage() {
 
         const page = docPages[annotation.page - 1];
         const { height: pageHeight } = page.getSize();
-        const scaleFactor = 1 / scale;
+        // Since we store unscaled points, scaleFactor is no longer needed here
+        // as PDF points match our unscaled system.
 
         const hexToRgb = (hex: string) => {
           const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -564,10 +703,10 @@ export default function EditPdfPage() {
         const color = hexToRgb(annotation.color);
         const rgbColor = rgb(color.r, color.g, color.b);
 
-        const pdfX = annotation.x * scaleFactor;
-        const pdfW = annotation.width * scaleFactor;
-        const pdfH = annotation.height * scaleFactor;
-        const pdfY = pageHeight - (annotation.y * scaleFactor) - pdfH;
+        const pdfX = annotation.x;
+        const pdfW = annotation.width;
+        const pdfH = annotation.height;
+        const pdfY = pageHeight - annotation.y - pdfH;
 
         switch (annotation.type) {
           case "text":
@@ -585,7 +724,7 @@ export default function EditPdfPage() {
               page.drawText(annotation.content, {
                 x: pdfX,
                 y: pdfY + (pdfH * 0.15),
-                size: (annotation.fontSize || 14) * scaleFactor * 1.02,
+                size: (annotation.fontSize || 14),
                 font: fontToEmbed,
                 color: rgbColor,
               });
@@ -598,7 +737,6 @@ export default function EditPdfPage() {
               width: pdfW,
               height: pdfH,
               color: rgb(1, 1, 1),
-              borderColor: rgb(1, 1, 1),
             });
             break;
           case "rectangle":
@@ -631,13 +769,68 @@ export default function EditPdfPage() {
               opacity: 0.3,
             });
             break;
-          case "arrow":
+          case "arrow": {
+            // Calculate direction for a professional arrow
+            const endX = pdfX + pdfW;
+            const endY = pdfY; // Simple horizontal arrow for now, or use actual drag points
             page.drawLine({
               start: { x: pdfX, y: pdfY + pdfH / 2 },
               end: { x: pdfX + pdfW, y: pdfY + pdfH / 2 },
               color: rgbColor,
               thickness: 2
             });
+            // Head
+            page.drawLine({
+              start: { x: pdfX + pdfW, y: pdfY + pdfH / 2 },
+              end: { x: pdfX + pdfW - 10, y: pdfY + pdfH / 2 + 5 },
+              color: rgbColor, thickness: 2
+            });
+            page.drawLine({
+              start: { x: pdfX + pdfW, y: pdfY + pdfH / 2 },
+              end: { x: pdfX + pdfW - 10, y: pdfY + pdfH / 2 - 5 },
+              color: rgbColor, thickness: 2
+            });
+            break;
+          }
+          case "draw":
+            if (annotation.points && annotation.points.length > 1) {
+              for (let i = 0; i < annotation.points.length - 1; i++) {
+                const start = annotation.points[i];
+                const end = annotation.points[i + 1];
+                page.drawLine({
+                  start: { x: start.x, y: pageHeight - start.y },
+                  end: { x: end.x, y: pageHeight - end.y },
+                  color: rgbColor,
+                  thickness: 2,
+                });
+              }
+            }
+            break;
+          case "image":
+            if (annotation.imageData) {
+              try {
+                const base64Data = annotation.imageData.split(",")[1];
+                const imageBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+                let pdfImage;
+                if (annotation.imageData.includes("image/png")) {
+                  pdfImage = await pdfDoc.embedPng(imageBytes);
+                } else if (annotation.imageData.includes("image/jpeg") || annotation.imageData.includes("image/jpg")) {
+                  pdfImage = await pdfDoc.embedJpg(imageBytes);
+                } else {
+                  // Fallback or skip if unsupported
+                  console.warn("Unsupported image format for PDF embedding");
+                  break;
+                }
+                page.drawImage(pdfImage, {
+                  x: pdfX,
+                  y: pdfY,
+                  width: pdfW,
+                  height: pdfH,
+                });
+              } catch (err) {
+                console.error("Error embedding image:", err);
+              }
+            }
             break;
         }
       }
@@ -696,438 +889,502 @@ export default function EditPdfPage() {
   };
 
   const handleInbuiltTextClick = (item: any) => {
-    // 1. Create a whiteout annotation at this spot
-    const whiteoutAnn = {
-      id: `wo-${Date.now()}`,
-      type: "whiteout" as const,
-      x: item.x,
-      y: item.y,
-      width: item.width + 1,
-      height: item.height + 1,
-      color: "#FFFFFF",
-      page: item.page,
-    };
+    if (!isAnnotating || selectedTool !== "text") return;
 
-    // 2. Create an editable text annotation
-    const textAnn = {
-      id: `edit-${Date.now()}`,
+    // Scale items back to unscaled coordinates
+    const unscaledX = item.x / scale;
+    const unscaledY = item.y / scale;
+    const unscaledW = item.width / scale;
+    const unscaledH = item.height / scale;
+    const unscaledFS = item.fontSize / scale;
+
+    const newAnnotation = {
+      id: Date.now().toString(),
       type: "text" as const,
       content: item.text,
-      x: item.x,
-      y: item.y,
-      width: item.width,
-      height: item.height,
-      color: "#000000",
-      fontSize: item.fontSize,
+      x: unscaledX,
+      y: unscaledY,
+      width: unscaledW + 20,
+      height: unscaledH + 10,
+      color: selectedColor,
+      fontSize: unscaledFS,
       page: item.page,
     };
-
-    setAnnotations([...annotations, whiteoutAnn, textAnn]);
-    setEditingAnnotationId(textAnn.id);
+    setAnnotations([...annotations, newAnnotation]);
+    setEditingAnnotationId(newAnnotation.id);
   };
 
   // Editing Mode UI
+  // Editing Mode UI
   if (isEditingMode) {
     return (
-      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1rem" }}>
+      <div style={{
+        backgroundColor: "#f0f2f5",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "'Inter', sans-serif"
+      }}>
+        <input
+          type="file"
+          hidden
+          ref={imageInputRef}
+          accept="image/*"
+          onChange={handleImageSelected}
+        />
         <style>{`
-          @media (max-width: 768px) {
-            .header-controls-edit { flex-direction: column !important; gap: 0.5rem !important; align-items: stretch !important; margin-top: 1rem !important; }
-            .header-controls-edit > * { width: 100% !important; justify-content: center !important; }
-            .main-container-edit { flex-direction: column !important; gap: 1rem !important; }
-            .tools-panel { 
-              width: 100% !important; 
-              position: static !important; 
-              margin-bottom: 0.5rem; 
-              max-height: none !important;
-            }
-            .tool-grid { grid-template-columns: repeat(3, 1fr) !important; }
-            .color-grid { grid-template-columns: repeat(4, 1fr) !important; }
-            .pdf-viewer-container { 
-              height: 60vh !important; 
-              padding: 0.5rem !important; 
-              overflow-x: auto !important;
-              width: 100% !important;
-              max-width: 100% !important;
-              box-sizing: border-box !important;
-            }
-            .pdf-pages-wrapper {
-              align-items: center !important;
-              width: max-content !important;
-              min-width: 100% !important;
-            }
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+          
+          .edit-top-bar {
+            height: 64px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+          }
+
+          .edit-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin: 1rem auto;
+            position: sticky;
+            top: 74px;
+            z-index: 999;
+            maxWidth: 900px;
+          }
+
+          .tool-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #4b5563;
+          }
+          .tool-btn:hover { background: #f3f4f6; color: #111827; }
+          .tool-btn.active { background: #e11d4820; color: #e11d48; border: 1px solid #e11d4840; }
+          .tool-btn span { font-size: 0.7rem; font-weight: 500; margin-top: 4px; }
+
+          .pdf-workspace {
+            display: flex;
+            flex: 1;
+            padding: 1rem;
+            overflow: hidden;
+            justify-content: center;
+          }
+
+          .main-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+          }
+
+          .side-settings {
+            width: 280px;
+            background: white;
+            border-left: 1px solid #e0e0e0;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+          }
+
+          .page-card {
+            background: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            position: relative;
+            transition: transform 0.2s;
+          }
+
+          @media (max-width: 1024px) {
+            .side-settings { display: none; }
+            .edit-top-bar { padding: 0 0.75rem; }
+            .edit-toolbar { width: 95%; overflow-x: auto; padding: 0.5rem; }
+          }
+          @media (max-width: 600px) {
+            .file-name-title { display: none !important; }
+            .save-btn-text { font-size: 0.8rem !important; }
           }
         `}</style>
 
-        <div
-          className="header-controls-edit"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            margin: "3rem 0rem 2rem 0rem",
-            gap: "1rem",
-            flexWrap: "wrap",
-          }}
-        >
-          <button
-            onClick={goBack}
-            style={{
-              backgroundColor: "#6c757d",
-              color: "white",
-              border: "none",
-              padding: "0.6rem 1.2rem",
-              borderRadius: "5px",
-              cursor: "pointer",
-              fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
-              minWidth: "100px",
-            }}
-          >
-            ← Back
-          </button>
-          <h1 style={{ fontSize: "clamp(1.2rem, 4vw, 1.5rem)", margin: 0 }}>Edit Your PDF</h1>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginRight: "1rem", backgroundColor: "white", padding: "0.4rem", borderRadius: "5px", border: "1px solid #ccc" }}>
-              <button onClick={handleZoomOut} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }} title="Zoom Out">
-                <PiMagnifyingGlassMinus size={20} />
-              </button>
-              <span style={{ fontSize: "0.9rem", minWidth: "3rem", textAlign: "center" }}>{Math.round(scale * 100)}%</span>
-              <button onClick={handleZoomIn} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }} title="Zoom In">
-                <PiMagnifyingGlassPlus size={20} />
-              </button>
-            </div>
+        {/* --- Top Bar --- */}
+        <div className="edit-top-bar">
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
             <button
-              onClick={downloadEditedPdf}
+              onClick={goBack}
               style={{
-                backgroundColor: "#28a745",
-                color: "white",
+                background: "#f3f4f6",
                 border: "none",
-                padding: "0.6rem 1.2rem",
-                borderRadius: "5px",
+                borderRadius: "6px",
+                padding: "0.5rem 1rem",
                 cursor: "pointer",
-                fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
-                minWidth: "100px",
+                fontWeight: "600",
                 display: "flex",
                 alignItems: "center",
                 gap: "0.5rem"
               }}
             >
-              <span>Finish & Save</span>
+              ← Back
+            </button>
+            <div style={{ height: "24px", width: "1px", background: "#e0e0e0" }} />
+            <h1 className="file-name-title" style={{
+              fontSize: "1rem", fontWeight: "600", color: "#111827", margin: 0,
+              maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+            }}>
+              {pdfFile?.name || "Editing PDF"}
+            </h1>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            {/* Zoom Controls */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", background: "#f3f4f6", padding: "0.3rem", borderRadius: "8px" }}>
+              <button onClick={handleZoomOut} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px" }}>
+                <PiMagnifyingGlassMinus size={18} />
+              </button>
+              <span style={{ fontSize: "0.8rem", width: "40px", textAlign: "center", fontWeight: "600" }}>{Math.round(scale * 100)}%</span>
+              <button onClick={handleZoomIn} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px" }}>
+                <PiMagnifyingGlassPlus size={18} />
+              </button>
+            </div>
+
+            <button
+              onClick={downloadEditedPdf}
+              className="save-btn-text"
+              style={{
+                backgroundColor: "#e11d48",
+                color: "white",
+                border: "none",
+                padding: "0.6rem 1.2rem",
+                borderRadius: "8px",
+                fontWeight: "600",
+                cursor: "pointer",
+                fontSize: "0.9rem",
+                boxShadow: "0 4px 6px rgba(225, 29, 72, 0.2)"
+              }}
+            >
+              Save PDF
             </button>
           </div>
         </div>
 
-        <div className="main-container-edit" style={{ display: "flex", gap: "2rem" }}>
-          {/* Editing Tools Panel */}
-          <div className="tools-panel" style={{
-            width: "300px",
-            backgroundColor: "#f8f9fa",
-            padding: "1.5rem",
-            borderRadius: "10px",
-            height: "fit-content",
-            position: "sticky",
-            top: "2rem",
-            maxHeight: "90vh",
-            overflowY: "auto"
-          }}>
-            <h3 style={{ marginTop: 0, marginBottom: "1.5rem", fontSize: "clamp(1rem, 3vw, 1.17rem)" }}>Editing Tools</h3>
+        {/* --- Floating Toolbar --- */}
+        <div className="edit-toolbar">
+          {tools.map((tool) => (
+            <button
+              key={tool.value}
+              className={`tool-btn ${selectedTool === tool.value && isAnnotating ? "active" : ""}`}
+              onClick={() => {
+                setSelectedTool(tool.value as any);
+                setIsAnnotating(true);
+              }}
+            >
+              <span style={{ fontSize: "1.2rem" }}>{tool.icon}</span>
+              <span>{tool.name}</span>
+            </button>
+          ))}
+          <div style={{ height: "30px", width: "1px", background: "#e0e0e0", margin: "0 4px" }} />
+          <button
+            className={`tool-btn ${!isAnnotating ? "active" : ""}`}
+            onClick={() => setIsAnnotating(false)}
+          >
+            <span style={{ fontSize: "1.2rem" }}>👆</span>
+            <span>Select</span>
+          </button>
+        </div>
 
-            {/* Helper Status */}
-            <div style={{ marginBottom: "1.5rem", padding: "0.75rem", backgroundColor: "#e9ecef", borderRadius: "5px", fontSize: "0.85rem" }}>
-              {isAnnotating ? "✏️ Annotation Mode Active" : "👆 Viewing Mode (Scroll)"}
-            </div>
-
-            {/* Annotation Mode Toggle */}
-            <div style={{ marginBottom: "2rem" }}>
-              <button
-                onClick={toggleAnnotationMode}
-                style={{
-                  backgroundColor: isAnnotating ? "#dc3545" : "#28a745",
-                  color: "white",
-                  border: "none",
-                  padding: "0.75rem 1rem",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  fontSize: "clamp(0.85rem, 2.5vw, 1rem)",
-                  width: "100%",
-                  fontWeight: "bold",
-                }}
+        {/* --- Workspace --- */}
+        <div className="pdf-workspace">
+          <div className="main-scroll">
+            {pages.map(pageNum => (
+              <div
+                key={pageNum}
+                className="page-card"
+                onMouseDown={(e) => handlePageMouseDown(e, pageNum)}
+                onMouseMove={(e) => handlePageMouseMove(e, pageNum)}
+                onMouseUp={handlePageMouseUp}
+                onTouchStart={(e) => handlePageMouseDown(e, pageNum)}
+                onTouchMove={(e) => handlePageMouseMove(e, pageNum)}
+                onTouchEnd={handlePageMouseUp}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleWorkspaceDrop(e, pageNum)}
               >
-                {isAnnotating ? "Exit Annotation Mode" : "Start Annotating"}
-              </button>
-            </div>
+                <div style={{ position: "absolute", left: "-40px", top: "10px", color: "#9ca3af", fontSize: "0.75rem", fontWeight: "600" }}>
+                  {pageNum}
+                </div>
 
-            {/* Tool Selection */}
-            {isAnnotating && (
-              <div style={{ marginBottom: "2rem" }}>
-                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Select Tool</h4>
-                <div className="tool-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-                  {tools.map((tool) => (
-                    <button
-                      key={tool.value}
-                      onClick={() => setSelectedTool(tool.value as any)}
+                <PDFPage
+                  pageNumber={pageNum}
+                  pdfDocument={pdfDocument}
+                  scale={scale}
+                  onDimensionsChanged={onDimensionChanged}
+                  onTextClick={handleInbuiltTextClick}
+                  selectedTool={selectedTool}
+                />
+
+                {/* Annotation Surface */}
+                <div style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  pointerEvents: isAnnotating ? "auto" : "none",
+                  cursor: isAnnotating ? (selectedTool === "text" ? "text" : "crosshair") : "default",
+                }}>
+                  {annotations.filter(ann => ann.page === pageNum).map(annotation => (
+                    <div
+                      key={annotation.id}
                       style={{
-                        backgroundColor: selectedTool === tool.value ? "#007bff" : "white",
-                        color: selectedTool === tool.value ? "white" : "#007bff",
-                        border: "1px solid #007bff",
-                        padding: "0.5rem",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                        fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "0.3rem",
+                        position: "absolute",
+                        left: annotation.x * scale,
+                        top: annotation.y * scale,
+                        width: annotation.width * scale,
+                        height: annotation.type === "text" ? "auto" : annotation.height * scale,
+                        minHeight: annotation.type === "text" ? `${(annotation.fontSize || 14) * scale * 1.2}px` : "auto",
+                        pointerEvents: "auto",
+                        cursor: annotationCanBeMoved(annotation.type) ? "move" : "auto",
+                        transition: "box-shadow 0.2s",
+                        ...(() => {
+                          const base = {
+                            color: annotation.color,
+                            fontSize: `${(annotation.fontSize || 14) * scale}px`,
+                            fontFamily: "'Inter', sans-serif",
+                          };
+                          switch (annotation.type) {
+                            case "text":
+                              return { ...base, padding: "2px 4px", borderRadius: "2px", border: editingAnnotationId === annotation.id ? "1px solid #e11d48" : "1px solid transparent" };
+                            case "rectangle":
+                              return { border: `2px solid ${annotation.color}` };
+                            case "circle":
+                              return { border: `2px solid ${annotation.color}`, borderRadius: "50%" };
+                            case "highlight":
+                              return { backgroundColor: `${annotation.color}40` };
+                            case "whiteout":
+                              return { backgroundColor: "white", border: "1px solid #e0e0e0" };
+                            case "arrow":
+                              return { borderBottom: `2px solid ${annotation.color}` };
+                            case "image":
+                              return {
+                                backgroundImage: `url(${annotation.imageData})`,
+                                backgroundSize: "contain",
+                                backgroundRepeat: "no-repeat",
+                                border: "1px dashed #e0e0e0"
+                              };
+                            case "draw":
+                              return { border: "none" };
+                            default: return {};
+                          }
+                        })(),
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (annotation.type === "text") setEditingAnnotationId(annotation.id);
                       }}
                     >
-                      <span>{tool.icon}</span>
-                      <span>{tool.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+                      {annotation.type === "text" && (
+                        <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                          {editingAnnotationId === annotation.id ? (
+                            <textarea
+                              autoFocus
+                              value={annotation.content}
+                              onChange={(e) => updateAnnotationText(annotation.id, e.target.value)}
+                              onBlur={() => {
+                                setEditingAnnotationId(null);
+                                if (!annotation.content?.trim()) removeAnnotation(annotation.id);
+                              }}
+                              style={{
+                                width: "100%", height: "100%", minHeight: `${(annotation.fontSize || 14) * scale * 1.3}px`, border: "none", background: "white",
+                                color: annotation.color, fontSize: `${(annotation.fontSize || 14) * scale}px`,
+                                padding: "2px 0", resize: "none", outline: "none", boxShadow: "0 0 0 2px #e11d4820"
+                              }}
+                            />
+                          ) : (
+                            <span style={{ cursor: "text", minWidth: "30px", display: "inline-block", padding: "2px 0", lineHeight: "1.2" }}>
+                              {annotation.content || "Type here..."}
+                            </span>
+                          )}
+                        </div>
+                      )}
 
-            {/* Simple Font Size Slider */}
-            {isAnnotating && selectedTool === "text" && (
-              <div style={{ marginBottom: "2rem" }}>
-                <h4 style={{ marginBottom: "0.5rem", fontSize: "0.9rem" }}>Text Size</h4>
-                <input
-                  type="range"
-                  min="8"
-                  max="72"
-                  value={fontSize}
-                  onChange={(e) => setFontSize(parseInt(e.target.value))}
-                  style={{ width: "100%" }}
-                />
-                <div style={{ fontSize: "0.8rem", textAlign: "right", color: "#666" }}>{fontSize}px</div>
-              </div>
-            )}
+                      {annotation.type === "draw" && annotation.points && (
+                        <svg
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            pointerEvents: "none",
+                            overflow: "visible"
+                          }}
+                        >
+                          <polyline
+                            points={annotation.points
+                              .map(p => `${(p.x - annotation.x) * scale},${(p.y - annotation.y) * scale}`)
+                              .join(" ")}
+                            fill="none"
+                            stroke={annotation.color}
+                            strokeWidth={2 * scale}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
 
-            {/* Color Selection */}
-            {isAnnotating && (
-              <div style={{ marginBottom: "2rem" }}>
-                <h4 style={{ marginBottom: "0.5rem", fontSize: "clamp(0.9rem, 2.5vw, 1rem)" }}>Color</h4>
-                <div className="color-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem" }}>
-                  {colors.map((color) => (
-                    <button
-                      key={color.value}
-                      onClick={() => setSelectedColor(color.value)}
-                      style={{
-                        backgroundColor: color.value,
-                        border: selectedColor === color.value ? "3px solid #000" : "1px solid #ccc",
-                        borderRadius: "5px",
-                        width: "100%",
-                        aspectRatio: "1",
-                        cursor: "pointer",
-                        minHeight: "30px",
-                      }}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* PDF Pages List */}
-          <div className="pdf-viewer-container" style={{ flex: 1, minWidth: 0, backgroundColor: "#e2e2e2", padding: "2rem", borderRadius: "8px", height: "80vh", overflowY: "auto" }}>
-            <div className="pdf-pages-wrapper" style={{ display: "flex", flexDirection: "column", gap: "2rem", alignItems: "center" }}>
-              {pages.map(pageNum => (
-                <div
-                  key={pageNum}
-                  style={{
-                    position: "relative",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                    backgroundColor: "white"
-                  }}
-                  onMouseDown={(e) => handlePageMouseDown(e, pageNum)}
-                  onMouseMove={(e) => handlePageMouseMove(e, pageNum)}
-                  onMouseUp={handlePageMouseUp}
-                  onTouchStart={(e) => handlePageMouseDown(e, pageNum)}
-                  onTouchMove={(e) => handlePageMouseMove(e, pageNum)}
-                  onTouchEnd={handlePageMouseUp}
-                  onClick={(e) => handlePageClick(e, pageNum)}
-                >
-                  <PDFPage
-                    pageNumber={pageNum}
-                    pdfDocument={pdfDocument}
-                    scale={scale}
-                    onDimensionsChanged={onDimensionChanged}
-                    onTextClick={handleInbuiltTextClick}
-                    selectedTool={selectedTool}
-                  />
-
-                  {/* Overlay for Page */}
-                  <div style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    pointerEvents: isAnnotating ? "auto" : "none",
-                    cursor: isAnnotating ? (selectedTool === "text" ? "text" : "crosshair") : "default",
-                  }}>
-                    {/* Annotations for this page */}
-                    {annotations.filter(ann => ann.page === pageNum).map(annotation => (
-                      <div
-                        key={annotation.id}
+                      {/* Delete Handle */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeAnnotation(annotation.id); }}
                         style={{
-                          position: "absolute",
-                          left: annotation.x,
-                          top: annotation.y,
-                          width: annotation.width,
-                          height: annotation.height,
-                          pointerEvents: "auto",
-                          ...(() => {
-                            switch (annotation.type) {
-                              case "text":
-                                return {
-                                  color: annotation.color,
-                                  fontSize: `${annotation.fontSize}px`,
-                                  fontFamily: "sans-serif",
-                                  backgroundColor: "rgba(255, 255, 255, 0.7)",
-                                  whiteSpace: "nowrap",
-                                  padding: "2px 4px",
-                                  borderRadius: "4px",
-                                  border: "1px dashed transparent"
-                                };
-                              case "rectangle":
-                                return {
-                                  border: `2px solid ${annotation.color}`,
-                                  backgroundColor: "transparent",
-                                };
-                              case "circle":
-                                return {
-                                  border: `2px solid ${annotation.color}`,
-                                  borderRadius: "50%",
-                                  backgroundColor: "transparent",
-                                };
-                              case "highlight":
-                                return {
-                                  backgroundColor: `${annotation.color}40`,
-                                };
-                              case "arrow":
-                                // Simplified arrow visualization for DOM (just a line/box for now or complex SVG)
-                                // Building a proper DOM arrow is hard, using simple box for preview
-                                return {
-                                  borderBottom: `2px solid ${annotation.color}`,
-                                  backgroundColor: "transparent",
-                                  transformOrigin: "left center",
-                                  // rotation would be needed for real arrows
-                                };
-                              case "whiteout":
-                                return {
-                                  backgroundColor: "white",
-                                  border: "1px solid #eee"
-                                };
-                              default:
-                                return {};
-                            }
-                          })(),
+                          position: "absolute", top: "-10px", right: "-10px",
+                          background: "#ef4444", color: "white", borderRadius: "50%",
+                          width: "20px", height: "20px", fontSize: "10px", border: "none",
+                          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                          opacity: editingAnnotationId === annotation.id ? 1 : 0,
+                          transition: "opacity 0.2s",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
                         }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (annotation.type === "text") {
-                            setEditingAnnotationId(annotation.id);
-                          }
-                        }}
+                        className="delete-handle"
                       >
-                        {annotation.type === "text" && (
-                          <div style={{ position: "relative", width: "100%", height: "100%" }}>
-                            {editingAnnotationId === annotation.id ? (
-                              <textarea
-                                autoFocus
-                                value={annotation.content}
-                                onChange={(e) => updateAnnotationText(annotation.id, e.target.value)}
-                                onBlur={() => {
-                                  setEditingAnnotationId(null);
-                                  if (!annotation.content?.trim()) {
-                                    removeAnnotation(annotation.id);
-                                  }
-                                }}
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  border: "1px dashed #007bff",
-                                  background: "transparent",
-                                  color: annotation.color,
-                                  fontSize: `${annotation.fontSize}px`,
-                                  fontFamily: "sans-serif",
-                                  padding: 0,
-                                  resize: "none",
-                                  overflow: "hidden",
-                                  outline: "none",
-                                }}
-                                onMouseDown={(e) => e.stopPropagation()} // Prevent dragging setup
-                              />
-                            ) : (
-                              <span style={{ cursor: "text", display: "inline-block", minWidth: "20px", minHeight: "20px" }}>{annotation.content || "Type here..."}</span>
-                            )}
+                        ✕
+                      </button>
+                      <style>{`.page-card:hover .delete-handle { opacity: 1; }`}</style>
+                    </div>
+                  ))}
 
-                            {editingAnnotationId !== annotation.id && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); removeAnnotation(annotation.id); }}
-                                style={{
-                                  position: "absolute",
-                                  top: "-10px",
-                                  right: "-10px",
-                                  background: "red",
-                                  color: "white",
-                                  borderRadius: "50%",
-                                  width: "16px",
-                                  height: "16px",
-                                  fontSize: "10px",
-                                  border: "none",
-                                  cursor: "pointer",
-                                  display: "flex", alignItems: "center", justifyContent: "center",
-                                  zIndex: 5
-                                }}
-                              >x</button>
-                            )}
-                          </div>
-                        )}
-                        {annotation.type !== "text" && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); removeAnnotation(annotation.id); }}
-                            style={{
-                              position: "absolute",
-                              top: "-8px",
-                              right: "-8px",
-                              background: "red",
-                              color: "white",
-                              borderRadius: "50%",
-                              width: "16px",
-                              height: "16px",
-                              fontSize: "10px",
-                              border: "none",
-                              cursor: "pointer",
-                              display: "flex", alignItems: "center", justifyContent: "center"
-                            }}
-                          >x</button>
-                        )}
-                      </div>
-                    ))}
-
-                    {/* Current Annotation Preview (Draft) */}
-                    {currentAnnotation && currentAnnotation.page === pageNum && (
-                      <div
-                        style={{
+                  {/* Draft Preview */}
+                  {currentAnnotation && currentAnnotation.page === pageNum && (
+                    <>
+                      {currentAnnotation.type !== "draw" ? (
+                        <div style={{
                           position: "absolute",
                           left: currentAnnotation.x,
                           top: currentAnnotation.y,
                           width: currentAnnotation.width,
-                          height: currentAnnotation.height,
+                          height: currentAnnotation.type === "text" ? "auto" : currentAnnotation.height,
+                          minHeight: currentAnnotation.type === "text" ? `${fontSize * 1.2}px` : "auto",
                           border: `2px dashed ${currentAnnotation.color}`,
                           backgroundColor: currentAnnotation.type === "highlight" ? `${currentAnnotation.color}40` : "transparent",
                           borderRadius: currentAnnotation.type === "circle" ? "50%" : "0",
                           pointerEvents: "none",
-                        }}
-                      />
-                    )}
-                  </div>
+                        }} />
+                      ) : (
+                        <svg
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            pointerEvents: "none",
+                            overflow: "visible"
+                          }}
+                        >
+                          <polyline
+                            points={currentAnnotation.points
+                              .map((p: any) => `${p.x},${p.y}`)
+                              .join(" ")}
+                            fill="none"
+                            stroke={currentAnnotation.color}
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </>
+                  )}
                 </div>
-              ))}
+              </div>
+            ))}
+          </div>
+
+          {/* Settings Sidebar */}
+          <div className="side-settings">
+            <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: "600" }}>Settings</h3>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "#4b5563" }}>Color Palette</label>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem" }}>
+                {colors.map(color => (
+                  <button
+                    key={color.value}
+                    onClick={() => setSelectedColor(color.value)}
+                    style={{
+                      height: "32px",
+                      backgroundColor: color.value,
+                      border: selectedColor === color.value ? "3px solid #111827" : "1px solid #e0e0e0",
+                      borderRadius: "6px",
+                      cursor: "pointer"
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {selectedTool === "text" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "#4b5563" }}>Font Size ({fontSize}px)</label>
+                <input
+                  type="range" min="8" max="72" value={fontSize}
+                  onChange={(e) => setFontSize(parseInt(e.target.value))}
+                  style={{ width: "100%", accentColor: "#e11d48" }}
+                />
+              </div>
+            )}
+
+            {selectedTool === "image" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "#4b5563" }}>Add Image</label>
+                <button
+                  onClick={() => imageInputRef.current?.click()}
+                  style={{
+                    backgroundColor: "#e11d48",
+                    color: "white",
+                    border: "none",
+                    padding: "0.75rem",
+                    borderRadius: "8px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    fontSize: "0.85rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem"
+                  }}
+                >
+                  <span>🖼️</span>
+                  Upload from device
+                </button>
+                <p style={{ fontSize: "0.75rem", color: "#6b7280", margin: 0 }}>
+                  Or click anywhere on the page to place an image.
+                </p>
+              </div>
+            )}
+
+            <div style={{ marginTop: "auto", padding: "1.25rem", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "10px", fontSize: "0.8rem", color: "#6b7280" }}>
+              <p style={{ margin: "0 0 0.5rem 0", fontWeight: "600", color: "#374151" }}>Quick Help</p>
+              Click anywhere on the page to add text, or drag to draw shapes. Use 'Select' mode to move around.
             </div>
           </div>
         </div>
@@ -1135,9 +1392,19 @@ export default function EditPdfPage() {
     );
   }
 
+
   // Initial Upload UI or Success UI
   return (
-    <div>
+    <div style={{
+      fontFamily: "'Inter', sans-serif"
+    }}>
+      <input
+        type="file"
+        hidden
+        ref={imageInputRef}
+        accept="image/*"
+        onChange={handleImageSelected}
+      />
       <Navbar />
       <style>{`
         @media (max-width: 1024px) {
@@ -1443,7 +1710,9 @@ export default function EditPdfPage() {
                       <PiX size={18} />
                     </button>
 
-                    <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+                    <div style={{ padding: "0.5rem" }}>
+                      <PDFThumbnail pdfDocument={pdfDocument} />
+                    </div>
                     <span style={{
                       fontSize: "0.65rem",
                       color: "#666",
