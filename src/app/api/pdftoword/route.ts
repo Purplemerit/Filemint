@@ -49,12 +49,9 @@ export async function POST(req: NextRequest) {
     // Write input PDF
     fs.writeFileSync(inputPath, buffer);
 
-    // Find python
-    const python = await findPython();
-
-    // Run pdf2docx conversion
-    // pdf2docx preserves layout: text blocks, images, tables, columns
-    const script = `
+    // Save python script to temporary file to avoid shell expansion and indentation issues
+    const scriptPath = path.join(tmpdir(), `pdftoword_${tmpId}.py`);
+    const pythonCode = `
 import sys
 try:
     from pdf2docx import Converter
@@ -69,18 +66,26 @@ except Exception as e:
     print(f"ERROR: {e}")
     sys.exit(1)
 `;
+    fs.writeFileSync(scriptPath, pythonCode);
 
-    const { stdout, stderr } = await execAsync(`${python} -c "${script.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, {
-      timeout: 110000,
-    });
+    // Find python
+    const python = await findPython();
+
+    const runScript = async () => {
+      return await execAsync(`${python} "${scriptPath}"`, {
+        timeout: 110000,
+      });
+    };
+
+    let { stdout, stderr } = await runScript();
 
     if (stdout.includes("IMPORT_ERROR")) {
       // pdf2docx not installed — try to install and retry once
       await execAsync(`pip3 install pdf2docx 2>&1 || pip install pdf2docx 2>&1`);
-      const { stdout: stdout2 } = await execAsync(`${python} -c "${script.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, {
-        timeout: 110000,
-      });
-      if (!stdout2.includes("SUCCESS")) {
+      const retry = await runScript();
+      stdout = retry.stdout;
+      stderr = retry.stderr;
+      if (!stdout.includes("SUCCESS")) {
         throw new Error("pdf2docx conversion failed after install");
       }
     } else if (!stdout.includes("SUCCESS")) {
@@ -110,5 +115,9 @@ except Exception as e:
     // Cleanup temp files
     try { fs.unlinkSync(inputPath); } catch (err) { }
     try { fs.unlinkSync(outputPath); } catch (err) { }
+    try {
+      const scriptPath = path.join(tmpdir(), `pdftoword_${tmpId}.py`);
+      if (fs.existsSync(scriptPath)) fs.unlinkSync(scriptPath);
+    } catch (err) { }
   }
 }
