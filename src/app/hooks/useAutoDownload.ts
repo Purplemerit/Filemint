@@ -13,7 +13,8 @@ export function useAutoDownload(
     delay = 10000
 ): () => void {
     const hasDownloadedRef = useRef(false);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    // Use ReturnType<typeof setTimeout> instead of NodeJS.Timeout for browser compatibility
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Store latest downloadFn in a ref so the timer closure always has the current version
     const downloadFnRef = useRef(downloadFn);

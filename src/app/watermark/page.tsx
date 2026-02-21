@@ -180,7 +180,7 @@ export default function PdfWatermarkPage() {
       if (blob.type !== "application/pdf") return alert("Not a PDF");
       setFile(new File([blob], "downloaded.pdf", { type: "application/pdf" }));
       setShowUrlModal(false);
-    } catch { alert("Failed"); } finally { setIsUploading(false); }
+    } catch (error) { alert("Failed"); } finally { setIsUploading(false); }
   };
 
   const { openPicker: openGoogleDrivePicker } = useGoogleDrivePicker({ onFilePicked: (f) => { setFile(f); setIsDropdownOpen(false); } });

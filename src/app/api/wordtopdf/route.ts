@@ -29,7 +29,7 @@ async function findLibreOffice(): Promise<string> {
     try {
       await execAsync(`"${cmd}" --version`, { timeout: 5000 });
       return cmd;
-    } catch {
+    } catch (err) {
       continue;
     }
   }

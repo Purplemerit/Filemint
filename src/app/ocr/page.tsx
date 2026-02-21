@@ -156,7 +156,7 @@ export default function ImageTextExtractor() {
       const f = new File([blob], "downloaded_image", { type: blob.type });
       processFile(f);
       setShowUrlModal(false);
-    } catch { alert("Failed to fetch image"); } finally { setIsUploading(false); }
+    } catch (_e) { alert("Failed to fetch image"); } finally { setIsUploading(false); }
   };
 
   const { openPicker: openGoogleDrivePicker } = useGoogleDrivePicker({ onFilePicked: (f) => { processFile(f); setIsDropdownOpen(false); } });

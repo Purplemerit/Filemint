@@ -22,7 +22,7 @@ async function findPython(): Promise<string> {
     try {
       await execAsync(`${bin} -c "import pdfplumber, openpyxl"`);
       return bin;
-    } catch { }
+    } catch (err) { }
   }
   throw new Error(
     "pdfplumber/openpyxl not found. On EC2:\n" +
@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
     let python: string;
     try {
       python = await findPython();
-    } catch {
+    } catch (err) {
       // Try to auto-install
       await execAsync("pip3 install pdfplumber openpyxl --break-system-packages 2>&1 || true");
       python = "python3";
@@ -199,8 +199,8 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   } finally {
-    try { fs.unlinkSync(inputPath); } catch { }
-    try { fs.unlinkSync(outputPath); } catch { }
-    try { fs.unlinkSync(scriptPath); } catch { }
+    try { fs.unlinkSync(inputPath); } catch (err) { }
+    try { fs.unlinkSync(outputPath); } catch (err) { }
+    try { fs.unlinkSync(scriptPath); } catch (err) { }
   }
 }

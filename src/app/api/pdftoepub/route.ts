@@ -26,7 +26,7 @@ async function findEbookConvert(): Promise<string> {
     try {
       await execAsync(`"${bin}" --version`);
       return bin;
-    } catch { }
+    } catch (err) { }
   }
   throw new Error(
     "Calibre not found. On EC2 run:\n" +
@@ -248,7 +248,7 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   } finally {
-    try { fs.unlinkSync(inputPath); } catch { }
-    try { fs.unlinkSync(outputPath); } catch { }
+    try { fs.unlinkSync(inputPath); } catch (err) { }
+    try { fs.unlinkSync(outputPath); } catch (err) { }
   }
 }

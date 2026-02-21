@@ -439,18 +439,6 @@ export default function MergePdfPage() {
     }
   };
 
-  const handleDownload = () => {
-    if (mergedFileBlob) {
-      const url = window.URL.createObjectURL(mergedFileBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "merged_documents.pdf";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    }
-  };
 
   const handleReset = () => {
     setFiles([]);

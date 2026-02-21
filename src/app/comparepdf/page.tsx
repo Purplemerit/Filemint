@@ -176,7 +176,7 @@ export default function ComparePdfPage() {
       activeUpload === 1 ? setPdf1(f) : setPdf2(f);
       setShowUrlModal(false);
       setUrlInput("");
-    } catch {
+    } catch (err) {
       alert("Failed to fetch PDF");
     }
     setIsUploading(false);
