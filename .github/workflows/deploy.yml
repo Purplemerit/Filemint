@@ -3,7 +3,9 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main   # change to your branch name if different
+      - main
+      - master
+      - awsdeploy
 
 jobs:
   deploy:
@@ -24,8 +26,10 @@ jobs:
           script: |
             cd ~/Filemint
 
-            echo "📥 Pulling latest changes..."
-            git pull origin main
+            echo "📥 Pulling latest changes from ${{ github.ref_name }}..."
+            git fetch origin
+            git checkout ${{ github.ref_name }}
+            git pull origin ${{ github.ref_name }}
 
             echo "📦 Installing dependencies..."
             npm install --production=false

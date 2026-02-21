@@ -1,17 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable standalone output for Docker deployment
-  output: 'standalone',
-
   typescript: {
     ignoreBuildErrors: true,
   },
 
-  // Optimize CSS loading to prevent FOUC
+  // Increase file upload limit for PDF tools (default is 4MB, we need up to 100MB)
   experimental: {
     optimizeCss: false,
+    serverActions: {
+      bodySizeLimit: "100mb",
+    },
   },
+
+  // Native modules that should not be bundled
+  serverExternalPackages: ["canvas", "mammoth", "jszip"],
 
   // Ensure CSS is loaded synchronously
   compiler: {
