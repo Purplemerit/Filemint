@@ -36,12 +36,11 @@ async function findEbookConvert(): Promise<string> {
 }
 
 // ---------------------------------------------------------------
-// Fallback: Pure-JS EPUB builder using pdf-parse + JSZip
-// (used when Calibre is not installed)
+// Fallback: Professional-grade EPUB builder using epub-gen-memory
 // ---------------------------------------------------------------
 async function buildEpubFallback(buffer: Buffer, fileName: string): Promise<Buffer> {
   const pdfParse = (await import("pdf-parse")).default;
-  const JSZip = (await import("jszip")).default;
+  const Epub = (await import("epub-gen-memory")).default;
 
   const pdfData = await pdfParse(buffer);
   const plainText = pdfData.text?.trim();
@@ -50,132 +49,40 @@ async function buildEpubFallback(buffer: Buffer, fileName: string): Promise<Buff
 
   const bookTitle = fileName.replace(/\.[^/.]+$/, "");
 
-  // Smarter chapter detection: split on form-feeds OR 3+ blank lines
+  // Smarter content processing: split by pages/form-feeds
   const rawChunks = plainText
-    .split(/\f+|\n{3,}/g)
+    .split(/\f+/g)
     .map((t) => t.trim())
-    .filter((t) => t.length > 40);
+    .filter((t) => t.length > 20);
 
-  // Group small chunks into larger "chapters" (~1500 chars each)
-  const chapters: { title: string; html: string }[] = [];
-  let buf = "";
-  let chapNum = 1;
+  const chapters: any[] = [];
+  rawChunks.forEach((chunk, i) => {
+    // Basic paragraph wrapping
+    const content = chunk
+      .split(/\n{2,}/)
+      .map(p => `<p>${p.replace(/\n/g, " ").trim()}</p>`)
+      .join("");
 
-  for (const chunk of rawChunks) {
-    buf += "\n\n" + chunk;
-    if (buf.length >= 1500) {
-      const paragraphs = buf
-        .trim()
-        .split(/\n+/)
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((line) => `<p>${line}</p>`)
-        .join("\n");
-
-      chapters.push({
-        title: `Chapter ${chapNum}`,
-        html: `<h2>Chapter ${chapNum}</h2>\n${paragraphs}`,
-      });
-      buf = "";
-      chapNum++;
-    }
-  }
-
-  // Push remaining
-  if (buf.trim().length > 0) {
-    const paragraphs = buf
-      .trim()
-      .split(/\n+/)
-      .map((l) => `<p>${l.trim()}</p>`)
-      .filter((p) => p !== "<p></p>")
-      .join("\n");
-    chapters.push({ title: `Chapter ${chapNum}`, html: `<h2>Chapter ${chapNum}</h2>\n${paragraphs}` });
-  }
+    chapters.push({
+      title: `Page ${i + 1}`,
+      content: content
+    });
+  });
 
   if (!chapters.length) throw new Error("Could not extract meaningful content from PDF.");
 
-  const uid = `urn:uuid:${Math.random().toString(36).substring(2)}-${Date.now()}`;
+  // Use epub-gen-memory for professional structure
+  const option = {
+    title: bookTitle,
+    author: "Filemint",
+    publisher: "Filemint EPUB Engine",
+    content: chapters,
+    verbose: false,
+    tempDir: tmpdir(),
+  };
 
-  const css = `
-    body { font-family: Georgia, serif; font-size: 1em; line-height: 1.7; margin: 2em; color: #222; }
-    h2   { font-size: 1.4em; color: #1a1a1a; margin-top: 2em; border-bottom: 1px solid #ccc; padding-bottom: 0.3em; }
-    p    { margin: 0.8em 0; text-indent: 1.2em; }
-  `;
-
-  const zip = new JSZip();
-
-  zip.file("mimetype", "application/epub+zip", { compression: "STORE" });
-
-  zip.file("META-INF/container.xml",
-    `<?xml version="1.0"?>
-<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-  <rootfiles>
-    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
-  </rootfiles>
-</container>`);
-
-  zip.file("OEBPS/style.css", css);
-
-  chapters.forEach((ch, i) => {
-    zip.file(`OEBPS/chapter${i + 1}.xhtml`,
-      `<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <title>${ch.title}</title>
-  <link rel="stylesheet" type="text/css" href="style.css"/>
-</head>
-<body>
-  ${ch.html}
-</body>
-</html>`);
-  });
-
-  const manifestItems = [
-    `<item id="style" href="style.css" media-type="text/css"/>`,
-    ...chapters.map((_, i) =>
-      `<item id="chap${i + 1}" href="chapter${i + 1}.xhtml" media-type="application/xhtml+xml"/>`
-    ),
-  ].join("\n    ");
-
-  const spineItems = chapters.map((_, i) => `<itemref idref="chap${i + 1}"/>`).join("\n    ");
-
-  zip.file("OEBPS/content.opf",
-    `<?xml version="1.0" encoding="UTF-8"?>
-<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title>${bookTitle}</dc:title>
-    <dc:language>en</dc:language>
-    <dc:identifier id="BookId">${uid}</dc:identifier>
-    <meta property="dcterms:modified">${new Date().toISOString().split('.')[0]}Z</meta>
-  </metadata>
-  <manifest>
-    ${manifestItems}
-  </manifest>
-  <spine>
-    ${spineItems}
-  </spine>
-</package>`);
-
-  const ncxNavPoints = chapters.map((ch, i) =>
-    `<navPoint id="navPoint-${i + 1}" playOrder="${i + 1}">
-      <navLabel><text>${ch.title}</text></navLabel>
-      <content src="chapter${i + 1}.xhtml"/>
-    </navPoint>`
-  ).join("\n");
-
-  zip.file("OEBPS/toc.ncx",
-    `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN"
- "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
-<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
-  <head><meta name="dtb:uid" content="${uid}"/></head>
-  <docTitle><text>${bookTitle}</text></docTitle>
-  <navMap>${ncxNavPoints}</navMap>
-</ncx>`);
-
-  return await zip.generateAsync({ type: "nodebuffer" });
+  const epubBuffer = await Epub(option, chapters);
+  return Buffer.from(epubBuffer);
 }
 
 // ---------------------------------------------------------------
@@ -210,10 +117,11 @@ export async function POST(req: NextRequest) {
       const cmd = `"${ebookConvert}" "${inputPath}" "${outputPath}" \
         --title="${baseName}" \
         --language="en" \
-        --chapter="//*[name()='h1' or name()='h2' or name()='h3']" \
+        --enable-heuristics \
+        --smarten-punctuation \
+        --chapter="//*[name()='h1' or name()='h2' or name()='h3' or contains(@class, 'heading')]" \
         --chapter-mark="pagebreak" \
         --page-breaks-before="//*[name()='h1' or name()='h2']" \
-        --no-chapters-in-toc \
         --margin-top=36 \
         --margin-bottom=36 \
         --margin-left=36 \
