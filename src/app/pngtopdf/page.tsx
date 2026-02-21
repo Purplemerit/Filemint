@@ -27,6 +27,7 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import RecommendedTools from "../components/RecommendedTools";
 import {
   DndContext,
   closestCenter,
@@ -215,14 +216,23 @@ export default function PngToPdfPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Conversion failed");
+        if (response.status === 413) {
+          throw new Error("File too large. Your server's upload limit (usually Nginx) is blocking this file. Please increase client_max_body_size.");
+        }
+        let errorMsg = "Conversion failed";
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch (_) {
+          errorMsg = `Server error (${response.status}): ${response.statusText}`;
+        }
+        throw new Error(errorMsg);
       }
 
       const contentType = response.headers.get("Content-Type");
-      if (contentType !== "application/pdf") {
+      if (contentType && !contentType.includes("application/pdf")) {
         const errorText = await response.text();
-        throw new Error(`Unexpected response: ${errorText}`);
+        throw new Error(`Unexpected response: ${errorText.substring(0, 100)}...`);
       }
 
       const blob = await response.blob();
@@ -532,6 +542,7 @@ export default function PngToPdfPage() {
                     Convert Another File
                   </button>
                 </div>
+                <RecommendedTools />
               </div>
             ) : files.length === 0 ? (
               /* Empty State */

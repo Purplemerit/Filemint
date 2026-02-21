@@ -19,6 +19,7 @@ import { TbShare3 } from "react-icons/tb";
 import ShareModal from "../components/ShareModal";
 import { useGoogleDrivePicker } from "../hooks/useGoogleDrivePicker";
 import { useDropboxPicker } from "../hooks/useDropboxPicker";
+import RecommendedTools from "../components/RecommendedTools";
 import ToolInstructions from "../components/ToolInstructions";
 import toolData from "../data/toolInstructions.json";
 import Testimonials from "../components/Testimonials";
@@ -228,6 +229,7 @@ export default function EditPdfPage() {
   const [urlInput, setUrlInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showMobileColors, setShowMobileColors] = useState(false);
   const [editedFileBlob, setEditedFileBlob] = useState<Blob | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1020,11 +1022,13 @@ export default function EditPdfPage() {
           @media (max-width: 1024px) {
             .side-settings { display: none; }
             .edit-top-bar { padding: 0 0.75rem; }
-            .edit-toolbar { width: 95%; overflow-x: auto; padding: 0.5rem; }
+            .edit-toolbar { width: 95%; overflow-x: auto; padding: 0.5rem; justify-content: flex-start; }
+            .mobile-color-picker { display: flex !important; }
           }
           @media (max-width: 600px) {
             .file-name-title { display: none !important; }
             .save-btn-text { font-size: 0.8rem !important; }
+            .mobile-color-palette { bottom: 80px !important; }
           }
         `}</style>
 
@@ -1111,6 +1115,43 @@ export default function EditPdfPage() {
             <span style={{ fontSize: "1.2rem" }}>👆</span>
             <span>Select</span>
           </button>
+
+          {/* Mobile Color Picker */}
+          <div style={{ height: "30px", width: "1px", background: "#e0e0e0", margin: "0 4px" }} className="mobile-color-picker" />
+          <button
+            className="tool-btn mobile-color-picker"
+            style={{ display: "none", position: "relative" }}
+            onClick={() => setShowMobileColors(!showMobileColors)}
+          >
+            <div style={{
+              width: "24px", height: "24px", borderRadius: "50%",
+              backgroundColor: selectedColor, border: "2px solid white",
+              boxShadow: "0 0 0 1px #e0e0e0"
+            }} />
+            <span>Color</span>
+          </button>
+
+          {showMobileColors && (
+            <div className="mobile-color-palette" style={{
+              position: "absolute", bottom: "100%", left: "0", right: "0",
+              backgroundColor: "white", padding: "10px", borderRadius: "8px",
+              boxShadow: "0 -4px 12px rgba(0,0,0,0.1)", display: "flex",
+              gap: "8px", overflowX: "auto", zIndex: 1001, marginBottom: "8px"
+            }}>
+              {colors.map(color => (
+                <button
+                  key={color.value}
+                  onClick={() => { setSelectedColor(color.value); setShowMobileColors(false); }}
+                  style={{
+                    width: "36px", height: "36px", flexShrink: 0,
+                    backgroundColor: color.value, borderRadius: "50%",
+                    border: selectedColor === color.value ? "3px solid #111827" : "1px solid #e0e0e0",
+                    cursor: "pointer"
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* --- Workspace --- */}
@@ -1544,6 +1585,7 @@ export default function EditPdfPage() {
                     Edit Another File
                   </button>
                 </div>
+                <RecommendedTools />
               </div>
             ) : !pdfFile ? (
               /* Empty State */
