@@ -33,6 +33,8 @@ import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
 import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import RecommendedTools from "../components/RecommendedTools";
+
 
 // Configure PDF.js worker
 if (typeof window !== 'undefined') {
@@ -675,9 +677,10 @@ export default function ESignPdfPage() {
           <button
             onClick={finishSigning}
             style={{
-              backgroundColor: "#28a745", color: "white", border: "none",
+              backgroundColor: "#D879FD", color: "white", border: "none",
               padding: "0.6rem 1.2rem", borderRadius: "5px", cursor: "pointer",
-              fontWeight: "bold"
+              fontWeight: "bold",
+              boxShadow: "0 4px 6px rgba(216, 121, 253, 0.3)"
             }}
           >
             Finish & Sign
@@ -690,10 +693,11 @@ export default function ESignPdfPage() {
             <button
               onClick={() => setShowSignatureModal(true)}
               style={{
-                width: "100%", padding: "1rem", backgroundColor: "#e11d48",
+                width: "100%", padding: "1rem", backgroundColor: "#D879FD",
                 color: "white", border: "none", borderRadius: "8px",
                 cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-                marginBottom: "1rem"
+                marginBottom: "1rem",
+                boxShadow: "0 4px 6px rgba(216, 121, 253, 0.2)"
               }}
             >
               <PiPenNib size={24} /> Add Signature
@@ -736,7 +740,7 @@ export default function ESignPdfPage() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                border: "2px dashed #e11d48",
+                border: "2px dashed #D879FD",
                 backgroundColor: "rgba(255, 255, 255, 0.4)"
               }}>
                 {stagedSignature.type === "text" ? (
@@ -779,7 +783,7 @@ export default function ESignPdfPage() {
                           top: sig.y,
                           width: sig.width,
                           height: sig.height,
-                          border: "1px dashed #e11d48",
+                          border: "1px dashed #D879FD",
                           cursor: "grab",
                           display: "flex", alignItems: "center", justifyContent: "center"
                         }}
@@ -834,9 +838,9 @@ export default function ESignPdfPage() {
 
               {/* Tabs */}
               <div style={{ display: "flex", borderBottom: "1px solid #eee", marginBottom: "1rem" }}>
-                <button onClick={() => setActiveTab("type")} style={{ flex: 1, padding: "0.5rem", borderBottom: activeTab === "type" ? "2px solid #007bff" : "none", fontWeight: activeTab === "type" ? "bold" : "normal", background: "none", border: "none", cursor: "pointer" }}>Type</button>
-                <button onClick={() => setActiveTab("draw")} style={{ flex: 1, padding: "0.5rem", borderBottom: activeTab === "draw" ? "2px solid #007bff" : "none", fontWeight: activeTab === "draw" ? "bold" : "normal", background: "none", border: "none", cursor: "pointer" }}>Draw</button>
-                <button onClick={() => setActiveTab("upload")} style={{ flex: 1, padding: "0.5rem", borderBottom: activeTab === "upload" ? "2px solid #007bff" : "none", fontWeight: activeTab === "upload" ? "bold" : "normal", background: "none", border: "none", cursor: "pointer" }}>Upload</button>
+                <button onClick={() => setActiveTab("type")} style={{ flex: 1, padding: "0.5rem", borderBottom: activeTab === "type" ? "2px solid #D879FD" : "none", fontWeight: activeTab === "type" ? "bold" : "normal", background: "none", border: "none", cursor: "pointer" }}>Type</button>
+                <button onClick={() => setActiveTab("draw")} style={{ flex: 1, padding: "0.5rem", borderBottom: activeTab === "draw" ? "2px solid #D879FD" : "none", fontWeight: activeTab === "draw" ? "bold" : "normal", background: "none", border: "none", cursor: "pointer" }}>Draw</button>
+                <button onClick={() => setActiveTab("upload")} style={{ flex: 1, padding: "0.5rem", borderBottom: activeTab === "upload" ? "2px solid #D879FD" : "none", fontWeight: activeTab === "upload" ? "bold" : "normal", background: "none", border: "none", cursor: "pointer" }}>Upload</button>
               </div>
 
               {/* Tab Content */}
@@ -856,7 +860,7 @@ export default function ESignPdfPage() {
                           key={font.name}
                           onClick={() => setSelectedFont(font.name)}
                           style={{
-                            padding: "0.8rem", border: selectedFont === font.name ? "2px solid #007bff" : "1px solid #eee",
+                            padding: "0.8rem", border: selectedFont === font.name ? "2px solid #D879FD" : "1px solid #eee",
                             borderRadius: "5px", cursor: "pointer", fontFamily: font.name, fontSize: "1.2rem"
                           }}
                         >
@@ -910,7 +914,7 @@ export default function ESignPdfPage() {
 
               <div style={{ marginTop: "1.5rem", display: "flex", justifyContent: "flex-end", gap: "1rem" }}>
                 <button onClick={() => setShowSignatureModal(false)} style={{ padding: "0.7rem 1.5rem", background: "none", border: "1px solid #ccc", borderRadius: "5px", cursor: "pointer" }}>Cancel</button>
-                <button onClick={applySignature} style={{ padding: "0.7rem 1.5rem", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>Apply</button>
+                <button onClick={applySignature} style={{ padding: "0.7rem 1.5rem", backgroundColor: "#D879FD", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "600" }}>Apply</button>
               </div>
             </div>
           </div>
@@ -923,203 +927,386 @@ export default function ESignPdfPage() {
   return (
     <div>
       <Navbar />
+
       <style>{`
+        .main-container {
+          display: flex;
+          max-width: 1400px;
+          margin: 4rem auto;
+          padding: 0 1rem;
+          gap: 2rem;
+          align-items: flex-start;
+        }
+        .ad-column {
+          width: 160px;
+          flex-shrink: 0;
+        }
+        .content-area {
+          flex: 1;
+          min-width: 0;
+        }
+        .drop-zone-container {
+          border: 3px solid rgba(216, 121, 253, 0.4);
+          background-color: #F3E6FF;
+          border-radius: 12px;
+          padding: 2.5rem 1rem;
+          text-align: center;
+          position: relative;
+          min-height: 280px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          box-sizing: border-box;
+          transition: all 0.2s;
+        }
+        .tool-title {
+          font-size: 2rem;
+          font-weight: 600;
+          margin-bottom: 2rem;
+          color: #1a1a1a;
+          font-family: Georgia, serif;
+          text-align: left;
+        }
         @media (max-width: 1024px) {
-          .upload-container {
+          .main-container {
             flex-direction: column !important;
             padding: 0 1rem !important;
+            margin: 2rem auto !important;
           }
           .ad-column {
             display: none !important;
           }
+          .content-area {
+            max-width: 100% !important;
+            width: 100% !important;
+          }
         }
       `}</style>
 
-      <div className="upload-container" style={{
-        display: "flex",
-        maxWidth: "1400px",
-        margin: "4rem auto",
-        padding: "0 2rem",
-        gap: "2rem",
-        alignItems: "flex-start"
-      }}>
-        {/* Left Ad */}
-        <div className="ad-column">
-          <VerticalAdLeft />
-        </div>
-
-        {/* Main Content */}
-        <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
-          <h1 style={{
-            fontSize: "2rem",
-            fontWeight: "600",
-            marginBottom: "2rem",
-            textAlign: "left",
-            color: "#1a1a1a",
-            fontFamily: 'Georgia, "Times New Roman", serif',
-          }}>
-            Sign PDF
-          </h1>
-
+      {isSigningMode ? (
+        /* Signing Workflow */
+        <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1rem" }}>
           <div
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
             style={{
-              border: "3px solid rgba(57, 185, 57, 0.4)",
-              backgroundColor: "rgba(144, 238, 144, 0.2)",
-              borderRadius: "12px",
-              padding: "2rem",
-              textAlign: "center",
-              marginBottom: "2rem",
-              position: "relative",
-              minHeight: "280px",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              margin: "3rem 0rem 2rem 0rem", gap: "1rem", flexWrap: "wrap",
             }}
           >
-            {isSigned ? (
-              /* Success State */
-              <div style={{
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                height: "100%", gap: "1.5rem", padding: "2rem 0"
-              }}>
+            <button
+              onClick={() => setIsSigningMode(false)}
+              style={{
+                backgroundColor: "#6c757d", color: "white", border: "none",
+                padding: "0.6rem 1.2rem", borderRadius: "5px", cursor: "pointer",
+                fontWeight: "600"
+              }}
+            >
+              ← Back
+            </button>
+            <h1 style={{ fontSize: "1.5rem", margin: 0, fontFamily: "Georgia, serif" }}>Sign PDF</h1>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "auto", marginRight: "1rem", backgroundColor: "white", padding: "0.4rem", borderRadius: "5px", border: "1px solid #ccc" }}>
+              <button onClick={handleZoomOut} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }} title="Zoom Out">
+                <PiMagnifyingGlassMinus size={20} />
+              </button>
+              <span style={{ fontSize: "0.9rem", minWidth: "3rem", textAlign: "center" }}>{Math.round(scale * 100)}%</span>
+              <button onClick={handleZoomIn} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }} title="Zoom In">
+                <PiMagnifyingGlassPlus size={20} />
+              </button>
+            </div>
+
+            <button
+              onClick={finishSigning}
+              style={{
+                backgroundColor: "#D879FD", color: "white", border: "none",
+                padding: "0.6rem 1.2rem", borderRadius: "5px", cursor: "pointer",
+                fontWeight: "bold", boxShadow: "0 4px 6px rgba(216, 121, 253, 0.2)"
+              }}
+            >
+              Finish & Sign
+            </button>
+          </div>
+
+          <div className="workspace-container-main" style={{ display: "flex", gap: "2rem", marginBottom: "4rem" }}>
+            <div className="tools-sidebar-area" style={{ width: "250px", flexShrink: 0 }}>
+              <button
+                onClick={() => setShowSignatureModal(true)}
+                style={{
+                  width: "100%", padding: "1rem", backgroundColor: "#D879FD",
+                  color: "white", border: "none", borderRadius: "8px",
+                  cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+                  marginBottom: "1rem", fontWeight: "600", boxShadow: "0 4px 8px rgba(216, 121, 253, 0.25)"
+                }}
+              >
+                <PiPenNib size={24} /> Add Signature
+              </button>
+              <div style={{ backgroundColor: "#F3E6FF", padding: "1rem", borderRadius: "8px", border: "1px solid #D879FD40" }}>
+                <p style={{ fontSize: "0.9rem", color: "#666", marginTop: 0 }}>
+                  {stagedSignature
+                    ? "Signature ready! Now CLICK anywhere on the document to place it."
+                    : 'Click "Add Signature" to create one, then click on the page to place it.'}
+                </p>
+              </div>
+            </div>
+
+            <div
+              className="pdf-viewer-container"
+              onMouseMove={handleContainerMouseMove}
+              style={{
+                flex: 1,
+                backgroundColor: "#e2e2e2",
+                padding: "2rem",
+                borderRadius: "8px",
+                height: "80vh",
+                overflowY: "auto",
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center"
+              }}
+            >
+              {stagedSignature && (
                 <div style={{
-                  width: "80px", height: "80px", borderRadius: "50%",
-                  background: "#e8f5e9", display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#2e7d32", marginBottom: "0.5rem"
+                  position: "absolute",
+                  left: mousePos.x,
+                  top: mousePos.y,
+                  width: stagedSignature.width,
+                  height: stagedSignature.height,
+                  pointerEvents: "none",
+                  opacity: 0.6,
+                  zIndex: 1000,
+                  transform: "translate(-50%, -50%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "2px dashed #D879FD",
+                  backgroundColor: "rgba(255, 255, 255, 0.4)"
                 }}>
-                  <PiCheckCircle size={48} />
-                </div>
-                <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0, textAlign: "center" }}>
-                  Signed Successfully!
-                </h2>
-                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                  <button
-                    onClick={handleDownload}
-                    className="download-button"
-                    style={{
-                      backgroundColor: "#e11d48", color: "white", padding: "1rem 2.5rem",
-                      borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600",
-                      border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem",
-                      boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)"
-                    }}
-                  >
-                    Download PDF
-                  </button>
-                </div>
-                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                  <button onClick={handleShare} style={{ background: "transparent", border: "1px solid #ccc", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}> <TbShare3 /> Share </button>
-                  <button onClick={removeFile} style={{ background: "transparent", border: "1px solid #ccc", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer" }}> Sign Another File </button>
-                </div>
-              </div>
-            ) : !pdfFile ? (
-              /* Upload State */
-              <div style={{
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                height: "300px", minHeight: "220px",
-              }}>
-                <div style={{ marginBottom: "1.5rem" }}><img src="./upload.svg" alt="Upload Icon" /></div>
-                <div ref={dropdownRef} style={{ position: "relative" }}>
-                  <button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    style={{
-                      backgroundColor: "white", padding: "0.6rem 1rem",
-                      border: "1px solid #e0e0e0", borderRadius: "6px",
-                      cursor: "pointer", display: "flex", alignItems: "center",
-                      gap: "0.5rem", fontSize: "0.9rem", fontWeight: "500", color: "#333",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                    }}
-                  >
-                    <PiFiles size={18} /> Select File <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
-                  </button>
-                  {isDropdownOpen && (
-                    <div style={{
-                      position: "absolute", top: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)",
-                      backgroundColor: "white", border: "1px solid #e0e0e0", borderRadius: "8px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)", zIndex: 1000, minWidth: "180px", overflow: "hidden",
+                  {stagedSignature.type === "text" ? (
+                    <span style={{
+                      fontFamily: stagedSignature.fontFamily,
+                      color: stagedSignature.color,
+                      fontSize: "1.5rem",
+                      whiteSpace: "nowrap"
                     }}>
-                      {[{ icon: <PiUploadSimple size={18} />, label: "From Device", onClick: handleFromDevice },
-                      { icon: <PiLink size={18} />, label: "Paste URL", onClick: handlePasteUrl },
-                      { icon: <FaGoogleDrive size={16} />, label: "Google Drive", onClick: openGoogleDrivePicker },
-                      { icon: <FaDropbox size={16} />, label: "Drop Box", onClick: openDropboxPicker },
-                      ].map((item, index) => (
-                        <button key={index} onClick={item.onClick} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.7rem 1rem", width: "100%", border: "none", backgroundColor: "transparent", cursor: "pointer", fontSize: "0.85rem", color: "#333", textAlign: "left" }}>
-                          <span style={{ color: "#666", display: "flex", alignItems: "center" }}>{item.icon}</span> {item.label}
-                        </button>
-                      ))}
-                    </div>
+                      {stagedSignature.content}
+                    </span>
+                  ) : (
+                    <img src={stagedSignature.content} style={{ width: "100%", height: "100%", objectFit: "contain" }} alt="" />
                   )}
-                  <input ref={fileInputRef} type="file" accept="application/pdf,.pdf" onChange={handleFileChange} style={{ display: "none" }} />
                 </div>
-              </div>
-            ) : (
-              /* File Uploaded Overview */
-              <div>
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginBottom: "1.5rem" }}>
-                  <button
-                    onClick={() => setIsSigningMode(true)}
-                    style={{
-                      backgroundColor: "#e11d48", color: "white", border: "none", padding: "0.5rem 1rem",
-                      borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem",
-                      fontSize: "0.85rem", fontWeight: "500"
-                    }}
-                  >
-                    ✍️ Start eSign
-                  </button>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ backgroundColor: "white", borderRadius: "8px", width: "120px", height: "140px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", position: "relative" }}>
-                    <button onClick={removeFile} style={{ position: "absolute", top: "4px", right: "4px", background: "white", border: "none", borderRadius: "50%", width: "25px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "black", zIndex: 10 }}><PiX size={18} /></button>
-                    <div style={{ marginBottom: "0.5rem" }}>
-                      <PDFThumbnail pdfDocument={pdfDocument} />
+              )}
+
+              {Array.from({ length: pdfDocument?.numPages || 0 }, (_, i) => (
+                <div key={i} style={{ position: "relative", marginBottom: "2rem", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }} onClick={(e) => handlePageClick(e, i + 1)}>
+                  <PDFPage pageNumber={i + 1} pdfDocument={pdfDocument} scale={scale} onDimensionsChanged={onDimensionChanged} />
+                  {signatures.filter(s => s.page === i + 1).map(sig => (
+                    <div
+                      key={sig.id}
+                      onMouseDown={(e) => handleStartDrag(e, sig)}
+                      onTouchStart={(e) => handleStartDrag(e, sig)}
+                      className="e-signature-item"
+                      style={{
+                        position: "absolute",
+                        left: sig.x,
+                        top: sig.y,
+                        width: sig.width,
+                        height: sig.height,
+                        cursor: "move",
+                        border: "1px dashed #D879FD",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        userSelect: "none"
+                      }}
+                    >
+                      {sig.type === "text" ? (
+                        <span style={{ fontFamily: sig.fontFamily, color: sig.color, fontSize: "1.5rem", whiteSpace: "nowrap" }}>
+                          {sig.content}
+                        </span>
+                      ) : (
+                        <img src={sig.content} style={{ width: "100%", height: "100%", objectFit: "contain" }} draggable={false} alt="" />
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeSignature(sig.id); }}
+                        style={{ position: "absolute", top: "-10px", right: "-10px", width: "20px", height: "20px", borderRadius: "50%", background: "#e11d48", color: "white", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}
+                      >
+                        ×
+                      </button>
                     </div>
-                    <span style={{ fontSize: "0.65rem", color: "#666", maxWidth: "100px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 0.5rem" }}>{pdfFile.name}</span>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Upload & Overview Mode */
+        <div className="main-container">
+          <div className="ad-column">
+            <VerticalAdLeft />
+          </div>
+
+          <div className="content-area">
+            <h1 className="tool-title">eSign PDF</h1>
+
+            <div
+              className="drop-zone-container"
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+            >
+              {isSigned ? (
+                /* Success State */
+                <div style={{
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  justifyContent: "center", height: "100%", gap: "1.5rem"
+                }}>
+                  <div style={{
+                    width: "80px", height: "80px", borderRadius: "50%",
+                    background: "#e8f5e9", display: "flex", alignItems: "center",
+                    justifyContent: "center", color: "#2e7d32", marginBottom: "0.5rem"
+                  }}>
+                    <PiCheckCircle size={48} />
+                  </div>
+                  <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0 }}>Signed Successfully!</h2>
+                  <p style={{ color: "#666", textAlign: "center", maxWidth: "400px" }}>Your PDF has been signed. Download the document below.</p>
+                  <div>
+                    <button
+                      onClick={handleDownload}
+                      style={{
+                        backgroundColor: "#D879FD", color: "white", padding: "1rem 2.5rem",
+                        borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600",
+                        border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem",
+                        boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)"
+                      }}
+                    >
+                      Download PDF
+                    </button>
+                  </div>
+                  <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                    <button onClick={handleShare} style={{ background: "transparent", border: "1px solid #ccc", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}> <TbShare3 /> Share </button>
+                    <button onClick={removeFile} style={{ background: "transparent", border: "1px solid #ccc", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer" }}> Sign Another File </button>
                   </div>
                 </div>
-              </div>
-            )}
+              ) : !pdfFile ? (
+                /* Upload State */
+                <div style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  height: "300px", minHeight: "220px",
+                }}>
+                  <div style={{ marginBottom: "1.5rem" }}><img src="./upload.svg" alt="Upload Icon" /></div>
+                  <div ref={dropdownRef} style={{ position: "relative" }}>
+                    <button
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      style={{
+                        backgroundColor: "#D879FD", padding: "0.6rem 1rem",
+                        border: "none", borderRadius: "6px",
+                        cursor: "pointer", display: "flex", alignItems: "center",
+                        gap: "0.5rem", fontSize: "0.9rem", fontWeight: "600", color: "white",
+                        boxShadow: "0 2px 4px rgba(216, 121, 253, 0.3)",
+                      }}
+                    >
+                      <PiFiles size={18} /> Select File <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
+                    </button>
+                    {isDropdownOpen && (
+                      <div style={{
+                        position: "absolute", top: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)",
+                        backgroundColor: "white", border: "1px solid #e0e0e0", borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)", zIndex: 1000, minWidth: "180px", overflow: "hidden",
+                      }}>
+                        {[{ icon: <PiUploadSimple size={18} />, label: "From Device", onClick: handleFromDevice },
+                        { icon: <PiLink size={18} />, label: "Paste URL", onClick: handlePasteUrl },
+                        { icon: <FaGoogleDrive size={16} />, label: "Google Drive", onClick: openGoogleDrivePicker },
+                        { icon: <FaDropbox size={16} />, label: "Drop Box", onClick: openDropboxPicker },
+                        ].map((item, index) => (
+                          <button key={index} onClick={item.onClick} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.7rem 1rem", width: "100%", border: "none", backgroundColor: "transparent", cursor: "pointer", fontSize: "0.85rem", color: "#333", textAlign: "left" }}>
+                            <span style={{ color: "#666", display: "flex", alignItems: "center" }}>{item.icon}</span> {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <input ref={fileInputRef} type="file" accept="application/pdf,.pdf" onChange={handleFileChange} style={{ display: "none" }} />
+                  </div>
+                </div>
+              ) : (
+                /* File Uploaded Overview */
+                <div>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginBottom: "1.5rem" }}>
+                    <button
+                      onClick={() => setIsSigningMode(true)}
+                      style={{
+                        backgroundColor: "#D879FD", color: "white", border: "none", padding: "0.5rem 1rem",
+                        borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem",
+                        fontSize: "0.85rem", fontWeight: "600", boxShadow: "0 4px 6px rgba(216, 121, 253, 0.25)"
+                      }}
+                    >
+                      ✍️ Start eSign
+                    </button>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ backgroundColor: "white", borderRadius: "8px", width: "120px", height: "140px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", position: "relative" }}>
+                      <button onClick={removeFile} style={{ position: "absolute", top: "4px", right: "4px", background: "white", border: "none", borderRadius: "50%", width: "25px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "black", zIndex: 10 }}><PiX size={18} /></button>
+                      <div style={{ marginBottom: "0.5rem" }}>
+                        <PDFThumbnail pdfDocument={pdfDocument} />
+                      </div>
+                      <span style={{ fontSize: "0.65rem", color: "#666", maxWidth: "100px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 0.5rem" }}>{pdfFile.name}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            {/* Action Icons (Visual) */}
-            {(!isSigned && !pdfFile) && (
-              <div style={{ position: "absolute", right: "1rem", top: "90%", transform: "translateY(-50%)", display: "flex", gap: "0.5rem", opacity: 0.4 }}>
-                <PiUploadSimple size={20} /> <PiLink size={20} /> <FaGoogleDrive size={18} /> <FaDropbox size={18} /> <PiClipboard size={20} />
-              </div>
-            )}
+              {(!isSigned && !pdfFile) && (
+                <div style={{ position: "absolute", right: "1rem", top: "90%", transform: "translateY(-50%)", display: "flex", gap: "0.5rem", opacity: 0.4 }}>
+                  <PiUploadSimple size={20} /> <PiLink size={20} /> <FaGoogleDrive size={18} /> <FaDropbox size={18} /> <PiClipboard size={20} />
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginTop: "3rem", fontFamily: 'Georgia, serif' }}>
+              <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>Sign yourself or request electronic signatures from others.</p>
+              <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
+                {["Create your digital signature in seconds", "Sign PDF files securely", "Works on any device"].map((text, i) => (
+                  <li key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}><PiCheckCircle size={18} style={{ color: "green" }} /> {text}</li>
+                ))}
+              </ul>
+            </div>
+            <div style={{ marginTop: "3rem", padding: "1.5rem", backgroundColor: "#f0f9ff", border: "1px solid #cce5ff", borderRadius: "10px", fontSize: "0.95rem", fontFamily: "Georgia, serif" }}>
+              <strong>Protected. Encrypted.</strong> <p style={{ marginTop: "0.5rem", color: "#555" }}>Your files are encrypted and automatically deleted after 2 hours.</p>
+            </div>
           </div>
 
-          {/* Info & Footer */}
-          <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
-            <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>Sign yourself or request electronic signatures from others.</p>
-            <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
-              {["Create your digital signature in seconds", "Sign PDF files securely", "Works on any device"].map((text, i) => (
-                <li key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}><PiCheckCircle size={18} style={{ color: "green" }} /> {text}</li>
-              ))}
-            </ul>
-          </div>
-          <div style={{ marginTop: "3rem", padding: "1.5rem", backgroundColor: "#f0f9ff", border: "1px solid #cce5ff", borderRadius: "10px", fontSize: "0.95rem" }}>
-            <strong>Protected. Encrypted.</strong> <p style={{ marginTop: "0.5rem", color: "#555" }}>Your files are encrypted and automatically deleted after 2 hours.</p>
+          <div className="ad-column">
+            <VerticalAdRight />
           </div>
         </div>
-        <div className="ad-column">
-          <VerticalAdRight />
-        </div>
-      </div>
+      )}
+
+      {!isSigningMode && (
+        <>
+          <ToolInstructions title={instructionData.title} steps={instructionData.steps as any} />
+          <Testimonials title="What Our Users Say" testimonials={testimonialData.testimonials} autoScrollInterval={3000} />
+          <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} fileBlob={signedFileBlob} fileName={`signed_${pdfFile?.name || "document.pdf"}`} />
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '0 2rem 4rem' }}>
+            <RecommendedTools />
+          </div>
+        </>
+      )}
 
       {/* URL Input Modal */}
       {showUrlModal && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }} onClick={() => setShowUrlModal(false)}>
           <div style={{ backgroundColor: "white", padding: "2rem", borderRadius: "10px", width: "90%", maxWidth: "500px" }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ marginBottom: "1rem" }}>Paste PDF URL</h3>
-            <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
+            <h3 style={{ marginBottom: "1rem", fontFamily: "Georgia, serif" }}>Paste PDF URL</h3>
+            <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://example.com/document.pdf" style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
               <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#e11d48", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
+              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#D879FD", color: "white", borderRadius: "6px", cursor: isUploading ? "not-allowed" : "pointer", opacity: isUploading ? 0.7 : 1 }}>{isUploading ? "Loading..." : "Add PDF"}</button>
             </div>
           </div>
         </div>
       )}
 
-      <ToolInstructions title={instructionData.title} steps={instructionData.steps as any} />
-      <Testimonials title="What Our Users Say" testimonials={testimonialData.testimonials} autoScrollInterval={3000} />
-      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} fileBlob={signedFileBlob} fileName="signed.pdf" />
       <Footer />
     </div>
   );
