@@ -12,18 +12,25 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const files = formData.getAll("files") as File[];
+    const url = formData.get("url") as string;
 
-    if (!files || files.length === 0) {
-      return NextResponse.json({ error: "No HTML file uploaded" }, { status: 400 });
+    if ((!files || files.length === 0) && !url) {
+      return NextResponse.json({ error: "No HTML file or URL provided" }, { status: 400 });
     }
 
-    const htmlFile = files[0];
-    if (!htmlFile.name.endsWith(".html")) {
-      return NextResponse.json({ error: "Only .html files are supported" }, { status: 400 });
-    }
+    let htmlContent = "";
+    let pageUrl = "";
 
-    const arrayBuffer = await htmlFile.arrayBuffer();
-    const htmlContent = new TextDecoder().decode(arrayBuffer);
+    if (url) {
+      pageUrl = url;
+    } else {
+      const htmlFile = files[0];
+      if (!htmlFile.name.endsWith(".html") && !htmlFile.name.endsWith(".htm")) {
+        return NextResponse.json({ error: "Only .html files are supported" }, { status: 400 });
+      }
+      const arrayBuffer = await htmlFile.arrayBuffer();
+      htmlContent = new TextDecoder().decode(arrayBuffer);
+    }
 
     tempPdfPath = path.join(tmpdir(), `html-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.pdf`);
 
@@ -45,14 +52,18 @@ export async function POST(req: NextRequest) {
     browser = isLocal
       ? await puppeteer.launch({ headless: true }) // puppeteer includes its own Chromium
       : await puppeteer.launch({
-          args: chromium.args,
-          defaultViewport: chromium.defaultViewport,
-          executablePath: await chromium.executablePath(),
-          headless: chromium.headless,
-        });
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+      });
 
     const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+    if (pageUrl) {
+      await page.goto(pageUrl, { waitUntil: "networkidle0" });
+    } else {
+      await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+    }
     await page.pdf({ path: tempPdfPath, format: "A4" });
 
     const pdfBuffer = await fs.promises.readFile(tempPdfPath);
@@ -61,7 +72,7 @@ export async function POST(req: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${htmlFile.name.replace('.html', '.pdf')}"`,
+        "Content-Disposition": `attachment; filename="${(pageUrl ? "converted_url" : (files[0]?.name || "converted")).replace('.html', '').replace('.htm', '')}.pdf"`,
       },
     });
   } catch (error: any) {

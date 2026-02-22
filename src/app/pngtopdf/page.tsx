@@ -83,70 +83,100 @@ function SortableFileCard({
       ref={setNodeRef}
       style={{
         ...style,
+        backgroundColor: "white",
+        borderRadius: "16px",
+        width: "140px",
+        height: "180px",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
-        gap: "0.5rem",
+        justifyContent: "center",
+        boxShadow: isDragging ? "0 20px 25px -5px rgba(0, 0, 0, 0.1)" : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+        position: "relative",
+        border: "1px solid #e5e7eb",
+        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        cursor: isDragging ? "grabbing" : "grab",
       }}
       {...attributes}
       {...listeners}
+      onMouseEnter={(e) => {
+        if (!isDragging) {
+          e.currentTarget.style.transform = "translateY(-4px)";
+          e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isDragging) {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1)";
+        }
+      }}
     >
-      <div
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(item.id);
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: "white",
-          borderRadius: "8px",
-          width: "120px",
-          height: "140px",
+          position: "absolute",
+          top: "-8px",
+          right: "-8px",
+          background: "#ef4444",
+          border: "2px solid white",
+          borderRadius: "50%",
+          width: "26px",
+          height: "26px",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          position: "relative",
-          cursor: "grab",
+          cursor: "pointer",
+          zIndex: 10,
+          color: "white",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
         }}
       >
-        <button
-          onClick={(e) => {
-            e.stopPropagation(); // Prevent drag start when clicking delete
-            onRemove(item.id);
-          }}
-          onPointerDown={(e) => e.stopPropagation()} // Prevent drag start
-          style={{
-            position: "absolute",
-            top: "4px",
-            right: "4px",
-            background: "rgba(255, 255, 255, 1)",
-            border: "none",
-            borderRadius: "50%",
-            width: "25px",
-            height: "25px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            color: "black",
-            zIndex: 10,
-          }}
-        >
-          <PiX size={18} />
-        </button>
+        <PiX size={14} />
+      </button>
 
-        <FilePreview file={item.file} defaultIcon="./png.png" style={{ width: "80px", height: "100px", marginBottom: "0.5rem" }} />
-        <p
+      <div style={{
+        width: "100px",
+        height: "130px",
+        marginBottom: "0.5rem",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '4px'
+      }}>
+        <FilePreview
+          file={item.file}
+          defaultIcon="./png.png"
+          style={{ width: "100%", height: "100%", borderRadius: '8px' }}
+        />
+      </div>
+
+      <div style={{
+        width: '100%',
+        padding: '0 0.75rem',
+        textAlign: 'center'
+      }}>
+        <span
           style={{
             fontSize: "0.75rem",
-            color: "#333",
-            textAlign: "center",
-            padding: "0 5px",
+            fontWeight: "600",
+            color: "#374151",
+            maxWidth: "110px",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
-            width: "100%",
-            margin: 0,
+            display: "block"
           }}
         >
           {item.file.name}
-        </p>
+        </span>
+        <span style={{ fontSize: '0.65rem', color: '#9ca3af' }}>
+          {(item.file.size / 1024 / 1024).toFixed(2)} MB
+        </span>
       </div>
     </div>
   );

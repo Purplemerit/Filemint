@@ -30,6 +30,7 @@ import JSZip from "jszip";
 import FilePreview from "../components/FilePreview";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import RecommendedTools from "../components/RecommendedTools";
 // Configure PDF.js worker
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -445,6 +446,7 @@ export default function PdfToPngPage() {
                       Convert Another File
                     </button>
                   </div>
+                  <RecommendedTools />
                 </div>
               ) : !file ? (
                 /* Empty State */

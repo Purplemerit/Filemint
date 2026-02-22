@@ -27,6 +27,7 @@ import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
 import FilePreview from "../components/FilePreview";
+import RecommendedTools from "../components/RecommendedTools";
 export default function PdfToExcelPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -757,6 +758,9 @@ export default function PdfToExcelPage() {
         fileBlob={convertedFileBlob}
         fileName="converted.xlsx"
       />
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '0 2rem 4rem' }}>
+        <RecommendedTools />
+      </div>
       <Footer />
     </div>
   );

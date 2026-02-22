@@ -25,6 +25,8 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import FilePreview from "../components/FilePreview";
+import RecommendedTools from "../components/RecommendedTools";
 export default function ScanToPdfPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -491,16 +493,9 @@ export default function ScanToPdfPage() {
                         <PiX size={18} />
                       </button>
 
-                      <img
-                        src="./scan.png"
-                        alt="Image Icon"
-                        style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }}
-                        onError={(e) => {
-                          // Fallback if image-icon.svg doesn't exist
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement!.innerHTML += '<div style="width: 40px; height: 50px; background: #e0e0e0; border-radius: 4px; margin-bottom: 0.5rem;"></div>';
-                        }}
-                      />
+                      <div style={{ width: "80px", height: "100px", marginBottom: "0.5rem" }}>
+                        <FilePreview file={file} style={{ width: "100%", height: "100%" }} />
+                      </div>
                       <span style={{
                         fontSize: "0.65rem",
                         color: "#666",
@@ -714,6 +709,9 @@ export default function ScanToPdfPage() {
         fileBlob={convertedBlob}
         fileName="scanned.pdf"
       />
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '0 2rem 4rem' }}>
+        <RecommendedTools />
+      </div>
       <Footer />
     </div>
   );
