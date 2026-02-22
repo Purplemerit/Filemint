@@ -72,8 +72,8 @@ export default function Header() {
         {!isLoading && (
           <div className="header-right">
             {!(user && token) ? (
-              <a href="/login" className="no-underline">
-                <span className="nav-link login login-btn">Login</span>
+              <a href="/login" className="no-underline" style={{ color: 'white' }}>
+                <span className="nav-link login login-btn" style={{ color: 'white' }}>Login</span>
               </a>
             ) : (
               <Link href="/profile">
@@ -173,7 +173,7 @@ export default function Header() {
 
   /* ---------- LINKS ---------- */
   .nav a,
-  .nav-link {
+  .nav-link:not(.login) {
     color: black !important;
     text-decoration: none !important;
     font-weight: 500;
@@ -273,7 +273,7 @@ export default function Header() {
 
   .login {
     margin-right: 1rem;
-    color: white;
+    color: white !important;
     background-color: #323D68;
     padding: 10px 24px;
     border-radius: 8px;
@@ -469,6 +469,7 @@ export default function Header() {
     .login-btn {
       padding: 6px 16px !important;
       font-size: 0.9rem !important;
+      color: white !important;
     }
     
     .profile-circle {
