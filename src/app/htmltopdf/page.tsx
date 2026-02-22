@@ -454,6 +454,20 @@ export default function HtmlToPdfPage() {
           .upload-btn-container {
              justify-content: center !important;
           }
+          .url-input-group {
+             flex-direction: column !important;
+             gap: 0.75rem !important;
+          }
+          .url-input-group input, .url-input-group button {
+             width: 100% !important;
+          }
+          .drop-zone {
+             padding: 1rem !important;
+             min-height: auto !important;
+          }
+          .quick-action-icons {
+             display: none !important;
+          }
         }
       `}</style>
 
@@ -487,6 +501,7 @@ export default function HtmlToPdfPage() {
           <div
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
+            className="drop-zone"
             style={{
               border: "3px solid #FF800080",
               backgroundColor: "rgb(255 234 215)",
@@ -591,8 +606,8 @@ export default function HtmlToPdfPage() {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                height: "300px",
-                minHeight: "220px",
+                minHeight: "300px",
+                padding: "1rem 0"
               }}>
                 {/* Cloud Upload Icon */}
                 <div style={{ marginBottom: "1.5rem" }}>
@@ -601,7 +616,7 @@ export default function HtmlToPdfPage() {
 
                 {/* Dropdown Button */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "1rem", alignItems: "center", width: "100%", maxWidth: "400px" }}>
-                  <div style={{ display: "flex", width: "100%", gap: "0.5rem" }}>
+                  <div className="url-input-group" style={{ display: "flex", width: "100%", gap: "0.5rem" }}>
                     <input
                       type="text"
                       placeholder="Enter Website URL (e.g., https://google.com)"
@@ -618,6 +633,7 @@ export default function HtmlToPdfPage() {
                     />
                     <button
                       onClick={handleUrlSubmit}
+                      disabled={isConverting}
                       style={{
                         padding: "0.75rem 1.5rem",
                         backgroundColor: "#FF8000",
@@ -625,11 +641,27 @@ export default function HtmlToPdfPage() {
                         border: "none",
                         borderRadius: "8px",
                         fontWeight: "600",
-                        cursor: "pointer",
-                        whiteSpace: "nowrap"
+                        cursor: isConverting ? "not-allowed" : "pointer",
+                        whiteSpace: "nowrap",
+                        opacity: isConverting ? 0.7 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem'
                       }}
                     >
-                      Convert URL
+                      {isConverting ? (
+                        <>
+                          <div className="animate-spin" style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid white',
+                            borderTopColor: 'transparent',
+                            borderRadius: '50%'
+                          }} />
+                          Processing...
+                        </>
+                      ) : "Convert URL"}
                     </button>
                   </div>
 
@@ -936,6 +968,7 @@ export default function HtmlToPdfPage() {
             {/* Quick action icons for empty state */}
             {files.length === 0 && (
               <div
+                className="quick-action-icons"
                 style={{
                   position: "absolute",
                   right: "1rem",
