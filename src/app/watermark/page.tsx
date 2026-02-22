@@ -1,7 +1,7 @@
 "use client";
 
 import Navbar from "../components/Navbar";
-import { PDFDocument, rgb, degrees } from "pdf-lib";
+import { PDFDocument, rgb, degrees, StandardFonts } from "pdf-lib";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
@@ -107,12 +107,21 @@ export default function PdfWatermarkPage() {
       const pages = pdfDoc.getPages();
       const c = hexToRgb01(color);
 
+      // Embed a standard font so we can measure exact text width
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const textWidth = font.widthOfTextAtSize(watermark, fontSize);
+      const textHeight = font.heightAtSize(fontSize);
+
       pages.forEach((page) => {
         const { width, height } = page.getSize();
+        // Center the watermark on the page (matching the CSS-centered preview)
+        const x = (width - textWidth) / 2;
+        const y = (height - textHeight) / 2;
         page.drawText(watermark, {
-          x: width / 2 - watermark.length * (fontSize / 3),
-          y: height / 2,
+          x,
+          y,
           size: fontSize,
+          font,
           rotate: degrees(rotation),
           color: rgb(c.r, c.g, c.b),
           opacity: opacity,

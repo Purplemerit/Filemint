@@ -243,7 +243,7 @@ export default function WordToPdfPage() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [zipBlob, setZipBlob] = useState<Blob | null>(null);
   const [downloadFileName, setDownloadFileName] = useState<string>("");
-  const instructionData = toolData["wordtopdf"] || { title: "How to convert Word to PDF", steps: [] };
+  const instructionData = toolData["word-pdf"] || { title: "How to convert Word to PDF", steps: [] };
 
   const [isConvertingBatch, setIsConvertingBatch] = useState(false);
   const [isConverted, setIsConverted] = useState(false);
@@ -642,8 +642,99 @@ export default function WordToPdfPage() {
       }
 
       <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 2rem" }}>
+        {/* How to Convert Word to PDF Section */}
+        <div style={{
+          margin: "3rem 0",
+          fontFamily: 'Georgia, "Times New Roman", serif',
+        }}>
+          <h2 style={{
+            fontSize: "1.75rem",
+            fontWeight: "700",
+            color: "#1a1a1a",
+            textAlign: "center",
+            marginBottom: "2.5rem",
+          }}>
+            How to Convert Word to PDF
+          </h2>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: "2rem",
+          }}>
+            {[
+              {
+                step: "1",
+                title: "Upload Your Word File",
+                description: "Drag and drop your DOC or DOCX file into the upload area, or click \"Select Word Files\" to browse from your device, Google Drive, Dropbox, or paste a URL. You can upload multiple files for batch conversion.",
+              },
+              {
+                step: "2",
+                title: "Convert to PDF",
+                description: "Once your files are uploaded, click the \"Convert\" button. Our advanced engine preserves all formatting, fonts, tables, images, and layouts — producing a pixel-perfect PDF replica of your original Word document.",
+              },
+              {
+                step: "3",
+                title: "Download Your PDF",
+                description: "After conversion is complete, download your PDF instantly. For multiple files, you'll receive a convenient ZIP archive. Your converted files are 100% secure and processed on our encrypted servers.",
+              },
+            ].map((item) => (
+              <div
+                key={item.step}
+                style={{
+                  backgroundColor: "#f8fafc",
+                  borderRadius: "16px",
+                  padding: "2rem",
+                  border: "1px solid #e2e8f0",
+                  transition: "all 0.3s ease",
+                  position: "relative",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-4px)";
+                  e.currentTarget.style.boxShadow = "0 12px 24px rgba(0,0,0,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                <div style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #2b579a, #4b8bd4)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                  fontSize: "1.25rem",
+                  fontWeight: "700",
+                  marginBottom: "1.25rem",
+                }}>
+                  {item.step}
+                </div>
+                <h3 style={{
+                  fontSize: "1.1rem",
+                  fontWeight: "600",
+                  color: "#1a1a1a",
+                  marginBottom: "0.75rem",
+                }}>
+                  {item.title}
+                </h3>
+                <p style={{
+                  fontSize: "0.9rem",
+                  lineHeight: "1.7",
+                  color: "#555",
+                  margin: 0,
+                }}>
+                  {item.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <ToolInstructions title={instructionData.title} steps={instructionData.steps as any} />
-        <Testimonials title="What Our Users Say" testimonials={testimonialData.testimonials} />
+        <Testimonials title="What Our Users Say" testimonials={testimonialData.testimonials} autoScrollInterval={3000} />
         <div style={{ display: 'flex', justifyContent: 'center', margin: '4rem 0' }}>
           <RecommendedTools />
         </div>
