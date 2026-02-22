@@ -316,7 +316,7 @@ export default function PdfWatermarkPage() {
                       <span style={{
                         fontSize: `${Math.max(12, fontSize * 0.55)}px`,
                         opacity: opacity,
-                        transform: `rotate(${rotation}deg)`,
+                        transform: `rotate(${-rotation}deg)`,
                         color: color,
                         fontWeight: "bold",
                         whiteSpace: "nowrap",
