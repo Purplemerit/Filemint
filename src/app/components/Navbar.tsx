@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-  const { user, isLoading } = useAuth();
+  const { user, token, isLoading } = useAuth();
   const pathname = usePathname();
   const dropdownRef = useRef<HTMLLIElement>(null);
 
@@ -71,7 +71,7 @@ export default function Header() {
         {/* Right Section (Profile / Login) */}
         {!isLoading && (
           <div className="header-right">
-            {!user ? (
+            {!(user && token) ? (
               <a href="/login" className="no-underline">
                 <span className="nav-link login login-btn">Login</span>
               </a>
@@ -194,6 +194,12 @@ export default function Header() {
   .nav-link:focus,
   .nav-link:active {
     text-decoration: none !important;
+    color: inherit;
+  }
+  
+  .nav-link:not(.login):hover,
+  .nav-link:not(.login):focus,
+  .nav-link:not(.login):active {
     color: #000000ff !important;
   }
 
