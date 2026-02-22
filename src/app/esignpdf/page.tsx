@@ -607,21 +607,21 @@ export default function ESignPdfPage() {
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1rem" }}>
         <style>{`
          @media (max-width: 768px) {
-             .header-controls-sign {
+             .top-bar-controls {
                flex-direction: column !important;
                gap: 0.5rem !important;
                align-items: stretch !important;
                margin-top: 1rem !important;
              }
-             .header-controls-sign > * {
+             .top-bar-controls > * {
                width: 100% !important;
                justify-content: center !important;
              }
-             .main-container-sign {
+             .workspace-container-main {
                flex-direction: column !important;
                gap: 1rem !important;
              }
-             .signature-panel {
+             .tools-sidebar-area {
                width: 100% !important;
                position: static !important;
                margin-bottom: 0.5rem;
@@ -645,7 +645,7 @@ export default function ESignPdfPage() {
            }
          `}</style>
         <div
-          className="header-controls-sign"
+          className="top-bar-controls"
           style={{
             display: "flex", justifyContent: "space-between", alignItems: "center",
             margin: "3rem 0rem 2rem 0rem", gap: "1rem", flexWrap: "wrap",
@@ -684,9 +684,9 @@ export default function ESignPdfPage() {
           </button>
         </div>
 
-        <div className="main-container-sign" style={{ display: "flex", gap: "2rem" }}>
+        <div className="workspace-container-main" style={{ display: "flex", gap: "2rem" }}>
           {/* Sidebar Tools */}
-          <div className="signature-panel" style={{ width: "250px", flexShrink: 0 }}>
+          <div className="tools-sidebar-area" style={{ width: "250px", flexShrink: 0 }}>
             <button
               onClick={() => setShowSignatureModal(true)}
               style={{
@@ -696,7 +696,7 @@ export default function ESignPdfPage() {
                 marginBottom: "1rem"
               }}
             >
-              <PiSignature size={24} /> Add Signature
+              <PiPenNib size={24} /> Add Signature
             </button>
             <div style={{ backgroundColor: "#f8f9fa", padding: "1rem", borderRadius: "8px" }}>
               <p style={{ fontSize: "0.9rem", color: "#666", marginTop: 0 }}>
@@ -1062,7 +1062,7 @@ export default function ESignPdfPage() {
                       fontSize: "0.85rem", fontWeight: "500"
                     }}
                   >
-                    ✍️ Start Signing
+                    ✍️ Start eSign
                   </button>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>

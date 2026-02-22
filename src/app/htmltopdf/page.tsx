@@ -188,7 +188,6 @@ export default function HtmlToPdfPage() {
   const [isAddDropdownOpen, setIsAddDropdownOpen] = useState(false);
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [urlInput, setUrlInput] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
   const { token, isLoading } = useAuth();
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -262,6 +261,8 @@ export default function HtmlToPdfPage() {
       const blob = await response.blob();
       setConvertedFileBlob(blob);
       setIsConverted(true);
+      setShowUrlModal(false);
+      setUrlInput("");
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
       setError(errorMessage);
@@ -716,7 +717,20 @@ export default function HtmlToPdfPage() {
                       opacity: isConverting ? 0.7 : 1,
                     }}
                   >
-                    {isConverting ? "Converting..." : "Convert to PDF"}
+                    {isConverting ? (
+                      <>
+                        <div className="animate-spin" style={{
+                          width: '16px',
+                          height: '16px',
+                          border: '2px solid white',
+                          borderTopColor: 'transparent',
+                          borderRadius: '50%'
+                        }} />
+                        Converting...
+                      </>
+                    ) : (
+                      "Convert to PDF"
+                    )}
                   </button>
                   <button
                     onClick={handleShare}
@@ -967,83 +981,99 @@ export default function HtmlToPdfPage() {
 
         {/* Right Ad */}
         <VerticalAdRight />
-      </div>
+      </div >
 
       {/* URL Input Modal */}
-      {showUrlModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2000,
-          }}
-          onClick={() => setShowUrlModal(false)}
-        >
+      {
+        showUrlModal && (
           <div
             style={{
-              backgroundColor: "white",
-              padding: "2rem",
-              borderRadius: "10px",
-              width: "90%",
-              maxWidth: "500px",
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 2000,
             }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={() => setShowUrlModal(false)}
           >
-            <h3 style={{ marginBottom: "1rem" }}>Paste HTML URL</h3>
-            <input
-              type="url"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="https://example.com/page.html"
+            <div
               style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #ccc",
-                borderRadius: "6px",
-                fontSize: "0.9rem",
-                marginBottom: "1rem",
-                boxSizing: "border-box",
+                backgroundColor: "white",
+                padding: "2rem",
+                borderRadius: "10px",
+                width: "90%",
+                maxWidth: "500px",
               }}
-            />
-            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-              <button
-                onClick={() => setShowUrlModal(false)}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 style={{ marginBottom: "1rem" }}>Paste HTML URL</h3>
+              <input
+                type="url"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder="https://example.com/page.html"
                 style={{
-                  padding: "0.5rem 1rem",
+                  width: "100%",
+                  padding: "0.75rem",
                   border: "1px solid #ccc",
                   borderRadius: "6px",
-                  backgroundColor: "white",
-                  cursor: "pointer",
+                  fontSize: "0.9rem",
+                  marginBottom: "1rem",
+                  boxSizing: "border-box",
                 }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUrlSubmit}
-                disabled={isUploading}
-                style={{
-                  padding: "0.5rem 1rem",
-                  border: "none",
-                  borderRadius: "6px",
-                  backgroundColor: "#007bff",
-                  color: "white",
-                  cursor: isUploading ? "not-allowed" : "pointer",
-                  opacity: isUploading ? 0.7 : 1,
-                }}
-              >
-                {isUploading ? "Loading..." : "Add File"}
-              </button>
+              />
+              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => setShowUrlModal(false)}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    border: "1px solid #ccc",
+                    borderRadius: "6px",
+                    backgroundColor: "white",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUrlSubmit}
+                  disabled={isConverting}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    border: "none",
+                    borderRadius: "6px",
+                    backgroundColor: "#e11d48",
+                    color: "white",
+                    cursor: isConverting ? "not-allowed" : "pointer",
+                    opacity: isConverting ? 0.7 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  {isConverting ? (
+                    <>
+                      <div className="animate-spin" style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid white',
+                        borderTopColor: 'transparent',
+                        borderRadius: '50%'
+                      }} />
+                      Processing...
+                    </>
+                  ) : "Convert URL"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       <ToolInstructions
         title={instructionData.title}
@@ -1064,6 +1094,6 @@ export default function HtmlToPdfPage() {
         <RecommendedTools />
       </div>
       <Footer />
-    </div>
+    </div >
   );
 }
