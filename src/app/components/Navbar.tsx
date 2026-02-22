@@ -9,7 +9,7 @@ export default function Header() {
   const [langOpen, setLangOpen] = useState(false);
   const { user, isLoading } = useAuth();
   const pathname = usePathname();
-  const dropdownRef = useRef(null);
+  const dropdownRef = useRef<HTMLLIElement>(null);
 
   const getInitials = () => {
     if (!user) return "?";
@@ -20,8 +20,8 @@ export default function Header() {
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setLangOpen(false);
       }
     };
@@ -39,15 +39,6 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* Hamburger for mobile */}
-        <div
-          className={`hamburger ${menuOpen ? "open" : ""}`}
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
 
         {/* Navigation */}
         <nav className={`nav ${menuOpen ? "active" : ""}`}>
@@ -74,41 +65,15 @@ export default function Header() {
               )}
             </li>
 
-            {/* Mobile Login/Profile */}
-            {!isLoading && (
-              <>
-                {!user ? (
-                  <li className="mobile-only">
-                    <a className="no-underline" href="/login">
-                      <span className="nav-link login">Login</span>
-                    </a>
-                  </li>
-                ) : (
-                  <li className="mobile-only">
-                    <Link href="/profile">
-                      {user.profileImage ? (
-                        <img
-                          src={user.profileImage}
-                          alt="Profile"
-                          className="profile-circle"
-                        />
-                      ) : (
-                        <div className="profile-circle">{getInitials()}</div>
-                      )}
-                    </Link>
-                  </li>
-                )}
-              </>
-            )}
           </ul>
         </nav>
 
-        {/* Desktop Right Section */}
+        {/* Right Section (Profile / Login) */}
         {!isLoading && (
-          <div className="right desktop-only">
+          <div className="header-right">
             {!user ? (
               <a href="/login" className="no-underline">
-                <span className="nav-link login"><span style={{ color: "white" }}>Login</span></span>
+                <span className="nav-link login login-btn">Login</span>
               </a>
             ) : (
               <Link href="/profile">
@@ -123,6 +88,16 @@ export default function Header() {
                 )}
               </Link>
             )}
+
+            {/* Hamburger for mobile */}
+            <div
+              className={`hamburger ${menuOpen ? "open" : ""}`}
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
           </div>
         )}
       </header>
@@ -282,7 +257,7 @@ export default function Header() {
   }
 
   /* ---------- RIGHT SECTION ---------- */
-  .right {
+  .header-right {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -478,12 +453,27 @@ export default function Header() {
     }
 
     /* ---------- Visibility helpers ---------- */
-    .mobile-only {
-      display: block;
+    .header-right {
+      position: static !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 12px !important;
     }
 
-    .desktop-only {
-      display: none;
+    .login-btn {
+      padding: 6px 16px !important;
+      font-size: 0.9rem !important;
+    }
+    
+    .profile-circle {
+      width: 36px !important;
+      height: 36px !important;
+      font-size: 14px !important;
+    }
+
+    .hamburger {
+      position: static !important;
+      margin: 0 !important;
     }
   }
 

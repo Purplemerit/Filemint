@@ -427,7 +427,37 @@ export default function HtmlToPdfPage() {
     <div>
       <Navbar />
 
-      <div style={{
+      <style>{`
+        @media (max-width: 1024px) {
+          .main-container {
+            flex-direction: column !important;
+            padding: 0 1rem !important;
+            margin: 2rem auto !important;
+          }
+          .ad-column {
+            display: none !important;
+          }
+          .content-area {
+            max-width: 100% !important;
+            width: 100% !important;
+          }
+          .file-grid {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+            gap: 1rem !important;
+            justify-content: center !important;
+          }
+          .title-text {
+             font-size: 1.5rem !important;
+             text-align: center !important;
+          }
+          .upload-btn-container {
+             justify-content: center !important;
+          }
+        }
+      `}</style>
+
+      <div className="main-container" style={{
         display: "flex",
         maxWidth: "1400px",
         margin: "4rem auto",
@@ -436,11 +466,13 @@ export default function HtmlToPdfPage() {
         alignItems: "flex-start"
       }}>
         {/* Left Ad */}
-        <VerticalAdLeft />
+        <div className="ad-column">
+          <VerticalAdLeft />
+        </div>
 
         {/* Main Content */}
-        <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
-          <h1 style={{
+        <div className="content-area" style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
+          <h1 className="title-text" style={{
             fontSize: "2rem",
             fontWeight: "600",
             marginBottom: "2rem",
@@ -693,7 +725,7 @@ export default function HtmlToPdfPage() {
               /* Files Uploaded State - Show sortable file cards */
               <div>
                 {/* Convert and Share buttons */}
-                <div style={{
+                <div className="upload-btn-container" style={{
                   display: "flex",
                   justifyContent: "flex-end",
                   gap: "0.5rem",
@@ -764,7 +796,7 @@ export default function HtmlToPdfPage() {
                     items={files.map((f) => f.id)}
                     strategy={rectSortingStrategy}
                   >
-                    <div style={{
+                    <div className="file-grid" style={{
                       display: "flex",
                       alignItems: "flex-start",
                       gap: "1.5rem",

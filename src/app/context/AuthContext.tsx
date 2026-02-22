@@ -12,6 +12,7 @@ interface User {
   subscriptionStatus?: "active" | "inactive" | "cancelled" | "expired";
   subscriptionStartDate?: string;
   subscriptionEndDate?: string;
+  profileImage?: string;
 }
 
 interface AuthContextType {
