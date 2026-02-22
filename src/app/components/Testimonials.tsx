@@ -93,6 +93,7 @@ export default function Testimonials({
       flexDirection: "column",
       justifyContent: "center",
       boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+      overflow: "visible",
     };
 
     if (isMobile) {
@@ -355,7 +356,7 @@ export default function Testimonials({
           position: "relative",
           maxWidth: "100%",
           margin: "0 auto",
-          height: "400px",
+          height: "420px",
           display: "flex",
           alignItems: "center",
         }}
@@ -394,6 +395,8 @@ export default function Testimonials({
               lineHeight: "1.6",
               color: "#444",
               marginTop: "1rem",
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
             }}>
               <strong>{testimonial.text.split('.')[0]}.</strong>
               {testimonial.text.split('.').slice(1).join('.')}
