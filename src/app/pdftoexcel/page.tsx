@@ -28,6 +28,7 @@ import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
 import FilePreview from "../components/FilePreview";
 import RecommendedTools from "../components/RecommendedTools";
+
 export default function PdfToExcelPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -230,44 +231,76 @@ export default function PdfToExcelPage() {
     <div>
       <Navbar />
 
-      <div style={{
-        display: "flex",
-        maxWidth: "1400px",
-        margin: "4rem auto",
-        padding: "0 2rem",
-        gap: "2rem",
-        alignItems: "flex-start"
-      }}>
-        {/* Left Ad */}
-        <VerticalAdLeft />
+      <style>{`
+        .main-container {
+          display: flex;
+          max-width: 1400px;
+          margin: 4rem auto;
+          padding: 0 1rem;
+          gap: 2rem;
+          align-items: flex-start;
+        }
+        .ad-column {
+          width: 160px;
+          flex-shrink: 0;
+        }
+        .content-area {
+          flex: 1;
+          min-width: 0;
+        }
+        .drop-zone-container {
+          border: 3px solid rgba(216, 121, 253, 0.4);
+          background-color: #F3E6FF;
+          border-radius: 12px;
+          padding: 2.5rem 1rem;
+          text-align: center;
+          position: relative;
+          min-height: 280px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          box-sizing: border-box;
+          transition: all 0.2s;
+        }
+        .tool-title {
+          font-size: 2rem;
+          font-weight: 600;
+          margin-bottom: 2rem;
+          color: #1a1a1a;
+          font-family: Georgia, serif;
+          text-align: left;
+        }
+        @media (max-width: 1024px) {
+          .main-container {
+            flex-direction: column !important;
+            padding: 0 1rem !important;
+            margin: 2rem auto !important;
+          }
+          .ad-column {
+            display: none !important;
+          }
+          .content-area {
+            max-width: 100% !important;
+            width: 100% !important;
+          }
+        }
+      `}</style>
 
-        {/* Main Content */}
-        <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
-          <h1 style={{
-            fontSize: "2rem",
-            fontWeight: "600",
-            marginBottom: "2rem",
-            textAlign: "left",
-            color: "#1a1a1a",
-            fontFamily: 'Georgia, "Times New Roman", serif',
-          }}>
-            PDF to Excel
-          </h1>
+      <div className="main-container">
+        <div className="ad-column">
+          <VerticalAdLeft />
+        </div>
+
+        <div className="content-area">
+          <h1 className="tool-title">PDF to Excel</h1>
 
           {/* Drop Zone */}
           <div
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
-            style={{
-              border: "3px solid rgba(216, 121, 253, 0.5)",
-              backgroundColor: "rgb(243, 230, 255)",
-              borderRadius: "12px",
-              padding: "2rem",
-              textAlign: "center",
-              marginBottom: "2rem",
-              position: "relative",
-              minHeight: "280px",
-            }}
+            className="drop-zone-container"
           >
             {isConverted ? (
               /* Success State - Download */
@@ -304,7 +337,7 @@ export default function PdfToExcelPage() {
                     onClick={triggerDownload}
                     className="download-button"
                     style={{
-                      backgroundColor: "#e11d48", // Brand color
+                      backgroundColor: "#D879FD",
                       color: "white",
                       padding: "1rem 2.5rem",
                       borderRadius: "8px",
@@ -315,7 +348,7 @@ export default function PdfToExcelPage() {
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
-                      boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)"
+                      boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)"
                     }}
                   >
                     Download Excel
@@ -372,18 +405,18 @@ export default function PdfToExcelPage() {
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     style={{
-                      backgroundColor: "white",
+                      backgroundColor: "#D879FD",
                       padding: "0.6rem 1rem",
-                      border: "1px solid #e0e0e0",
+                      border: "none",
                       borderRadius: "6px",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
                       fontSize: "0.9rem",
-                      fontWeight: "500",
-                      color: "#333",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                      fontWeight: "600",
+                      color: "white",
+                      boxShadow: "0 2px 4px rgba(216, 121, 253, 0.3)",
                     }}
                   >
                     <PiFiles size={18} />
@@ -463,7 +496,7 @@ export default function PdfToExcelPage() {
                     onClick={handleConvert}
                     disabled={isConverting}
                     style={{
-                      backgroundColor: "#e11d48",
+                      backgroundColor: "#D879FD",
                       color: "white",
                       border: "none",
                       padding: "0.5rem 1rem",
@@ -473,8 +506,9 @@ export default function PdfToExcelPage() {
                       alignItems: "center",
                       gap: "0.5rem",
                       fontSize: "0.85rem",
-                      fontWeight: "500",
+                      fontWeight: "600",
                       opacity: isConverting ? 0.7 : 1,
+                      boxShadow: "0 4px 6px rgba(216, 121, 253, 0.25)"
                     }}
                   >
                     {isConverting ? "Converting..." : "Convert to Excel"}
@@ -537,6 +571,7 @@ export default function PdfToExcelPage() {
                         justifyContent: "center",
                         cursor: "pointer",
                         color: "black",
+                        zIndex: 10
                       }}
                     >
                       <PiX size={18} />
@@ -607,7 +642,6 @@ export default function PdfToExcelPage() {
             )}
           </div>
 
-          {/* Info Section */}
           <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
             <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
               Convert tables from your PDF files into editable Excel spreadsheets with our seamless online tool.
@@ -626,7 +660,6 @@ export default function PdfToExcelPage() {
             </ul>
           </div>
 
-          {/* Security Section */}
           <div
             style={{
               marginTop: "3rem",
@@ -645,26 +678,12 @@ export default function PdfToExcelPage() {
               document you upload is encrypted and automatically deleted after 2
               hours. Your data stays yours—always.
             </p>
-            <div
-              style={{
-                marginTop: "1rem",
-                display: "flex",
-                justifyContent: "space-around",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "1rem",
-                filter: "grayscale(100%)",
-              }}
-            >
-              <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
-              <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
-              <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
-              <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />          </div>
           </div>
         </div>
 
-        {/* Right Ad */}
-        <VerticalAdRight />
+        <div className="ad-column">
+          <VerticalAdRight />
+        </div>
       </div>
 
       {/* URL Input Modal */}
@@ -730,7 +749,7 @@ export default function PdfToExcelPage() {
                   padding: "0.5rem 1rem",
                   border: "none",
                   borderRadius: "6px",
-                  backgroundColor: "#e11d48",
+                  backgroundColor: "#D879FD",
                   color: "white",
                   cursor: isUploading ? "not-allowed" : "pointer",
                   opacity: isUploading ? 0.7 : 1,
@@ -752,12 +771,7 @@ export default function PdfToExcelPage() {
         testimonials={testimonialData.testimonials}
         autoScrollInterval={3000}
       />
-      <ShareModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        fileBlob={convertedFileBlob}
-        fileName="converted.xlsx"
-      />
+      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} fileBlob={convertedFileBlob} fileName={files[0]?.name.replace(".pdf", ".xlsx") || "converted.xlsx"} />
       <div style={{ display: 'flex', justifyContent: 'center', padding: '0 2rem 4rem' }}>
         <RecommendedTools />
       </div>

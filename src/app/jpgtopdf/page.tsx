@@ -478,14 +478,20 @@ export default function JpgToPdfPage() {
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
             style={{
-              border: "3px solid #FF800080",
-              backgroundColor: "rgb(255 234 215)",
+              border: "3px solid rgba(216, 121, 253, 0.4)",
+              backgroundColor: "#F3E6FF",
               borderRadius: "12px",
-              padding: "2rem",
+              padding: "2.5rem 1rem",
               textAlign: "center",
               marginBottom: "2rem",
               position: "relative",
               minHeight: "280px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              boxSizing: "border-box",
             }}
           >
             {isConverted ? (
@@ -523,7 +529,7 @@ export default function JpgToPdfPage() {
                     onClick={triggerDownload}
                     className="download-button"
                     style={{
-                      backgroundColor: "#e11d48", // Brand color
+                      backgroundColor: "#D879FD",
                       color: "white",
                       padding: "1rem 2.5rem",
                       borderRadius: "8px",
@@ -534,7 +540,7 @@ export default function JpgToPdfPage() {
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
-                      boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)"
+                      boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)"
                     }}
                   >
                     Download PDF
@@ -592,22 +598,22 @@ export default function JpgToPdfPage() {
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     style={{
-                      backgroundColor: "white",
-                      padding: "0.6rem 1rem",
-                      border: "1px solid #e0e0e0",
+                      backgroundColor: "#D879FD",
+                      padding: "0.6rem 1.2rem",
+                      border: "none",
                       borderRadius: "6px",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
-                      fontSize: "0.9rem",
-                      fontWeight: "500",
-                      color: "#333",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                      fontSize: "0.95rem",
+                      fontWeight: "600",
+                      color: "white",
+                      boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)",
                     }}
                   >
                     <PiFiles size={18} />
-                    Select Files
+                    Select JPG Files
                     <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
                   </button>
 
@@ -676,50 +682,65 @@ export default function JpgToPdfPage() {
               <div>
                 <div style={{
                   display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "0.5rem",
-                  marginBottom: "1.5rem",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "2rem",
+                  flexWrap: "wrap",
+                  gap: "1rem"
                 }}>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <div ref={addDropdownRef} style={{ position: "relative" }}>
+                      <button
+                        onClick={() => setIsAddDropdownOpen(!isAddDropdownOpen)}
+                        style={{
+                          backgroundColor: "#D879FD",
+                          color: "white",
+                          border: "none",
+                          padding: "0.5rem 1rem",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          fontSize: "0.85rem",
+                          fontWeight: "600",
+                          boxShadow: "0 4px 12px rgba(216, 121, 253, 0.2)"
+                        }}
+                      >
+                        <PiPlus size={18} /> Add More
+                      </button>
+                      {isAddDropdownOpen && (
+                        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, backgroundColor: "white", border: "1px solid #e0e0e0", borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", zIndex: 1000, minWidth: "180px", overflow: "hidden" }}>
+                          {menuItems.map((item, i) => (
+                            <button key={i} onClick={item.onClickAdd} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", width: "100%", border: "none", backgroundColor: "transparent", cursor: "pointer", fontSize: "0.85rem", color: "#333", textAlign: "left" }}>
+                              <span style={{ color: "#666" }}>{item.icon}</span> {item.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <button
                     onClick={handleConvert}
                     disabled={isConverting}
                     style={{
-                      backgroundColor: "#e11d48",
+                      backgroundColor: "#D879FD",
                       color: "white",
                       border: "none",
-                      padding: "0.5rem 1rem",
-                      borderRadius: "6px",
+                      padding: "0.6rem 1.5rem",
+                      borderRadius: "8px",
                       cursor: isConverting ? "not-allowed" : "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
-                      fontSize: "0.85rem",
-                      fontWeight: "500",
+                      fontSize: "0.9rem",
+                      fontWeight: "600",
+                      boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)",
                       opacity: isConverting ? 0.7 : 1,
                     }}
                   >
-                    {isConverting ? "Converting..." : "Convert to PDF"}
-                  </button>
-                  <button
-                    onClick={handleShare}
-                    disabled={!isConverted}
-                    style={{
-                      backgroundColor: "white",
-                      color: "#333",
-                      border: "1px solid #e0e0e0",
-                      padding: "0.5rem 1rem",
-                      borderRadius: "6px",
-                      cursor: !isConverted ? "not-allowed" : "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      fontSize: "0.85rem",
-                      fontWeight: "500",
-                      opacity: !isConverted ? 0.5 : 1
-                    }}
-                  >
-                    <TbShare3 />
-                    Share
+                    {isConverting ? "Converting..." : "Convert to PDF →"}
                   </button>
                 </div>
 
@@ -1045,6 +1066,9 @@ export default function JpgToPdfPage() {
         testimonials={testimonialData.testimonials}
         autoScrollInterval={3000}
       />
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '0 2rem 4rem' }}>
+        <RecommendedTools />
+      </div>
       <ShareModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}

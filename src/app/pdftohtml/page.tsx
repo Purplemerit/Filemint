@@ -28,6 +28,7 @@ import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
 import FilePreview from "../components/FilePreview";
 import RecommendedTools from "../components/RecommendedTools";
+
 export default function PdfToHtmlPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -102,18 +103,6 @@ export default function PdfToHtmlPage() {
 
   // Smart auto-download: fires after 10s only if user hasn't clicked manually
   const triggerDownload = useAutoDownload(isConverted && !!htmlResult, handleDownload, 10000);
-
-  const downloadHtml = () => {
-    if (!htmlResult) return;
-
-    const blob = new Blob([htmlResult], { type: "text/html" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "converted.html";
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
 
   const { openPicker: openGoogleDrivePicker } = useGoogleDrivePicker({
     onFilePicked: (file) => {
@@ -242,47 +231,77 @@ export default function PdfToHtmlPage() {
     <div>
       <Navbar />
 
-      <div style={{
-        display: "flex",
-        maxWidth: "1400px",
-        margin: "4rem auto",
-        padding: "0 2rem",
-        gap: "2rem",
-        alignItems: "flex-start"
-      }}>
-        {/* Left Ad */}
-        <VerticalAdLeft />
+      <style>{`
+        .main-container {
+          display: flex;
+          max-width: 1400px;
+          margin: 4rem auto;
+          padding: 0 1rem;
+          gap: 2rem;
+          align-items: flex-start;
+        }
+        .ad-column {
+          width: 160px;
+          flex-shrink: 0;
+        }
+        .content-area {
+          flex: 1;
+          min-width: 0;
+        }
+        .drop-zone-container {
+          border: 3px solid rgba(216, 121, 253, 0.4);
+          background-color: #F3E6FF;
+          border-radius: 12px;
+          padding: 2.5rem 1rem;
+          text-align: center;
+          position: relative;
+          min-height: 280px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          box-sizing: border-box;
+          transition: all 0.2s;
+        }
+        .tool-title {
+          font-size: 2rem;
+          font-weight: 600;
+          margin-bottom: 3rem;
+          color: #1a1a1a;
+          font-family: Georgia, serif;
+          text-align: left;
+        }
+        @media (max-width: 1024px) {
+          .main-container {
+            flex-direction: column !important;
+            padding: 0 1rem !important;
+            margin: 2rem auto !important;
+          }
+          .ad-column {
+            display: none !important;
+          }
+          .content-area {
+            max-width: 100% !important;
+            width: 100% !important;
+          }
+        }
+      `}</style>
 
-        {/* Main Content */}
-        <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
-          <h1 style={{
-            fontSize: "2rem",
-            fontWeight: "600",
-            marginBottom: "2rem",
-            textAlign: "left",
-            color: "#1a1a1a",
-            fontFamily: 'Georgia, "Times New Roman", serif',
-          }}>
-            PDF to HTML
-          </h1>
+      <div className="main-container">
+        <div className="ad-column">
+          <VerticalAdLeft />
+        </div>
 
-          {/* Drop Zone */}
+        <div className="content-area">
+          <h1 className="tool-title">PDF to HTML</h1>
+
           <div
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
-            style={{
-              border: "3px solid rgba(216, 121, 253, 0.5)",
-              backgroundColor: "rgb(243, 230, 255)",
-              borderRadius: "12px",
-              padding: "2rem",
-              textAlign: "center",
-              marginBottom: "2rem",
-              position: "relative",
-              minHeight: "280px",
-            }}
+            className="drop-zone-container"
           >
             {!file ? (
-              /* Empty State */
               <div style={{
                 display: "flex",
                 flexDirection: "column",
@@ -299,18 +318,18 @@ export default function PdfToHtmlPage() {
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     style={{
-                      backgroundColor: "white",
+                      backgroundColor: "#D879FD",
                       padding: "0.6rem 1rem",
-                      border: "1px solid #e0e0e0",
+                      border: "none",
                       borderRadius: "6px",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
                       fontSize: "0.9rem",
-                      fontWeight: "500",
-                      color: "#333",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                      fontWeight: "600",
+                      color: "white",
+                      boxShadow: "0 2px 4px rgba(216, 121, 253, 0.3)",
                     }}
                   >
                     <PiFiles size={18} />
@@ -378,7 +397,6 @@ export default function PdfToHtmlPage() {
                 </div>
               </div>
             ) : (
-              /* File Uploaded State */
               <div>
                 <div style={{
                   display: "flex",
@@ -390,29 +408,29 @@ export default function PdfToHtmlPage() {
                     onClick={handleConvert}
                     disabled={isConverting}
                     style={{
-                      backgroundColor: "#e11d48",
+                      backgroundColor: "#D879FD",
                       color: "white",
                       border: "none",
-                      padding: "0.5rem 1rem",
+                      padding: "0.5rem 1.5rem",
                       borderRadius: "6px",
                       cursor: isConverting ? "not-allowed" : "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
                       fontSize: "0.85rem",
-                      fontWeight: "500",
+                      fontWeight: "600",
                       opacity: isConverting ? 0.7 : 1,
+                      boxShadow: "0 4px 6px rgba(216, 121, 253, 0.25)"
                     }}
                   >
                     {isConverting ? "Converting..." : "Convert to HTML"}
                   </button>
                   {htmlResult && (
-                    <>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
                       <button
                         onClick={triggerDownload}
-                        className="download-button"
                         style={{
-                          backgroundColor: "#28a745",
+                          backgroundColor: "#2e7d32",
                           color: "white",
                           border: "none",
                           padding: "0.5rem 1rem",
@@ -429,80 +447,76 @@ export default function PdfToHtmlPage() {
                       </button>
                       <button
                         onClick={handleShare}
-                        disabled={!htmlResult}
                         style={{
                           backgroundColor: "white",
                           color: "#333",
                           border: "1px solid #e0e0e0",
                           padding: "0.5rem 1rem",
                           borderRadius: "6px",
-                          cursor: !htmlResult ? "not-allowed" : "pointer",
+                          cursor: "pointer",
                           display: "flex",
                           alignItems: "center",
                           gap: "0.5rem",
                           fontSize: "0.85rem",
                           fontWeight: "500",
-                          opacity: !htmlResult ? 0.5 : 1
                         }}
                       >
                         <TbShare3 />
                         Share
                       </button>
-                    </>
+                    </div>
                   )}
                 </div>
 
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <div
                     style={{
                       backgroundColor: "white",
-                      borderRadius: "8px",
-                      width: "120px",
-                      height: "140px",
+                      borderRadius: "16px",
+                      width: "140px",
+                      height: "180px",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "center",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
                       position: "relative",
+                      border: "1px solid #e5e7eb",
                     }}
                   >
                     <button
                       onClick={removeFile}
                       style={{
                         position: "absolute",
-                        top: "4px",
-                        right: "4px",
-                        background: "rgba(255, 255, 255, 1)",
-                        border: "none",
+                        top: "-8px",
+                        right: "-8px",
+                        background: "#ef4444",
+                        border: "2px solid white",
                         borderRadius: "50%",
-                        width: "25px",
-                        height: "25px",
+                        width: "26px",
+                        height: "26px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
-                        color: "black",
+                        color: "white",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
                       }}
                     >
-                      <PiX size={18} />
+                      <PiX size={14} />
                     </button>
 
-                    <div style={{ width: "80px", height: "100px", marginBottom: "0.5rem" }}>
-                      <FilePreview file={file} style={{ width: "100%", height: "100%" }} />
+                    <div style={{ width: "100px", height: "130px", marginBottom: "0.5rem" }}>
+                      <FilePreview file={file} style={{ width: "100%", height: "100%", borderRadius: '8px' }} />
                     </div>
                     <span style={{
-                      fontSize: "0.65rem",
-                      color: "#666",
-                      maxWidth: "100px",
+                      fontSize: "0.7rem",
+                      fontWeight: "600",
+                      color: "#374151",
+                      maxWidth: "110px",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
-                      padding: "0 0.5rem"
                     }}>
                       {file.name}
                     </span>
@@ -510,244 +524,60 @@ export default function PdfToHtmlPage() {
                 </div>
 
                 {error && (
-                  <p style={{
-                    color: "#dc2626",
-                    fontSize: "0.85rem",
-                    marginTop: "1rem",
-                    textAlign: "center"
-                  }}>
-                    {error}
-                  </p>
+                  <p style={{ color: "#dc2626", fontSize: "0.85rem", marginTop: "1rem", textAlign: "center" }}>{error}</p>
                 )}
-
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: "0.75rem",
-                    marginTop: "1.5rem",
-                    opacity: 0.4,
-                  }}
-                >
-                  <PiUploadSimple size={18} />
-                  <PiLink size={18} />
-                  <FaGoogleDrive size={16} />
-                  <FaDropbox size={16} />
-                  <PiClipboard size={18} />
-                </div>
               </div>
             )}
 
-            {!file && (
-              <div
-                style={{
-                  position: "absolute",
-                  right: "1rem",
-                  top: "90%",
-                  transform: "translateY(-50%)",
-                  display: "flex",
-                  gap: "0.5rem",
-                  opacity: 0.4,
-                }}
-              >
-                <PiUploadSimple size={20} />
-                <PiLink size={20} />
-                <FaGoogleDrive size={18} />
-                <FaDropbox size={18} />
-                <PiClipboard size={20} />
+            {file === null && (
+              <div style={{ position: "absolute", right: "1rem", top: "90%", transform: "translateY(-50%)", display: "flex", gap: "0.5rem", opacity: 0.4 }}>
+                <PiUploadSimple size={20} /> <PiLink size={20} /> <FaGoogleDrive size={18} /> <FaDropbox size={18} /> <PiClipboard size={20} />
               </div>
             )}
           </div>
 
-          {/* HTML Result Display */}
           {htmlResult && (
-            <div
-              style={{
-                backgroundColor: "#f8f9fa",
-                padding: "1.5rem",
-                borderRadius: "10px",
-                marginBottom: "2rem",
-                border: "1px solid #e0e0e0",
-              }}
-            >
-              <h2 style={{
-                fontSize: "1.2rem",
-                marginBottom: "1rem",
-                fontFamily: 'Georgia, "Times New Roman", serif',
-                fontWeight: "600"
-              }}>
-                Converted HTML Preview:
-              </h2>
-              <div
-                style={{
-                  backgroundColor: "white",
-                  padding: "1rem",
-                  borderRadius: "5px",
-                  fontFamily: "monospace",
-                  fontSize: "0.85rem",
-                  maxHeight: "400px",
-                  overflowY: "auto",
-                  border: "1px solid #ddd",
-                }}
-              >
-                <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordWrap: "break-word" }}>
-                  {htmlResult}
-                </pre>
+            <div style={{ backgroundColor: "#f8f9fa", padding: "1.5rem", borderRadius: "10px", marginBottom: "2rem", border: "1px solid #e0e0e0" }}>
+              <h2 style={{ fontSize: "1.2rem", marginBottom: "1rem", fontFamily: 'Georgia, serif', fontWeight: "600" }}>Converted HTML Preview:</h2>
+              <div style={{ backgroundColor: "white", padding: "1rem", borderRadius: "5px", fontFamily: "monospace", fontSize: "0.85rem", maxHeight: "400px", overflowY: "auto", border: "1px solid #ddd" }}>
+                <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordWrap: "break-word" }}>{htmlResult}</pre>
               </div>
             </div>
           )}
 
-          {/* Info Section */}
-          <div style={{ marginTop: "3rem", fontFamily: 'Georgia, "Times New Roman", serif' }}>
-            <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>
-              Convert your PDF files to HTML format for web publishing and editing with our seamless online tool.
-            </p>
+          <div style={{ marginTop: "3rem", fontFamily: 'Georgia, serif' }}>
+            <p style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "#555" }}>Convert your PDF files to HTML format for web publishing and editing with our seamless online tool.</p>
             <ul style={{ listStyleType: "none", fontSize: "0.95rem", padding: 0, margin: 0 }}>
-              {[
-                "Extract content and structure from PDFs",
-                "Works on any device — desktop, tablet, or mobile",
-                "Trusted by users worldwide for secure and fast conversion"
-              ].map((text, index) => (
+              {["Extract content and structure from PDFs", "Works on any device — desktop, tablet, or mobile", "Trusted by users worldwide for secure and fast conversion"].map((text, index) => (
                 <li key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                  <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} />
-                  {text}
+                  <PiCheckCircle size={18} style={{ color: "green", flexShrink: 0 }} /> {text}
                 </li>
               ))}
             </ul>
           </div>
-
-          {/* Security Section */}
-          <div
-            style={{
-              marginTop: "3rem",
-              padding: "1.5rem",
-              backgroundColor: "#f0f9ff",
-              border: "1px solid #cce5ff",
-              borderRadius: "10px",
-              fontSize: "0.95rem",
-              fontFamily: 'Georgia, "Times New Roman", serif',
-            }}
-          >
-            <strong>Protected. Encrypted. Automatically Deleted.</strong>
-            <p style={{ marginTop: "0.5rem", color: "#555" }}>
-              For years, our platform has helped users convert and manage files
-              securely—with no file tracking, no storage, and full privacy. Every
-              document you upload is encrypted and automatically deleted after 2
-              hours. Your data stays yours—always.
-            </p>
-            <div
-              style={{
-                marginTop: "1rem",
-                display: "flex",
-                justifyContent: "space-around",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "1rem",
-                filter: "grayscale(100%)",
-              }}
-            >
-              <img src="/google-cloud-logo.png" alt="Google Cloud" style={{ height: "30px" }} />
-              <img src="/onedrive-logo.png" alt="OneDrive" style={{ height: "30px" }} />
-              <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
-              <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />          </div>
-          </div>
         </div>
 
-        {/* Right Ad */}
-        <VerticalAdRight />
+        <div className="ad-column">
+          <VerticalAdRight />
+        </div>
       </div>
 
-      {/* URL Input Modal */}
       {showUrlModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2000,
-          }}
-          onClick={() => setShowUrlModal(false)}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "2rem",
-              borderRadius: "10px",
-              width: "90%",
-              maxWidth: "500px",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ marginBottom: "1rem" }}>Paste PDF URL</h3>
-            <input
-              type="url"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="https://example.com/document.pdf"
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #ccc",
-                borderRadius: "6px",
-                fontSize: "0.9rem",
-                marginBottom: "1rem",
-                boxSizing: "border-box",
-              }}
-            />
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }} onClick={() => setShowUrlModal(false)}>
+          <div style={{ background: "white", padding: "2rem", borderRadius: "10px", width: "90%", maxWidth: "500px" }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ marginBottom: "1rem", fontFamily: "Georgia, serif" }}>Paste PDF URL</h3>
+            <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://example.com/document.pdf" style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-              <button
-                onClick={() => setShowUrlModal(false)}
-                style={{
-                  padding: "0.5rem 1rem",
-                  border: "1px solid #ccc",
-                  borderRadius: "6px",
-                  backgroundColor: "white",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUrlSubmit}
-                disabled={isUploading}
-                style={{
-                  padding: "0.5rem 1rem",
-                  border: "none",
-                  borderRadius: "6px",
-                  backgroundColor: "#e11d48",
-                  color: "white",
-                  cursor: isUploading ? "not-allowed" : "pointer",
-                  opacity: isUploading ? 0.7 : 1,
-                }}
-              >
-                {isUploading ? "Loading..." : "Add PDF"}
-              </button>
+              <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
+              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#D879FD", color: "white", borderRadius: "6px", cursor: isUploading ? "not-allowed" : "pointer", opacity: isUploading ? 0.7 : 1 }}>{isUploading ? "Loading..." : "Add PDF"}</button>
             </div>
           </div>
         </div>
       )}
 
-      <ToolInstructions
-        title={instructionData.title}
-        steps={instructionData.steps as any}
-      />
-      <Testimonials
-        title="What Our Users Say"
-        testimonials={testimonialData.testimonials}
-        autoScrollInterval={3000}
-      />
-      <ShareModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        fileBlob={htmlBlob}
-        fileName="converted.html"
-      />
+      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} fileBlob={htmlBlob} fileName="converted.html" />
+      <ToolInstructions title={instructionData.title} steps={instructionData.steps as any} />
+      <Testimonials title="What Our Users Say" testimonials={testimonialData.testimonials} autoScrollInterval={3000} />
       <div style={{ display: 'flex', justifyContent: 'center', padding: '0 2rem 4rem' }}>
         <RecommendedTools />
       </div>
