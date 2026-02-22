@@ -17,8 +17,8 @@ interface TestimonialsProps {
   autoScrollInterval?: number;
 }
 
-export default function Testimonials({ 
-  title = "Testimonials", 
+export default function Testimonials({
+  title = "Testimonials",
   testimonials,
   autoScrollInterval = 3000
 }: TestimonialsProps) {
@@ -31,7 +31,7 @@ export default function Testimonials({
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
     };
-    
+
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -80,61 +80,79 @@ export default function Testimonials({
   const getCardStyle = (position: number): React.CSSProperties => {
     const baseStyle: React.CSSProperties = {
       position: "absolute",
-      width: "280px",
-      backgroundColor: "#EFF5FF66",
-      borderRadius: "12px",
-      padding: "1.5rem",
-      border: "2px solid #1B95F852",
-      transition: "all 0.5s ease",
+      width: isMobile ? "90%" : "320px",
+      backgroundColor: "#EFF5FF99",
+      borderRadius: "16px",
+      padding: "2rem",
+      border: "1px solid #1B95F833",
+      transition: "all 0.6s cubic-bezier(0.23, 1, 0.32, 1)",
       cursor: "pointer",
-      height: "300px"
+      height: "auto",
+      minHeight: "260px",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
     };
+
+    if (isMobile) {
+      return {
+        ...baseStyle,
+        position: "relative",
+        margin: "0 auto",
+        opacity: 1,
+        zIndex: 1,
+        left: "auto",
+        transform: "none",
+      };
+    }
 
     switch (position) {
       case -2: // Far left
         return {
           ...baseStyle,
-          left: "-15%",
-          transform: "translateX(-30%) scale(0.75)",
-          opacity: 1,
+          left: "0%",
+          transform: "translateX(-50%) scale(0.6)",
+          opacity: 0.3,
           zIndex: 1,
         };
       case -1: // Left
         return {
           ...baseStyle,
-          left: "20%",
-          transform: "translateX(-50%) scale(1)",
-          opacity: 1,
+          left: "25%",
+          transform: "translateX(-50%) scale(0.85)",
+          opacity: 0.8,
           zIndex: 2,
         };
       case 0: // Center
         return {
           ...baseStyle,
           left: "50%",
-          transform: "translateX(-50%) scale(1)",
+          transform: "translateX(-50%) scale(1.1)",
           opacity: 1,
           zIndex: 3,
-          boxShadow: "0 8px 24px rgba(59, 130, 246, 0.15)",
+          boxShadow: "0 20px 40px rgba(59, 130, 246, 0.2)",
           border: "2px solid #60a5fa",
+          backgroundColor: "#fff",
         };
       case 1: // Right
         return {
           ...baseStyle,
-          left: "80%",
-          transform: "translateX(-50%) scale(1)",
-          opacity: 1,
+          left: "75%",
+          transform: "translateX(-50%) scale(0.85)",
+          opacity: 0.8,
           zIndex: 2,
         };
       case 2: // Far right
         return {
           ...baseStyle,
-          left: "115%",
-          transform: "translateX(-70%) scale(0.75)",
-          opacity: 1,
+          left: "100%",
+          transform: "translateX(-50%) scale(0.6)",
+          opacity: 0.3,
           zIndex: 1,
         };
       default:
-        return baseStyle;
+        return { ...baseStyle, opacity: 0, zIndex: 0 };
     }
   };
 
@@ -160,7 +178,7 @@ export default function Testimonials({
   // Mobile view - single card with navigation
   if (isMobile) {
     const currentTestimonial = testimonials[currentIndex];
-    
+
     return (
       <div style={{
         padding: "3rem 1rem",
@@ -315,29 +333,31 @@ export default function Testimonials({
   // Desktop view - carousel (original design)
   return (
     <div style={{
-      padding: "5rem 5rem",
-      backgroundColor: "#ffffffff",
+      padding: isMobile ? "2rem 1rem" : "3rem 1rem",
+      backgroundColor: "#ffffff",
       overflow: "hidden",
       fontFamily: 'Georgia, "Times New Roman", serif',
     }}>
       {/* Title */}
       <h2 style={{
-        fontSize: "1.75rem",
+        fontSize: "2rem",
         fontWeight: "600",
         textAlign: "center",
-        marginBottom: "3rem",
+        marginBottom: "3.5rem",
         color: "#1a1a1a",
       }}>
         {title}
       </h2>
 
       {/* Carousel Container */}
-      <div 
-        style={{ 
-          position: "relative", 
-          maxWidth: "1000px", 
+      <div
+        style={{
+          position: "relative",
+          maxWidth: "100%",
           margin: "0 auto",
-          height: "320px",
+          height: "400px",
+          display: "flex",
+          alignItems: "center",
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}

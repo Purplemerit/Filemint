@@ -30,7 +30,6 @@ import Footer from "../components/footer";
 import { PDFDocument, degrees } from 'pdf-lib';
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
-import RecommendedTools from "../components/RecommendedTools";
 import * as pdfjsLib from "pdfjs-dist";
 
 // PDF.js worker setup
@@ -202,24 +201,13 @@ export default function RotatePdfPage() {
     <div>
       <Navbar />
 
-      <style>{`
-        .main-container { display: flex; max-width: 1400px; margin: 4rem auto; padding: 0 1rem; gap: 2rem; align-items: flex-start; }
-        .ad-column { width: 160px; flex-shrink: 0; }
-        .content-area { flex: 1; min-width: 0; }
-        .drop-zone-container { border: 3px solid rgba(216, 121, 253, 0.4); background-color: #F3E6FF; border-radius: 12px; padding: 2.5rem 1rem; text-align: center; position: relative; min-height: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; transition: all 0.2s; }
-        .tool-title { font-size: 2rem; font-weight: 600; margin-bottom: 2rem; color: #1a1a1a; font-family: Georgia, serif; }
-        @media (max-width: 1024px) { 
-           .main-container { flex-direction: column !important; padding: 0 1rem !important; margin: 2rem auto !important; }
-           .ad-column { display: none !important; }
-           .content-area { max-width: 100% !important; width: 100% !important; }
-        }
-      `}</style>
+      <div className="main-layout">
+        <VerticalAdLeft />
 
-      <div className="main-container">
-        <div className="ad-column"><VerticalAdLeft /></div>
-
-        <div className="content-area">
-          <h1 className="tool-title">Rotate PDF</h1>
+        <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
+          <h1 className="tool-title">
+            Rotate PDF
+          </h1>
 
           <div
             onDrop={handleDrop}
@@ -234,7 +222,7 @@ export default function RotatePdfPage() {
                 </div>
                 <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0 }}>Rotated Successfully!</h2>
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                  <button onClick={triggerDownload} className="download-button" style={{ backgroundColor: "#D879FD", color: "white", padding: "1rem 2.5rem", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)" }}>
+                  <button onClick={triggerDownload} className="download-button" style={{ backgroundColor: "#e11d48", color: "white", padding: "1rem 2.5rem", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)" }}>
                     Download PDF
                   </button>
                 </div>
@@ -248,8 +236,8 @@ export default function RotatePdfPage() {
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "300px", minHeight: "220px" }}>
                 <div style={{ marginBottom: "1.5rem" }}><img src="./upload.svg" alt="Upload Icon" /></div>
                 <div ref={dropdownRef} style={{ position: "relative" }}>
-                  <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ backgroundColor: "#D879FD", padding: "0.6rem 1.2rem", border: "none", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.95rem", fontWeight: "600", color: "white", boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)" }}>
-                    <PiFiles size={18} /> Select PDF <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
+                  <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ backgroundColor: "white", padding: "0.6rem 1rem", border: "1px solid #e0e0e0", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", fontWeight: "500", color: "#333", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+                    <PiFiles size={18} /> Select File <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
                   </button>
                   {isDropdownOpen && (
                     <div style={{ position: "absolute", top: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", backgroundColor: "white", border: "1px solid #e0e0e0", borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", zIndex: 1000, minWidth: "180px", overflow: "hidden" }}>
@@ -291,28 +279,28 @@ export default function RotatePdfPage() {
 
                 {/* Right: Controls */}
                 <div className="controls-container" style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-                  <div style={{ backgroundColor: "#F3E6FF", padding: "1rem", borderRadius: "8px", fontSize: "0.9rem", color: "#6B21A8" }}>
+                  <div style={{ backgroundColor: "#e3f2fd", padding: "1rem", borderRadius: "8px", fontSize: "0.9rem", color: "#0d47a1" }}>
                     Click the buttons below to rotate your PDF.
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <h4 style={{ margin: 0 }}>Rotation</h4>
-                      <button onClick={resetRotation} style={{ color: "#D879FD", background: "none", border: "none", cursor: "pointer", fontSize: "0.85rem", textDecoration: "underline" }}>Reset All</button>
+                      <button onClick={resetRotation} style={{ color: "red", background: "none", border: "none", cursor: "pointer", fontSize: "0.85rem", textDecoration: "underline" }}>Reset All</button>
                     </div>
 
-                    <button onClick={rotateRight} style={{ display: "flex", alignItems: "center", padding: "1rem", backgroundColor: "white", border: "1px solid #eee", borderRadius: "12px", cursor: "pointer", gap: "1rem", transition: "all 0.2s", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }} onMouseOver={e => e.currentTarget.style.borderColor = "#D879FD"} onMouseOut={e => e.currentTarget.style.borderColor = "#eee"}>
-                      <div style={{ width: 40, height: 40, background: "#D879FD", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
+                    <button onClick={rotateRight} style={{ display: "flex", alignItems: "center", padding: "1rem", backgroundColor: "white", border: "1px solid #ccc", borderRadius: "8px", cursor: "pointer", gap: "1rem", transition: "all 0.2s" }} onMouseOver={e => e.currentTarget.style.borderColor = "#28a745"} onMouseOut={e => e.currentTarget.style.borderColor = "#ccc"}>
+                      <div style={{ width: 40, height: 40, background: "#dc3545", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
                         <TbRotateClockwise size={24} />
                       </div>
-                      <span style={{ fontWeight: "600", color: "#333" }}>RIGHT (90°)</span>
+                      <span style={{ fontWeight: "bold", color: "#333" }}>RIGHT (90°)</span>
                     </button>
 
-                    <button onClick={rotateLeft} style={{ display: "flex", alignItems: "center", padding: "1rem", backgroundColor: "white", border: "1px solid #eee", borderRadius: "12px", cursor: "pointer", gap: "1rem", transition: "all 0.2s", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }} onMouseOver={e => e.currentTarget.style.borderColor = "#D879FD"} onMouseOut={e => e.currentTarget.style.borderColor = "#eee"}>
-                      <div style={{ width: 40, height: 40, background: "#D879FD", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
+                    <button onClick={rotateLeft} style={{ display: "flex", alignItems: "center", padding: "1rem", backgroundColor: "white", border: "1px solid #ccc", borderRadius: "8px", cursor: "pointer", gap: "1rem", transition: "all 0.2s" }} onMouseOver={e => e.currentTarget.style.borderColor = "#28a745"} onMouseOut={e => e.currentTarget.style.borderColor = "#ccc"}>
+                      <div style={{ width: 40, height: 40, background: "#dc3545", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
                         <TbRotateClockwise2 size={24} style={{ transform: "scaleX(-1)" }} />
                       </div>
-                      <span style={{ fontWeight: "600", color: "#333" }}>LEFT (-90°)</span>
+                      <span style={{ fontWeight: "bold", color: "#333" }}>LEFT (-90°)</span>
                     </button>
                   </div>
 
@@ -320,7 +308,7 @@ export default function RotatePdfPage() {
                     <button
                       onClick={processRotation}
                       disabled={loading}
-                      style={{ width: "100%", padding: "1rem", backgroundColor: "#D879FD", color: "white", border: "none", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "bold", cursor: loading ? "wait" : "pointer", display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)" }}
+                      style={{ width: "100%", padding: "1rem", backgroundColor: "#e11d48", color: "white", border: "none", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "bold", cursor: loading ? "wait" : "pointer", display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem" }}
                     >
                       {loading ? "Processing..." : "Save & Download"} <PiDownloadSimple size={20} />
                     </button>
@@ -349,25 +337,24 @@ export default function RotatePdfPage() {
           <div style={{ marginTop: "3rem", padding: "1.5rem", backgroundColor: "#f0f9ff", border: "1px solid #cce5ff", borderRadius: "10px", fontSize: "0.95rem" }}>
             <strong>Protected. Encrypted.</strong> <p style={{ marginTop: "0.5rem", color: "#555" }}>Your files are processed in the browser and not stored.</p>
           </div>
-          {/* URL Modal */}
-          {showUrlModal && (
-            <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }} onClick={() => setShowUrlModal(false)}>
-              <div style={{ backgroundColor: "white", padding: "2rem", borderRadius: "10px", width: "90%", maxWidth: "500px" }} onClick={e => e.stopPropagation()}>
-                <h3 style={{ marginBottom: "1rem" }}>Paste PDF URL</h3>
-                <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
-                <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-                  <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
-                  <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#D879FD", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
-        <div className="ad-column"><VerticalAdRight /></div>
+        <VerticalAdRight />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0' }}>
-        <RecommendedTools />
-      </div>
+
+      {/* URL Modal */}
+      {showUrlModal && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }} onClick={() => setShowUrlModal(false)}>
+          <div style={{ backgroundColor: "white", padding: "2rem", borderRadius: "10px", width: "90%", maxWidth: "500px" }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ marginBottom: "1rem" }}>Paste PDF URL</h3>
+            <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
+            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+              <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
+              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#e11d48", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ToolInstructions title={instructionData.title} steps={instructionData.steps as any} />
       <Testimonials title="What Our Users Say" testimonials={testimonialData.testimonials} autoScrollInterval={3000} />
       <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} fileBlob={rotatedBlob} fileName="rotated.pdf" />

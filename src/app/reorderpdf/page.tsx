@@ -274,24 +274,13 @@ export default function ReorderPdfPage() {
     <div>
       <Navbar />
 
-      <style>{`
-        .main-container { display: flex; max-width: 1400px; margin: 4rem auto; padding: 0 1rem; gap: 2rem; align-items: flex-start; }
-        .ad-column { width: 160px; flex-shrink: 0; }
-        .content-area { flex: 1; min-width: 0; }
-        .drop-zone-container { border: 3px solid rgba(216, 121, 253, 0.4); background-color: #F3E6FF; border-radius: 12px; padding: 2.5rem 1rem; text-align: center; position: relative; min-height: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; transition: all 0.2s; }
-        .tool-title { font-size: 2rem; font-weight: 600; margin-bottom: 2rem; color: #1a1a1a; font-family: Georgia, serif; }
-        @media (max-width: 1024px) { 
-           .main-container { flex-direction: column !important; padding: 0 1rem !important; margin: 2rem auto !important; }
-           .ad-column { display: none !important; }
-           .content-area { max-width: 100% !important; width: 100% !important; }
-        }
-      `}</style>
+      <div className="main-layout">
+        <VerticalAdLeft />
 
-      <div className="main-container">
-        <div className="ad-column"><VerticalAdLeft /></div>
-
-        <div className="content-area">
-          <h1 className="tool-title">Reorder PDF Pages</h1>
+        <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
+          <h1 className="tool-title">
+            Reorder PDF Pages
+          </h1>
 
           <div
             onDrop={handleDrop}
@@ -306,7 +295,7 @@ export default function ReorderPdfPage() {
                 </div>
                 <h2 style={{ fontSize: "1.75rem", color: "#333", margin: 0 }}>Reordered Successfully!</h2>
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                  <button onClick={triggerDownload} className="download-button" style={{ backgroundColor: "#D879FD", color: "white", padding: "1rem 2.5rem", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)" }}>
+                  <button onClick={triggerDownload} className="download-button" style={{ backgroundColor: "#e11d48", color: "white", padding: "1rem 2.5rem", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "600", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)" }}>
                     Download PDF
                   </button>
                 </div>
@@ -327,11 +316,10 @@ export default function ReorderPdfPage() {
                   <button
                     onClick={saveReorderedPdf}
                     style={{
-                      backgroundColor: "#D879FD",
+                      backgroundColor: "#e11d48",
                       color: "white", border: "none", padding: "0.7rem 1.5rem",
                       borderRadius: "6px", cursor: isProcessing ? "not-allowed" : "pointer",
-                      fontWeight: "bold", display: "flex", alignItems: "center", gap: "0.5rem",
-                      boxShadow: "0 4px 12px rgba(216, 121, 253, 0.2)"
+                      fontWeight: "bold", display: "flex", alignItems: "center", gap: "0.5rem"
                     }}
                   >
                     {isProcessing ? "Processing..." : "Reorder PDF"}
@@ -362,8 +350,8 @@ export default function ReorderPdfPage() {
                   <>
                     <div style={{ marginBottom: "1.5rem" }}><img src="./upload.svg" alt="Upload Icon" /></div>
                     <div ref={dropdownRef} style={{ position: "relative" }}>
-                      <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ backgroundColor: "#D879FD", padding: "0.6rem 1.2rem", border: "none", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.95rem", fontWeight: "600", color: "white", boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)" }}>
-                        <PiFiles size={18} /> Select PDF <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
+                      <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ backgroundColor: "white", padding: "0.6rem 1rem", border: "1px solid #e0e0e0", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", fontWeight: "500", color: "#333", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+                        <PiFiles size={18} /> Select File <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
                       </button>
                       {isDropdownOpen && (
                         <div style={{ position: "absolute", top: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", backgroundColor: "white", border: "1px solid #e0e0e0", borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", zIndex: 1000, minWidth: "180px", overflow: "hidden" }}>
@@ -400,7 +388,7 @@ export default function ReorderPdfPage() {
             <strong>Protected. Encrypted.</strong> <p style={{ marginTop: "0.5rem", color: "#555" }}>Your files are processed in the browser and not stored.</p>
           </div>
         </div>
-        <div className="ad-column"><VerticalAdRight /></div>
+        <VerticalAdRight />
       </div>
 
       {/* URL Modal */}
@@ -411,7 +399,7 @@ export default function ReorderPdfPage() {
             <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://..." style={{ width: "100%", padding: "0.75rem", border: "1px solid #ccc", borderRadius: "6px", marginBottom: "1rem" }} />
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
               <button onClick={() => setShowUrlModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ccc", background: "white", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#D879FD", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
+              <button onClick={handleUrlSubmit} disabled={isUploading} style={{ padding: "0.5rem 1rem", border: "none", background: "#e11d48", color: "white", borderRadius: "6px", cursor: "pointer" }}>{isUploading ? "Loading..." : "Add PDF"}</button>
             </div>
           </div>
         </div>
@@ -419,9 +407,6 @@ export default function ReorderPdfPage() {
 
       <ToolInstructions title={instructionData.title} steps={instructionData.steps as any} />
       <Testimonials title="What Our Users Say" testimonials={testimonialData.testimonials} autoScrollInterval={3000} />
-      <div style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0' }}>
-        <RecommendedTools />
-      </div>
       <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} fileBlob={modifiedBlob} fileName="reordered.pdf" />
       <Footer />
     </div>

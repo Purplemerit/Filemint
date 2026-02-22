@@ -1042,123 +1042,124 @@ export default function HtmlToPdfPage() {
               <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
               <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />          </div>
           </div>
+
+          {/* URL Input Modal */}
+          {
+            showUrlModal && (
+              <div
+                style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: "rgba(0,0,0,0.5)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 2000,
+                }}
+                onClick={() => setShowUrlModal(false)}
+              >
+                <div
+                  style={{
+                    backgroundColor: "white",
+                    padding: "2rem",
+                    borderRadius: "10px",
+                    width: "90%",
+                    maxWidth: "500px",
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 style={{ marginBottom: "1rem" }}>Paste HTML URL</h3>
+                  <input
+                    type="url"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="https://example.com/page.html"
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      border: "1px solid #ccc",
+                      borderRadius: "6px",
+                      fontSize: "0.9rem",
+                      marginBottom: "1rem",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                    <button
+                      onClick={() => setShowUrlModal(false)}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        border: "1px solid #ccc",
+                        borderRadius: "6px",
+                        backgroundColor: "white",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleUrlSubmit}
+                      disabled={isConverting}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        border: "none",
+                        borderRadius: "6px",
+                        backgroundColor: "#e11d48",
+                        color: "white",
+                        cursor: isConverting ? "not-allowed" : "pointer",
+                        opacity: isConverting ? 0.7 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}
+                    >
+                      {isConverting ? (
+                        <>
+                          <div className="animate-spin" style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid white',
+                            borderTopColor: 'transparent',
+                            borderRadius: '50%'
+                          }} />
+                          Processing...
+                        </>
+                      ) : "Convert URL"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
+          <ToolInstructions
+            title={instructionData.title}
+            steps={instructionData.steps as any}
+          />
+          <Testimonials
+            title="What Our Users Say"
+            testimonials={testimonialData.testimonials}
+            autoScrollInterval={3000}
+          />
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem 0' }}>
+            <RecommendedTools />
+          </div>
         </div>
 
         {/* Right Ad */}
         <VerticalAdRight />
-      </div >
+      </div>
 
-      {/* URL Input Modal */}
-      {
-        showUrlModal && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 2000,
-            }}
-            onClick={() => setShowUrlModal(false)}
-          >
-            <div
-              style={{
-                backgroundColor: "white",
-                padding: "2rem",
-                borderRadius: "10px",
-                width: "90%",
-                maxWidth: "500px",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 style={{ marginBottom: "1rem" }}>Paste HTML URL</h3>
-              <input
-                type="url"
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="https://example.com/page.html"
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #ccc",
-                  borderRadius: "6px",
-                  fontSize: "0.9rem",
-                  marginBottom: "1rem",
-                  boxSizing: "border-box",
-                }}
-              />
-              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-                <button
-                  onClick={() => setShowUrlModal(false)}
-                  style={{
-                    padding: "0.5rem 1rem",
-                    border: "1px solid #ccc",
-                    borderRadius: "6px",
-                    backgroundColor: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUrlSubmit}
-                  disabled={isConverting}
-                  style={{
-                    padding: "0.5rem 1rem",
-                    border: "none",
-                    borderRadius: "6px",
-                    backgroundColor: "#e11d48",
-                    color: "white",
-                    cursor: isConverting ? "not-allowed" : "pointer",
-                    opacity: isConverting ? 0.7 : 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}
-                >
-                  {isConverting ? (
-                    <>
-                      <div className="animate-spin" style={{
-                        width: '16px',
-                        height: '16px',
-                        border: '2px solid white',
-                        borderTopColor: 'transparent',
-                        borderRadius: '50%'
-                      }} />
-                      Processing...
-                    </>
-                  ) : "Convert URL"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      }
-
-      <ToolInstructions
-        title={instructionData.title}
-        steps={instructionData.steps as any}
-      />
-      <Testimonials
-        title="What Our Users Say"
-        testimonials={testimonialData.testimonials}
-        autoScrollInterval={3000}
-      />
       <ShareModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
         fileBlob={convertedFileBlob}
         fileName="converted.pdf"
       />
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '0 2rem 4rem' }}>
-        <RecommendedTools />
-      </div>
       <Footer />
-    </div >
+    </div>
   );
 }
