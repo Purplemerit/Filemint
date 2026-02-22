@@ -138,7 +138,7 @@ const PDFPage = ({ pageNumber, pdfDocument, scale, onDimensionsChanged, onTextCl
           border: 1px solid rgba(0, 123, 255, 0.4);
         }
       `}</style>
-      <canvas ref={canvasRef} style={{ display: "block", marginBottom: "0", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }} />
+      <canvas ref={canvasRef} style={{ display: "block", marginBottom: "0" }} />
       <div
         ref={textLayerRef}
         className={`textLayer ${selectedTool === 'text' ? 'interactive' : ''}`}
@@ -175,7 +175,7 @@ const PDFThumbnail = ({ pdfDocument }: { pdfDocument: pdfjsLib.PDFDocumentProxy 
     renderThumbnail();
   }, [pdfDocument]);
 
-  return <canvas ref={canvasRef} style={{ maxWidth: "80px", maxHeight: "110px", objectFit: "contain", borderRadius: "4px", border: "1px solid #ddd" }} />;
+  return <canvas ref={canvasRef} style={{ maxWidth: "80px", maxHeight: "110px", objectFit: "contain", borderRadius: "2px", border: "1px solid #eee" }} />;
 };
 
 
@@ -1002,30 +1002,20 @@ export default function EditPdfPage() {
             gap: 2rem;
           }
 
-          .tool-btn.active {
-            background-color: #F3E6FF;
-            color: #D879FD;
-            border-color: #D879FD;
-          }
-
           .side-settings {
-            width: 300px;
+            width: 280px;
             background: white;
-            border-left: 1px solid #e5e7eb;
-            padding: 2rem 1.5rem;
+            border-left: 1px solid #e0e0e0;
+            padding: 1.5rem;
             display: flex;
             flex-direction: column;
             gap: 2rem;
-            height: 100vh;
-            position: sticky;
-            top: 0;
           }
 
           .page-card {
             background: white;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             position: relative;
-            margin-bottom: 2rem;
             transition: transform 0.2s;
           }
 
@@ -1086,7 +1076,7 @@ export default function EditPdfPage() {
               onClick={downloadEditedPdf}
               className="save-btn-text"
               style={{
-                backgroundColor: "#D879FD",
+                backgroundColor: "#e11d48",
                 color: "white",
                 border: "none",
                 padding: "0.6rem 1.2rem",
@@ -1094,7 +1084,7 @@ export default function EditPdfPage() {
                 fontWeight: "600",
                 cursor: "pointer",
                 fontSize: "0.9rem",
-                boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)"
+                boxShadow: "0 4px 6px rgba(225, 29, 72, 0.2)"
               }}
             >
               Save PDF
@@ -1224,7 +1214,7 @@ export default function EditPdfPage() {
                           };
                           switch (annotation.type) {
                             case "text":
-                              return { ...base, padding: "2px 4px", borderRadius: "2px", border: editingAnnotationId === annotation.id ? "1px solid #D879FD" : "1px solid transparent" };
+                              return { ...base, padding: "2px 4px", borderRadius: "2px", border: editingAnnotationId === annotation.id ? "1px solid #e11d48" : "1px solid transparent" };
                             case "rectangle":
                               return { border: `2px solid ${annotation.color}` };
                             case "circle":
@@ -1267,7 +1257,7 @@ export default function EditPdfPage() {
                               style={{
                                 width: "100%", height: "100%", minHeight: `${(annotation.fontSize || 14) * scale * 1.3}px`, border: "none", background: "white",
                                 color: annotation.color, fontSize: `${(annotation.fontSize || 14) * scale}px`,
-                                padding: "2px 0", resize: "none", outline: "none", boxShadow: "0 0 0 2px #D879FD20"
+                                padding: "2px 0", resize: "none", outline: "none", boxShadow: "0 0 0 2px #e11d4820"
                               }}
                             />
                           ) : (
@@ -1399,7 +1389,7 @@ export default function EditPdfPage() {
                 <input
                   type="range" min="8" max="72" value={fontSize}
                   onChange={(e) => setFontSize(parseInt(e.target.value))}
-                  style={{ width: "100%", accentColor: "#D879FD" }}
+                  style={{ width: "100%", accentColor: "#e11d48" }}
                 />
               </div>
             )}
@@ -1410,7 +1400,7 @@ export default function EditPdfPage() {
                 <button
                   onClick={() => imageInputRef.current?.click()}
                   style={{
-                    backgroundColor: "#D879FD",
+                    backgroundColor: "#e11d48",
                     color: "white",
                     border: "none",
                     padding: "0.75rem",
@@ -1421,8 +1411,7 @@ export default function EditPdfPage() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "0.5rem",
-                    boxShadow: "0 4px 12px rgba(216, 121, 253, 0.2)"
+                    gap: "0.5rem"
                   }}
                 >
                   <span>🖼️</span>
@@ -1459,72 +1448,58 @@ export default function EditPdfPage() {
       />
       <Navbar />
       <style>{`
-        .main-container {
-          display: flex;
-          max-width: 1400px;
-          margin: 4rem auto;
-          padding: 0 1rem;
-          gap: 2rem;
-          align-items: flex-start;
-        }
-        .ad-column {
-          width: 160px;
-          flex-shrink: 0;
-        }
-        .content-area {
-          flex: 1;
-          min-width: 0;
-        }
-        .drop-zone-container {
-          border: 3px solid rgba(216, 121, 253, 0.4);
-          background-color: #F3E6FF;
-          border-radius: 12px;
-          padding: 2.5rem 1rem;
-          text-align: center;
-          position: relative;
-          min-height: 280px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          width: 100%;
-          box-sizing: border-box;
-          transition: all 0.2s;
-        }
-        .tool-title {
-          font-size: 2rem;
-          font-weight: 600;
-          margin-bottom: 2rem;
-          color: #1a1a1a;
-          font-family: Georgia, serif;
-          text-align: left;
-        }
         @media (max-width: 1024px) {
-          .main-container {
+          .upload-container {
             flex-direction: column !important;
             padding: 0 1rem !important;
-            margin: 2rem auto !important;
           }
           .ad-column {
             display: none !important;
           }
-          .content-area {
-            max-width: 100% !important;
-            width: 100% !important;
-          }
         }
       `}</style>
 
-      <div className="main-container">
+      <div className="upload-container" style={{
+        display: "flex",
+        maxWidth: "1400px",
+        margin: "4rem auto",
+        padding: "0 2rem",
+        gap: "2rem",
+        alignItems: "flex-start"
+      }}>
+        {/* Left Ad */}
         <div className="ad-column">
           <VerticalAdLeft />
         </div>
 
-        <div className="content-area">
-          <h1 className="tool-title">Edit PDF</h1>
+        {/* Main Content */}
+        <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
+          <h1 style={{
+            fontSize: "2rem",
+            fontWeight: "600",
+            marginBottom: "2rem",
+            textAlign: "left",
+            color: "#1a1a1a",
+            fontFamily: 'Georgia, "Times New Roman", serif',
+          }}>
+            Edit PDF
+          </h1>
 
           {/* Drop Zone */}
-          <div className="drop-zone-container">
+          <div
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+            style={{
+              border: "3px solid rgba(57, 185, 57, 0.4)",
+              backgroundColor: "rgba(144, 238, 144, 0.2)",
+              borderRadius: "12px",
+              padding: "2rem",
+              textAlign: "center",
+              marginBottom: "2rem",
+              position: "relative",
+              minHeight: "280px",
+            }}
+          >
             {isEdited ? (
               /* Success State - Download */
               <div style={{
@@ -1561,7 +1536,7 @@ export default function EditPdfPage() {
                     onClick={handleDownload}
                     className="download-button"
                     style={{
-                      backgroundColor: "#D879FD",
+                      backgroundColor: "#e11d48",
                       color: "white",
                       padding: "1rem 2.5rem",
                       borderRadius: "8px",
@@ -1572,7 +1547,7 @@ export default function EditPdfPage() {
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
-                      boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)"
+                      boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)"
                     }}
                   >
                     Download PDF
@@ -1720,7 +1695,7 @@ export default function EditPdfPage() {
                   <button
                     onClick={handleStartEditing}
                     style={{
-                      backgroundColor: "#D879FD",
+                      backgroundColor: "#e11d48",
                       color: "white",
                       border: "none",
                       padding: "0.5rem 1rem",
@@ -1730,8 +1705,7 @@ export default function EditPdfPage() {
                       alignItems: "center",
                       gap: "0.5rem",
                       fontSize: "0.85rem",
-                      fontWeight: "600",
-                      boxShadow: "0 4px 12px rgba(216, 121, 253, 0.2)"
+                      fontWeight: "500",
                     }}
                   >
                     ✏️ Start Editing
@@ -1960,11 +1934,10 @@ export default function EditPdfPage() {
                   padding: "0.5rem 1rem",
                   border: "none",
                   borderRadius: "6px",
-                  backgroundColor: "#D879FD",
+                  backgroundColor: "#007bff",
                   color: "white",
                   cursor: isUploading ? "not-allowed" : "pointer",
                   opacity: isUploading ? 0.7 : 1,
-                  fontWeight: "600"
                 }}
               >
                 {isUploading ? "Loading..." : "Add PDF"}
@@ -1983,9 +1956,6 @@ export default function EditPdfPage() {
         testimonials={testimonialData.testimonials}
         autoScrollInterval={3000}
       />
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '0 2rem 4rem' }}>
-        <RecommendedTools />
-      </div>
       <ShareModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}

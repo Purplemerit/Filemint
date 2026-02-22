@@ -478,20 +478,14 @@ export default function JpgToPdfPage() {
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
             style={{
-              border: "3px solid rgba(216, 121, 253, 0.4)",
-              backgroundColor: "#F3E6FF",
+              border: "3px solid #FF800080",
+              backgroundColor: "rgb(255 234 215)",
               borderRadius: "12px",
-              padding: "2.5rem 1rem",
+              padding: "2rem",
               textAlign: "center",
               marginBottom: "2rem",
               position: "relative",
               minHeight: "280px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "100%",
-              boxSizing: "border-box",
             }}
           >
             {isConverted ? (
@@ -529,7 +523,7 @@ export default function JpgToPdfPage() {
                     onClick={triggerDownload}
                     className="download-button"
                     style={{
-                      backgroundColor: "#D879FD",
+                      backgroundColor: "#e11d48", // Brand color
                       color: "white",
                       padding: "1rem 2.5rem",
                       borderRadius: "8px",
@@ -540,7 +534,7 @@ export default function JpgToPdfPage() {
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
-                      boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)"
+                      boxShadow: "0 4px 12px rgba(225, 29, 72, 0.3)"
                     }}
                   >
                     Download PDF
@@ -598,22 +592,22 @@ export default function JpgToPdfPage() {
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     style={{
-                      backgroundColor: "#D879FD",
-                      padding: "0.6rem 1.2rem",
-                      border: "none",
+                      backgroundColor: "white",
+                      padding: "0.6rem 1rem",
+                      border: "1px solid #e0e0e0",
                       borderRadius: "6px",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
-                      fontSize: "0.95rem",
-                      fontWeight: "600",
-                      color: "white",
-                      boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)",
+                      fontSize: "0.9rem",
+                      fontWeight: "500",
+                      color: "#333",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                     }}
                   >
                     <PiFiles size={18} />
-                    Select JPG Files
+                    Select Files
                     <PiCaretDown size={14} style={{ marginLeft: "0.25rem" }} />
                   </button>
 
@@ -682,65 +676,50 @@ export default function JpgToPdfPage() {
               <div>
                 <div style={{
                   display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "2rem",
-                  flexWrap: "wrap",
-                  gap: "1rem"
+                  justifyContent: "flex-end",
+                  gap: "0.5rem",
+                  marginBottom: "1.5rem",
                 }}>
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <div ref={addDropdownRef} style={{ position: "relative" }}>
-                      <button
-                        onClick={() => setIsAddDropdownOpen(!isAddDropdownOpen)}
-                        style={{
-                          backgroundColor: "#D879FD",
-                          color: "white",
-                          border: "none",
-                          padding: "0.5rem 1rem",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          fontSize: "0.85rem",
-                          fontWeight: "600",
-                          boxShadow: "0 4px 12px rgba(216, 121, 253, 0.2)"
-                        }}
-                      >
-                        <PiPlus size={18} /> Add More
-                      </button>
-                      {isAddDropdownOpen && (
-                        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, backgroundColor: "white", border: "1px solid #e0e0e0", borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", zIndex: 1000, minWidth: "180px", overflow: "hidden" }}>
-                          {menuItems.map((item, i) => (
-                            <button key={i} onClick={item.onClickAdd} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", width: "100%", border: "none", backgroundColor: "transparent", cursor: "pointer", fontSize: "0.85rem", color: "#333", textAlign: "left" }}>
-                              <span style={{ color: "#666" }}>{item.icon}</span> {item.label}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
                   <button
                     onClick={handleConvert}
                     disabled={isConverting}
                     style={{
-                      backgroundColor: "#D879FD",
+                      backgroundColor: "#e11d48",
                       color: "white",
                       border: "none",
-                      padding: "0.6rem 1.5rem",
-                      borderRadius: "8px",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
                       cursor: isConverting ? "not-allowed" : "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.5rem",
-                      fontSize: "0.9rem",
-                      fontWeight: "600",
-                      boxShadow: "0 4px 12px rgba(216, 121, 253, 0.3)",
+                      fontSize: "0.85rem",
+                      fontWeight: "500",
                       opacity: isConverting ? 0.7 : 1,
                     }}
                   >
-                    {isConverting ? "Converting..." : "Convert to PDF →"}
+                    {isConverting ? "Converting..." : "Convert to PDF"}
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    disabled={!isConverted}
+                    style={{
+                      backgroundColor: "white",
+                      color: "#333",
+                      border: "1px solid #e0e0e0",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      cursor: !isConverted ? "not-allowed" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      fontSize: "0.85rem",
+                      fontWeight: "500",
+                      opacity: !isConverted ? 0.5 : 1
+                    }}
+                  >
+                    <TbShare3 />
+                    Share
                   </button>
                 </div>
 
@@ -973,102 +952,98 @@ export default function JpgToPdfPage() {
               <img src="/dropbox-logo.png" alt="Dropbox" style={{ height: "30px" }} />
               <img src="/norton-logo.png" alt="Norton" style={{ height: "30px" }} />          </div>
           </div>
+
+          {/* URL Input Modal */}
+          {
+            showUrlModal && (
+              <div
+                style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: "rgba(0,0,0,0.5)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 2000,
+                }}
+                onClick={() => setShowUrlModal(false)}
+              >
+                <div
+                  style={{
+                    backgroundColor: "white",
+                    padding: "2rem",
+                    borderRadius: "10px",
+                    width: "90%",
+                    maxWidth: "500px",
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 style={{ marginBottom: "1rem" }}>Paste Image URL</h3>
+                  <input
+                    type="url"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      border: "1px solid #ccc",
+                      borderRadius: "6px",
+                      fontSize: "0.9rem",
+                      marginBottom: "1rem",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                    <button
+                      onClick={() => setShowUrlModal(false)}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        border: "1px solid #ccc",
+                        borderRadius: "6px",
+                        backgroundColor: "white",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleUrlSubmit}
+                      disabled={isUploading}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        border: "none",
+                        borderRadius: "6px",
+                        backgroundColor: "#007bff",
+                        color: "white",
+                        cursor: isUploading ? "not-allowed" : "pointer",
+                        opacity: isUploading ? 0.7 : 1,
+                      }}
+                    >
+                      {isUploading ? "Loading..." : "Add Image"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
         </div>
 
-        {/* Right Ad */}
         <VerticalAdRight />
       </div>
 
-      {/* URL Input Modal */}
-      {
-        showUrlModal && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 2000,
-            }}
-            onClick={() => setShowUrlModal(false)}
-          >
-            <div
-              style={{
-                backgroundColor: "white",
-                padding: "2rem",
-                borderRadius: "10px",
-                width: "90%",
-                maxWidth: "500px",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 style={{ marginBottom: "1rem" }}>Paste Image URL</h3>
-              <input
-                type="url"
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #ccc",
-                  borderRadius: "6px",
-                  fontSize: "0.9rem",
-                  marginBottom: "1rem",
-                  boxSizing: "border-box",
-                }}
-              />
-              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-                <button
-                  onClick={() => setShowUrlModal(false)}
-                  style={{
-                    padding: "0.5rem 1rem",
-                    border: "1px solid #ccc",
-                    borderRadius: "6px",
-                    backgroundColor: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUrlSubmit}
-                  disabled={isUploading}
-                  style={{
-                    padding: "0.5rem 1rem",
-                    border: "none",
-                    borderRadius: "6px",
-                    backgroundColor: "#007bff",
-                    color: "white",
-                    cursor: isUploading ? "not-allowed" : "pointer",
-                    opacity: isUploading ? 0.7 : 1,
-                  }}
-                >
-                  {isUploading ? "Loading..." : "Add Image"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      }
-
-      <ToolInstructions
-        title={instructionData.title}
-        steps={instructionData.steps as any}
-      />
-      <Testimonials
-        title="What Our Users Say"
-        testimonials={testimonialData.testimonials}
-        autoScrollInterval={3000}
-      />
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '0 2rem 4rem' }}>
-        <RecommendedTools />
+      <div style={{ maxWidth: "1200px", margin: "4rem auto", padding: "0 2rem" }}>
+        <ToolInstructions title={instructionData.title} steps={instructionData.steps as any} />
+        <Testimonials title="What Our Users Say" testimonials={testimonialData.testimonials} autoScrollInterval={3000} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem 0' }}>
+          <RecommendedTools />
+        </div>
       </div>
+
       <ShareModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
@@ -1076,6 +1051,6 @@ export default function JpgToPdfPage() {
         fileName="converted.pdf"
       />
       <Footer />
-    </div >
+    </div>
   );
 }

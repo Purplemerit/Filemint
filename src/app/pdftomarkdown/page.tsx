@@ -222,58 +222,19 @@ export default function PdfToMarkdownPage() {
     <div>
       <Navbar />
 
-      <style>{`
-        .main-container {
-          display: flex;
-          max-width: 1400px;
-          margin: 4rem auto;
-          padding: 0 2rem;
-          gap: 2rem;
-          align-items: flex-start;
-        }
-        .ad-column {
-          width: 160px;
-          flex-shrink: 0;
-        }
-        .content-area {
-          flex: 1;
-          max-width: 900px;
-          margin: 0 auto;
-        }
-        .drop-zone-container {
-          border: 3px solid rgba(216, 121, 253, 0.4);
-          background-color: #F3E6FF;
-          border-radius: 12px;
-          padding: 2rem;
-          text-align: center;
-          margin-bottom: 2rem;
-          position: relative;
-          min-height: 280px;
-          width: 100%;
-          box-sizing: border-box;
-        }
-        @media (max-width: 1024px) {
-          .main-container {
-            flex-direction: column !important;
-            padding: 0 1rem !important;
-            margin: 2rem auto !important;
-          }
-          .ad-column {
-            display: none !important;
-          }
-          .content-area {
-            max-width: 100% !important;
-            width: 100% !important;
-          }
-        }
-      `}</style>
+      <div style={{
+        display: "flex",
+        maxWidth: "1400px",
+        margin: "4rem auto",
+        padding: "0 2rem",
+        gap: "2rem",
+        alignItems: "flex-start"
+      }}>
+        {/* Left Ad */}
+        <VerticalAdLeft />
 
-      <div className="main-container">
-        <div className="ad-column">
-          <VerticalAdLeft />
-        </div>
-
-        <div className="content-area">
+        {/* Main Content */}
+        <div style={{ flex: 1, maxWidth: "900px", margin: "0 auto" }}>
           <h1 style={{
             fontSize: "2rem",
             fontWeight: "600",
@@ -289,7 +250,16 @@ export default function PdfToMarkdownPage() {
           <div
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
-            className="drop-zone-container"
+            style={{
+              border: "3px solid rgba(216, 121, 253, 0.5)",
+              backgroundColor: "rgb(243, 230, 255)",
+              borderRadius: "12px",
+              padding: "2rem",
+              textAlign: "center",
+              marginBottom: "2rem",
+              position: "relative",
+              minHeight: "280px",
+            }}
           >
             {!file ? (
               /* Empty State */
@@ -689,9 +659,7 @@ export default function PdfToMarkdownPage() {
         </div>
 
         {/* Right Ad */}
-        <div className="ad-column">
-          <VerticalAdRight />
-        </div>
+        <VerticalAdRight />
       </div>
 
       {/* URL Input Modal */}
@@ -757,7 +725,7 @@ export default function PdfToMarkdownPage() {
                   padding: "0.5rem 1rem",
                   border: "none",
                   borderRadius: "6px",
-                  backgroundColor: "#e11d48",
+                  backgroundColor: "#007bff",
                   color: "white",
                   cursor: isUploading ? "not-allowed" : "pointer",
                   opacity: isUploading ? 0.7 : 1,

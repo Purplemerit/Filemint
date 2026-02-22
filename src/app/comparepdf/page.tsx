@@ -303,7 +303,16 @@ export default function ComparePdfPage() {
       <div
         onDrop={(e) => handleDrop(e, num)}
         onDragOver={(e) => e.preventDefault()}
-        className="drop-zone-container"
+        style={{
+          flex: 1,
+          minWidth: "280px",
+          border: "2px dashed #d1bfff",
+          borderRadius: "12px",
+          padding: "2rem 1rem",
+          textAlign: "center",
+          backgroundColor: "rgb(243, 230, 255)",
+          position: "relative",
+        }}
       >
         <p style={{ fontWeight: 600, marginBottom: "1rem", color: "#333", fontSize: "1rem" }}>
           PDF {num}
@@ -393,58 +402,7 @@ export default function ComparePdfPage() {
 
   return (
     <div>
-      <Navbar />
-
       <style>{`
-        .main-container {
-          display: flex;
-          max-width: 1400px;
-          margin: 4rem auto;
-          padding: 0 2rem;
-          gap: 2rem;
-          align-items: flex-start;
-        }
-        .ad-column {
-          width: 160px;
-          flex-shrink: 0;
-        }
-        .content-area {
-          flex: 1;
-          min-width: 0;
-        }
-        .drop-zone-container {
-          border: 3px solid rgba(216, 121, 253, 0.4);
-          background-color: #F3E6FF;
-          border-radius: 12px;
-          padding: 2.5rem 1rem;
-          text-align: center;
-          position: relative;
-          min-height: 180px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          flex: 1;
-          transition: all 0.2s;
-        }
-        .drop-zone-container:hover {
-          border-color: rgba(216, 121, 253, 0.8);
-          background-color: #f0deff;
-        }
-        @media (max-width: 1024px) {
-          .main-container {
-            flex-direction: column !important;
-            padding: 0 1rem !important;
-            margin: 2rem auto !important;
-          }
-          .ad-column {
-            display: none !important;
-          }
-          .content-area {
-            max-width: 100% !important;
-            width: 100% !important;
-          }
-        }
         @media (max-width: 768px) {
           .compare-viewer-grid { flex-direction: column !important; }
           .compare-pdf-panel { min-width: 0 !important; }
@@ -455,12 +413,19 @@ export default function ComparePdfPage() {
         .compare-pdf-panel { flex: 1; min-width: 280px; display: flex; flex-direction: column; }
       `}</style>
 
-      <div className="main-container">
-        <div className="ad-column">
-          <VerticalAdLeft />
-        </div>
+      <Navbar />
 
-        <div className="content-area">
+      <div style={{
+        display: "flex",
+        maxWidth: "1400px",
+        margin: "3rem auto",
+        padding: "0 1rem",
+        gap: "1.5rem",
+        alignItems: "flex-start",
+      }}>
+        <VerticalAdLeft />
+
+        <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 700, marginBottom: "1.5rem", color: "#1a1a1a" }}>
             Compare PDF Files
           </h1>
@@ -581,9 +546,7 @@ export default function ComparePdfPage() {
           </div>
         </div>
 
-        <div className="ad-column">
-          <VerticalAdRight />
-        </div>
+        <VerticalAdRight />
       </div>
       <Footer />
 
