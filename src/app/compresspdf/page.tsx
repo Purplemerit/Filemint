@@ -28,6 +28,7 @@ import Footer from "../components/footer";
 import FilePreview from "../components/FilePreview";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import RecommendedTools from "../components/RecommendedTools";
 
 export default function CompressPdfPage() {
   const [files, setFiles] = useState<File[]>([]);
@@ -469,6 +470,7 @@ export default function CompressPdfPage() {
                     Compress Another
                   </button>
                 </div>
+                <RecommendedTools />
               </div>
 
               /* EMPTY – upload */

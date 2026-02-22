@@ -27,6 +27,7 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import RecommendedTools from "../components/RecommendedTools";
 import FilePreview from "../components/FilePreview";
 import JSZip from "jszip";
 
@@ -655,6 +656,7 @@ export default function SplitPdfPage() {
                 Split Another PDF
               </button>
             </div>
+            <RecommendedTools />
           </div>
         ) : (
           <div className="main-container" style={{ display: "flex", gap: "2rem" }}>

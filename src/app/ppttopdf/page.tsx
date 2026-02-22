@@ -27,6 +27,7 @@ import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
 import RecommendedTools from "../components/RecommendedTools";
+import FilePreview from "../components/FilePreview";
 export default function PptToPdfPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -559,7 +560,9 @@ export default function PptToPdfPage() {
                       <PiX size={18} />
                     </button>
 
-                    <img src="./ppt.png" alt="PPT Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+                    <div style={{ width: "80px", height: "100px", marginBottom: "0.5rem" }}>
+                      <FilePreview file={file} defaultIcon="/ppt.png" style={{ width: "100%", height: "100%" }} />
+                    </div>
                     <span style={{
                       fontSize: "0.65rem",
                       color: "#666",

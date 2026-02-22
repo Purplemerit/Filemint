@@ -97,6 +97,29 @@ export default function FilePreview({ file, className, style, defaultIcon = "/pd
                         setLoading(false);
                     }
                 }
+            }
+            // Handle HTML thumbnail generation
+            else if (
+                file.name.toLowerCase().endsWith(".html") ||
+                file.name.toLowerCase().endsWith(".htm") ||
+                file.type === "text/html"
+            ) {
+                setLoading(true);
+                setError(false);
+                try {
+                    const text = await file.text();
+                    if (isMounted) {
+                        setThumbnail(text.substring(0, 500)); // Store a snippet of code
+                        setPreviewType('html');
+                        setLoading(false);
+                    }
+                } catch (err) {
+                    console.error("Error reading html file:", err);
+                    if (isMounted) {
+                        setError(true);
+                        setLoading(false);
+                    }
+                }
             } else {
                 // For other types, we just use the default icon
                 setError(true);
@@ -148,11 +171,10 @@ export default function FilePreview({ file, className, style, defaultIcon = "/pd
                 }}
             >
                 <img
-                    src="/word.svg"
-                    alt="Word File"
+                    src={defaultIcon}
+                    alt="File Icon"
                     style={{ width: "100%", height: "100%", objectFit: "contain" }}
                     onError={(e) => {
-                        // Final safety if even word.svg is gone
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                     }}

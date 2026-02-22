@@ -26,6 +26,7 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import RecommendedTools from "../components/RecommendedTools";
 import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocument } from 'pdf-lib';
 import ShareModal from "../components/ShareModal";
@@ -40,22 +41,58 @@ if (typeof window !== 'undefined') {
 
 // Sortable Item Component
 const SortablePage = ({ id, imageUrl, index }: { id: string; imageUrl: string; index: number }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    cursor: "grab",
-    touchAction: "none"
+    zIndex: isDragging ? 10 : 1,
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <div style={{ border: "1px solid #ddd", borderRadius: "8px", overflow: "hidden", background: "white", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", position: "relative" }}>
-        <img src={imageUrl} style={{ width: "100%", display: "block", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", top: 5, left: 5, background: "rgba(0,0,0.7,0.5)", color: "white", padding: "2px 6px", borderRadius: "4px", fontSize: "0.8rem", fontWeight: "bold" }}>
-          {index + 1}
-        </div>
+    <div
+      ref={setNodeRef}
+      style={{
+        ...style,
+        cursor: isDragging ? "grabbing" : "grab",
+        touchAction: "none",
+        border: "1px solid #e5e7eb",
+        borderRadius: "12px",
+        overflow: "hidden",
+        background: "white",
+        boxShadow: isDragging ? "0 20px 25px -5px rgba(0, 0, 0, 0.1)" : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+        position: "relative",
+        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+      }}
+      {...attributes}
+      {...listeners}
+      onMouseEnter={(e) => {
+        if (!isDragging) {
+          e.currentTarget.style.transform = "translateY(-4px)";
+          e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isDragging) {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1)";
+        }
+      }}
+    >
+      <img src={imageUrl} style={{ width: "100%", display: "block", pointerEvents: "none" }} />
+      <div style={{
+        position: "absolute",
+        top: 8,
+        left: 8,
+        background: "rgba(0,0,0,0.6)",
+        color: "white",
+        padding: "4px 10px",
+        borderRadius: "6px",
+        fontSize: "0.85rem",
+        fontWeight: "700",
+        backdropFilter: "blur(4px)"
+      }}>
+        {index + 1}
       </div>
     </div>
   );
@@ -266,6 +303,7 @@ export default function ReorderPdfPage() {
                   <button onClick={() => setShowShareModal(true)} style={{ background: "transparent", border: "1px solid #ccc", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}> <TbShare3 /> Share </button>
                   <button onClick={reset} style={{ background: "transparent", border: "1px solid #ccc", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer" }}> Edit Another File </button>
                 </div>
+                <RecommendedTools />
               </div>
             ) : isEditingMode ? (
               /* Editing Mode (Grid) */

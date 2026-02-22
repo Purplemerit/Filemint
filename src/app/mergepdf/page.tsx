@@ -83,76 +83,100 @@ function SortableFileCard({
       ref={setNodeRef}
       style={{
         ...style,
+        backgroundColor: "white",
+        borderRadius: "16px",
+        width: "140px",
+        height: "180px",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
-        gap: "0.5rem",
+        justifyContent: "center",
+        boxShadow: isDragging ? "0 20px 25px -5px rgba(0, 0, 0, 0.1)" : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+        position: "relative",
+        border: "1px solid #e5e7eb",
+        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        cursor: isDragging ? "grabbing" : "grab",
       }}
       {...attributes}
       {...listeners}
+      onMouseEnter={(e) => {
+        if (!isDragging) {
+          e.currentTarget.style.transform = "translateY(-4px)";
+          e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isDragging) {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1)";
+        }
+      }}
     >
-      <div
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(item.id);
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: "white",
-          borderRadius: "8px",
-          width: "120px",
-          height: "140px",
+          position: "absolute",
+          top: "-8px",
+          right: "-8px",
+          background: "#ef4444",
+          border: "2px solid white",
+          borderRadius: "50%",
+          width: "26px",
+          height: "26px",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          position: "relative",
-          cursor: "grab",
+          cursor: "pointer",
+          zIndex: 10,
+          color: "white",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
         }}
       >
-        <button
-          onClick={(e) => {
-            e.stopPropagation(); // Prevent drag start when clicking delete
-            onRemove(item.id);
-          }}
-          onPointerDown={(e) => e.stopPropagation()} // Prevent drag start
-          style={{
-            position: "absolute",
-            top: "4px",
-            right: "4px",
-            background: "rgba(255, 255, 255, 1)",
-            border: "none",
-            borderRadius: "50%",
-            width: "25px",
-            height: "25px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            color: "black",
-            zIndex: 10,
-          }}
-        >
-          <PiX size={20} />
-        </button>
+        <PiX size={14} />
+      </button>
 
+      <div style={{
+        width: "100px",
+        height: "130px",
+        marginBottom: "0.5rem",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '4px'
+      }}>
         <FilePreview
           file={item.file}
-          style={{ width: "80px", height: "100px", marginBottom: "0.5rem" }}
+          style={{ width: "100%", height: "100%", borderRadius: '8px' }}
         />
-        <p
+      </div>
+
+      <div style={{
+        width: '100%',
+        padding: '0 0.75rem',
+        textAlign: 'center'
+      }}>
+        <span
           style={{
             fontSize: "0.75rem",
-            color: "#333",
-            textAlign: "center",
-            padding: "0 5px",
+            fontWeight: "600",
+            color: "#374151",
+            maxWidth: "110px",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
-            width: "100%",
-            margin: 0,
+            display: "block"
           }}
         >
           {item.file.name}
-        </p>
+        </span>
+        <span style={{ fontSize: '0.65rem', color: '#9ca3af' }}>
+          {(item.file.size / 1024 / 1024).toFixed(2)} MB
+        </span>
       </div>
-
-      {/* Visual separator (optional, or effectively handled by gap) */}
     </div>
   );
 }
@@ -684,12 +708,12 @@ export default function MergePdfPage() {
                     <div style={{
                       display: "flex",
                       alignItems: "flex-start",
-                      gap: "1rem",
+                      gap: "1.5rem",
                       flexWrap: "wrap",
                       justifyContent: "center",
-                      marginBottom: "2rem"
+                      marginBottom: "3rem"
                     }}>
-                      {files.map((item, index) => (
+                      {files.map((item) => (
                         <SortableFileCard
                           key={item.id}
                           item={item}
@@ -697,67 +721,65 @@ export default function MergePdfPage() {
                         />
                       ))}
 
-                      {/* Add Files Card (Fixed, not sortable) */}
                       <div ref={addDropdownRef} style={{ position: "relative" }} onPointerDown={(e) => e.stopPropagation()}>
                         <div
                           onClick={() => setIsAddDropdownOpen(!isAddDropdownOpen)}
-                          onPointerDown={(e) => e.stopPropagation()}
                           style={{
-                            backgroundColor: "white",
-                            borderRadius: "8px",
-                            width: "120px",
-                            height: "140px",
+                            backgroundColor: "#f9fafb",
+                            borderRadius: "16px",
+                            width: "140px",
+                            height: "180px",
                             display: "flex",
                             flexDirection: "column",
                             alignItems: "center",
                             justifyContent: "center",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
                             cursor: "pointer",
-                            border: "2px dashed #ccc",
-                            padding: "0.5rem",
+                            border: "2px dashed #d1d5db",
+                            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#f3f4f6";
+                            e.currentTarget.style.borderColor = "#9ca3af";
+                            e.currentTarget.style.transform = "translateY(-4px)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = "#f9fafb";
+                            e.currentTarget.style.borderColor = "#d1d5db";
+                            e.currentTarget.style.transform = "translateY(0)";
                           }}
                         >
-                          <div
-                            style={{
-                              width: "40px",
-                              height: "40px",
-                              border: "2px dashed #3b82f6",
-                              borderRadius: "8px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              marginBottom: "0.5rem",
-                            }}
-                          >
-                            <PiPlus size={20} style={{ color: "#3b82f6" }} />
-                          </div>
-                          <p style={{
-                            fontSize: "0.55rem",
-                            color: "#000000ff",
-                            marginTop: "0.5rem",
-                            textAlign: "center",
+                          <div style={{
+                            width: "48px",
+                            height: "48px",
+                            borderRadius: "12px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginBottom: "1rem",
+                            background: "white",
+                            color: "#3b82f6",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
                           }}>
-                            Add more files
-                          </p>
+                            <PiPlus size={24} />
+                          </div>
+                          <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#4b5563' }}>Add Files</span>
                         </div>
 
-                        {/* Add Files Dropdown */}
                         {isAddDropdownOpen && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: "calc(100% + 4px)",
-                              left: "50%",
-                              transform: "translateX(-50%)",
-                              backgroundColor: "white",
-                              border: "1px solid #e0e0e0",
-                              borderRadius: "8px",
-                              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                              zIndex: 1000,
-                              minWidth: "180px",
-                              overflow: "hidden",
-                            }}
-                          >
+                          <div style={{
+                            position: "absolute",
+                            top: "calc(100% + 8px)",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            backgroundColor: "white",
+                            borderRadius: "12px",
+                            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                            zIndex: 1000,
+                            minWidth: "200px",
+                            border: "1px solid #e5e7eb",
+                            padding: '4px'
+                          }}>
                             {menuItems.map((item, index) => (
                               <button
                                 key={index}
@@ -766,33 +788,26 @@ export default function MergePdfPage() {
                                   display: "flex",
                                   alignItems: "center",
                                   gap: "0.75rem",
-                                  padding: "0.7rem 1rem",
+                                  padding: "0.75rem 1rem",
                                   width: "100%",
                                   border: "none",
                                   backgroundColor: "transparent",
                                   cursor: "pointer",
-                                  fontSize: "0.85rem",
-                                  color: "#333",
+                                  fontSize: "0.875rem",
+                                  color: "#374151",
+                                  borderRadius: '8px',
                                   textAlign: "left",
-                                  transition: "background-color 0.2s",
+                                  transition: 'background-color 0.15s'
                                 }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = "#f5f5f5";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = "transparent";
-                                }}
+                                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                               >
-                                <span style={{ color: "#666", display: "flex", alignItems: "center" }}>
-                                  {item.icon}
-                                </span>
+                                <span style={{ color: "#6b7280" }}>{item.icon}</span>
                                 {item.label}
                               </button>
                             ))}
                           </div>
                         )}
-
-                        {/* Hidden file input for Add Files */}
                         <input
                           ref={addFileInputRef}
                           type="file"
@@ -918,81 +933,83 @@ export default function MergePdfPage() {
       </div>
 
       {/* URL Input Modal */}
-      {showUrlModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2000,
-          }}
-          onClick={() => setShowUrlModal(false)}
-        >
+      {
+        showUrlModal && (
           <div
             style={{
-              backgroundColor: "white",
-              padding: "2rem",
-              borderRadius: "10px",
-              width: "90%",
-              maxWidth: "500px",
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 2000,
             }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={() => setShowUrlModal(false)}
           >
-            <h3 style={{ marginBottom: "1rem" }}>Paste PDF URL</h3>
-            <input
-              type="url"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="https://example.com/document.pdf"
+            <div
               style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #ccc",
-                borderRadius: "6px",
-                fontSize: "0.9rem",
-                marginBottom: "1rem",
-                boxSizing: "border-box",
+                backgroundColor: "white",
+                padding: "2rem",
+                borderRadius: "10px",
+                width: "90%",
+                maxWidth: "500px",
               }}
-            />
-            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-              <button
-                onClick={() => setShowUrlModal(false)}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 style={{ marginBottom: "1rem" }}>Paste PDF URL</h3>
+              <input
+                type="url"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder="https://example.com/document.pdf"
                 style={{
-                  padding: "0.5rem 1rem",
+                  width: "100%",
+                  padding: "0.75rem",
                   border: "1px solid #ccc",
                   borderRadius: "6px",
-                  backgroundColor: "white",
-                  cursor: "pointer",
+                  fontSize: "0.9rem",
+                  marginBottom: "1rem",
+                  boxSizing: "border-box",
                 }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUrlSubmit}
-                disabled={isUploading}
-                style={{
-                  padding: "0.5rem 1rem",
-                  border: "none",
-                  borderRadius: "6px",
-                  backgroundColor: "#e11d48",
-                  color: "white",
-                  cursor: isUploading ? "not-allowed" : "pointer",
-                  opacity: isUploading ? 0.7 : 1,
-                }}
-              >
-                {isUploading ? "Loading..." : "Add PDF"}
-              </button>
+              />
+              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => setShowUrlModal(false)}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    border: "1px solid #ccc",
+                    borderRadius: "6px",
+                    backgroundColor: "white",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUrlSubmit}
+                  disabled={isUploading}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    border: "none",
+                    borderRadius: "6px",
+                    backgroundColor: "#e11d48",
+                    color: "white",
+                    cursor: isUploading ? "not-allowed" : "pointer",
+                    opacity: isUploading ? 0.7 : 1,
+                  }}
+                >
+                  {isUploading ? "Loading..." : "Add PDF"}
+                </button>
+              </div>
             </div>
-          </div>
 
-        </div>
-      )}
+          </div>
+        )
+      }
       <ToolInstructions
         title={instructionData.title}
         steps={(instructionData.steps as any)}
@@ -1008,6 +1025,6 @@ export default function MergePdfPage() {
         fileBlob={mergedFileBlob}
         fileName="merged.pdf"
       /><Footer />
-    </div>
+    </div >
   );
 }

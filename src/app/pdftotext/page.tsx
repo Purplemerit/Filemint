@@ -26,6 +26,7 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import RecommendedTools from "../components/RecommendedTools";
 import { v4 as uuidv4 } from 'uuid';
 import JSZip from 'jszip';
 import {
@@ -45,6 +46,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import FilePreview from "../components/FilePreview";
 
 interface FileWithId {
   id: string;
@@ -78,29 +80,38 @@ function SortableFileCard({
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={{
-        ...style,
-        display: "flex",
-        alignItems: "center",
-        gap: "0.5rem",
-      }}
-      {...attributes}
-      {...listeners}
-    >
+    <>
       <div
+        ref={setNodeRef}
+        {...attributes}
+        {...listeners}
         style={{
+          ...style,
           backgroundColor: "white",
-          borderRadius: "8px",
-          width: "120px",
-          height: "140px",
+          borderRadius: "16px",
+          width: "140px",
+          height: "180px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          boxShadow: isDragging ? "0 20px 25px -5px rgba(0, 0, 0, 0.1)" : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
           position: "relative",
+          border: "1px solid #e5e7eb",
+          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+          cursor: isDragging ? "grabbing" : "grab",
+        }}
+        onMouseEnter={(e) => {
+          if (!isDragging) {
+            e.currentTarget.style.transform = "translateY(-4px)";
+            e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1)";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isDragging) {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1)";
+          }
         }}
       >
         <button
@@ -111,59 +122,79 @@ function SortableFileCard({
           onPointerDown={(e) => e.stopPropagation()}
           style={{
             position: "absolute",
-            top: "4px",
-            right: "4px",
-            background: "white",
-            border: "1px solid #ddd",
+            top: "-8px",
+            right: "-8px",
+            background: "#ef4444",
+            border: "2px solid white",
             borderRadius: "50%",
-            width: "22px",
-            height: "22px",
+            width: "26px",
+            height: "26px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            zIndex: 2,
+            zIndex: 10,
+            color: "white",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
           }}
         >
-          <PiX size={14} />
+          <PiX size={14} weight="bold" />
         </button>
 
-        <img
-          src="./pdf.svg"
-          alt="PDF"
-          style={{ width: "35px", height: "45px", marginBottom: "0.5rem" }}
-        />
-        <span
-          style={{
-            fontSize: "0.65rem",
-            color: "#666",
-            maxWidth: "100px",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            padding: "0 0.5rem",
-            textAlign: "center"
-          }}
-        >
-          {item.file.name}
-        </span>
+        <div style={{
+          width: "100px",
+          height: "130px",
+          marginBottom: "0.5rem",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '4px'
+        }}>
+          <FilePreview file={item.file} style={{ width: "100%", height: "100%", borderRadius: '8px' }} />
+        </div>
+
+        <div style={{
+          width: '100%',
+          padding: '0 0.75rem',
+          textAlign: 'center'
+        }}>
+          <span
+            style={{
+              fontSize: "0.75rem",
+              fontWeight: "600",
+              color: "#374151",
+              maxWidth: "110px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              display: "block"
+            }}
+          >
+            {item.file.name}
+          </span>
+          <span style={{ fontSize: '0.65rem', color: '#9ca3af' }}>
+            {(item.file.size / 1024 / 1024).toFixed(2)} MB
+          </span>
+        </div>
 
         {item.status === 'extracting' && (
           <div style={{
             position: 'absolute',
             bottom: '0',
             left: '0',
-            height: '4px',
+            height: '6px',
             width: '100%',
-            backgroundColor: '#f3f3f3',
-            borderRadius: '0 0 8px 8px',
+            backgroundColor: '#f3f4f6',
+            borderRadius: '0 0 16px 16px',
             overflow: 'hidden'
           }}>
             <div style={{
               height: '100%',
-              width: '50%',
+              width: '100%',
               backgroundColor: '#e11d48',
-              animation: 'loading 1s linear infinite'
+              backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent)',
+              backgroundSize: '1rem 1rem',
+              animation: 'loading-stripes 1s linear infinite'
             }}></div>
           </div>
         )}
@@ -171,22 +202,27 @@ function SortableFileCard({
         {item.status === 'completed' && (
           <div style={{
             position: 'absolute',
-            top: 2,
-            left: 2,
-            color: '#2e7d32'
+            top: "-8px",
+            left: "-8px",
+            color: 'white',
+            background: '#10b981',
+            borderRadius: '50%',
+            padding: '4px',
+            border: '2px solid white',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
-            <PiCheckCircle size={18} />
+            <PiCheckCircle size={18} weight="fill" />
           </div>
         )}
       </div>
 
       <style>{`
-        @keyframes loading {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(200%); }
+        @keyframes loading-stripes {
+          from { background-position: 1rem 0; }
+          to { background-position: 0 0; }
         }
       `}</style>
-    </div>
+    </>
   );
 }
 
@@ -466,6 +502,10 @@ export default function PdfToTextPage() {
         </div>
 
         <VerticalAdRight />
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '0 2rem 4rem' }}>
+        <RecommendedTools />
       </div>
 
       {showUrlModal && (

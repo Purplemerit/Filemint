@@ -84,105 +84,139 @@ function SortableFileCard({
       ref={setNodeRef}
       style={{
         ...style,
+        backgroundColor: "white",
+        borderRadius: "16px",
+        width: "140px",
+        height: "180px",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
-        gap: "0.5rem",
+        justifyContent: "center",
+        boxShadow: isDragging ? "0 20px 25px -5px rgba(0, 0, 0, 0.1)" : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+        position: "relative",
+        border: "1px solid #e5e7eb",
+        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        cursor: isDragging ? "grabbing" : "grab",
       }}
       {...attributes}
       {...listeners}
+      onMouseEnter={(e) => {
+        if (!isDragging) {
+          e.currentTarget.style.transform = "translateY(-4px)";
+          e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isDragging) {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1)";
+        }
+      }}
     >
-      <div
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(item.id);
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: "white",
-          borderRadius: "8px",
-          width: "120px",
-          height: "140px",
+          position: "absolute",
+          top: "-8px",
+          right: "-8px",
+          background: "#ef4444",
+          border: "2px solid white",
+          borderRadius: "50%",
+          width: "26px",
+          height: "26px",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          position: "relative",
-          cursor: "grab",
+          cursor: "pointer",
+          zIndex: 10,
+          color: "white",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
         }}
       >
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove(item.id);
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          style={{
-            position: "absolute",
-            top: "4px",
-            right: "4px",
-            background: "white",
-            border: "1px solid #ddd",
-            borderRadius: "50%",
-            width: "22px",
-            height: "22px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            zIndex: 2,
-          }}
-        >
-          <PiX size={14} />
-        </button>
+        <PiX size={14} />
+      </button>
 
-        <FilePreview file={item.file} defaultIcon="./word.svg" style={{ width: "80px", height: "100px", marginBottom: "0.5rem" }} />
+      <div style={{
+        width: "100px",
+        height: "130px",
+        marginBottom: "0.5rem",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '4px'
+      }}>
+        <FilePreview file={item.file} defaultIcon="./word.svg" style={{ width: "100%", height: "100%", borderRadius: '8px' }} />
+      </div>
+
+      <div style={{
+        width: '100%',
+        padding: '0 0.75rem',
+        textAlign: 'center'
+      }}>
         <span
           style={{
-            fontSize: "0.65rem",
-            color: "#666",
-            maxWidth: "100px",
+            fontSize: "0.75rem",
+            fontWeight: "600",
+            color: "#374151",
+            maxWidth: "110px",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
-            padding: "0 0.5rem",
-            textAlign: "center"
+            display: "block"
           }}
         >
           {item.file.name}
         </span>
-
-        {item.status === 'converting' && (
-          <div style={{
-            position: 'absolute',
-            bottom: '0',
-            left: '0',
-            height: '4px',
-            width: '100%',
-            backgroundColor: '#f3f3f3',
-            borderRadius: '0 0 8px 8px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              height: '100%',
-              width: '50%',
-              backgroundColor: '#e11d48',
-              animation: 'loading 1s linear infinite'
-            }}></div>
-          </div>
-        )}
-
-        {item.status === 'completed' && (
-          <div style={{
-            position: 'absolute',
-            top: 2,
-            left: 2,
-            color: '#2e7d32'
-          }}>
-            <PiCheckCircle size={18} />
-          </div>
-        )}
+        <span style={{ fontSize: '0.65rem', color: '#9ca3af' }}>
+          {(item.file.size / 1024 / 1024).toFixed(2)} MB
+        </span>
       </div>
 
+      {item.status === 'converting' && (
+        <div style={{
+          position: 'absolute',
+          bottom: '0',
+          left: '0',
+          height: '6px',
+          width: '100%',
+          backgroundColor: '#f3f4f6',
+          borderRadius: '0 0 16px 16px',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            height: '100%',
+            width: '100%',
+            backgroundColor: '#e11d48',
+            backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent)',
+            backgroundSize: '1rem 1rem',
+            animation: 'loading-stripes 1s linear infinite'
+          }}></div>
+        </div>
+      )}
+
+      {item.status === 'completed' && (
+        <div style={{
+          position: 'absolute',
+          top: "-8px",
+          left: "-8px",
+          color: 'white',
+          background: '#10b981',
+          borderRadius: '50%',
+          padding: '4px',
+          border: '2px solid white',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <PiCheckCircle size={18} />
+        </div>
+      )}
       <style>{`
-        @keyframes loading {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(200%); }
+        @keyframes loading-stripes {
+          from { background-position: 1rem 0; }
+          to { background-position: 0 0; }
         }
       `}</style>
     </div>

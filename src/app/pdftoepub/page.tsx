@@ -26,6 +26,8 @@ import testimonialData from "../data/testimonials.json";
 import Footer from "../components/footer";
 import VerticalAdLeft from "../components/Verticaladleft";
 import VerticalAdRight from "../components/Verticaladright";
+import FilePreview from "../components/FilePreview";
+import RecommendedTools from "../components/RecommendedTools";
 export default function PdfToEpubPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -440,6 +442,7 @@ export default function PdfToEpubPage() {
                     Convert Another PDF
                   </button>
                 </div>
+                <RecommendedTools />
               </div>
             ) : (
               /* File Uploaded State */
@@ -533,7 +536,9 @@ export default function PdfToEpubPage() {
                       <PiX size={18} />
                     </button>
 
-                    <img src="./pdf.svg" alt="PDF Icon" style={{ width: "40px", height: "50px", marginBottom: "0.5rem" }} />
+                    <div style={{ width: "80px", height: "100px", marginBottom: "0.5rem" }}>
+                      <FilePreview file={file} style={{ width: "100%", height: "100%" }} />
+                    </div>
                     <span style={{
                       fontSize: "0.65rem",
                       color: "#666",
@@ -749,6 +754,9 @@ export default function PdfToEpubPage() {
         fileBlob={convertedFileBlob}
         fileName="converted.epub"
       />
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '0 2rem 4rem' }}>
+        <RecommendedTools />
+      </div>
       <Footer />
     </div>
   );
