@@ -180,7 +180,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Logout
   const logout = () => {
     localStorage.removeItem("token");
-    fetch("/api/auth/logout", { method: "POST", credentials: "include" }); // 👈 clear server cookie
+    // Explicitly clear the token cookie on the client side
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    fetch("/api/auth/logout", { method: "POST", credentials: "include" }); // Clear server side cookie
     setToken(null);
     setUser(null);
     router.push("/login");

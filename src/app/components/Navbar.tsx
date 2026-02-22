@@ -72,8 +72,8 @@ export default function Header() {
         {!isLoading && (
           <div className="header-right">
             {!(user && token) ? (
-              <a href="/login" className="no-underline" style={{ color: 'white' }}>
-                <span className="nav-link login login-btn" style={{ color: 'white' }}>Login</span>
+              <a href="/login" className="no-underline" id="main-login-link">
+                <span className="nav-link login login-btn" id="main-login-text">Login</span>
               </a>
             ) : (
               <Link href="/profile">
@@ -271,14 +271,14 @@ export default function Header() {
     right: 2rem;
   }
 
-  .login {
+  .login, #main-login-link, #main-login-text {
     margin-right: 1rem;
     color: white !important;
     background-color: #323D68;
     padding: 10px 24px;
     border-radius: 8px;
     font-weight: 600;
-    text-decoration: none;
+    text-decoration: none !important;
     transition: background 0.3s;
   }
 
