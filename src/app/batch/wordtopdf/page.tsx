@@ -71,7 +71,7 @@ export default function DocToPdfPage() {
 
       const a = document.createElement("a");
       const contentDisposition = response.headers.get("Content-Disposition");
-      const filenameMatch = contentDisposition?.match(/filename="?(.+)"?/);
+      const filenameMatch = contentDisposition?.match(/filename="?([^"]+)"?/);
       const filename = filenameMatch?.[1] || "converted_files.zip";
 
       a.href = url;

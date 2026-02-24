@@ -310,7 +310,7 @@ export default function WordToPdfPage() {
         if (!response.ok) throw new Error("Conversion failed");
         const blob = await response.blob();
         const contentDisposition = response.headers.get("Content-Disposition");
-        const filenameMatch = contentDisposition?.match(/filename="?(.+)"?/);
+        const filenameMatch = contentDisposition?.match(/filename="?([^"]+)"?/);
         setDownloadFileName(filenameMatch?.[1] || "converted.pdf");
         setZipBlob(blob);
         setFiles(prev => prev.map(f => f.id === fileData.id ? { ...f, status: 'completed', result: blob } : f));
