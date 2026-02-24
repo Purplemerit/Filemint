@@ -1,76 +1,127 @@
-// src/app/terms/page.tsx
+"use client";
+
 import Navbar from '../components/Navbar';
+import Footer from '../components/footer';
 import React from "react";
-import Link from "next/link";
+import { PiShieldCheckBold, PiFilesBold, PiUserCircleBold } from 'react-icons/pi';
 
 const Terms = () => {
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" ,fontFamily: 'Georgia, "Times New Roman", serif'}}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: '#fff' }}>
       <Navbar />
 
-      <main
-        style={{
-          flexGrow: 1,
-          width: "100%",
-          maxWidth: "800px",
-          margin: "0 auto",
-          padding: "40px 20px",
-          boxSizing: "border-box",
-        }}
-      >
-        <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "2rem", textAlign: "left" }}>
+      <style>{`
+        .terms-hero {
+          background-color: #f8fafc;
+          padding: 4rem 1rem;
+          text-align: center;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        .terms-content {
+          max-width: 900px;
+          margin: 0 auto;
+          padding: 4rem 2rem;
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        .terms-section {
+          margin-bottom: 3.5rem;
+        }
+        .terms-section h2 {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          font-size: 1.5rem;
+          color: #1a1a1a;
+          margin-bottom: 1.25rem;
+          font-weight: 700;
+        }
+        .terms-section p, .terms-section li {
+          font-size: 1.05rem;
+          line-height: 1.75;
+          color: #4a5568;
+        }
+        .terms-section ul {
+          margin-top: 1rem;
+          padding-left: 1.5rem;
+        }
+        .terms-section li {
+          margin-bottom: 0.75rem;
+        }
+        @media (max-width: 768px) {
+          .terms-content {
+            padding: 2rem 1.25rem;
+          }
+          .terms-hero h1 {
+            font-size: 2rem !important;
+          }
+        }
+      `}</style>
+
+      <section className="terms-hero">
+        <h1 style={{ fontSize: "2.75rem", fontWeight: "800", color: "#1a1b1e", margin: 0, fontFamily: 'Georgia, serif' }}>
           Terms and Conditions
         </h1>
+        <p style={{ marginTop: '1rem', color: '#64748b', fontSize: '1.1rem' }}>
+          Last Updated: February 24, 2026
+        </p>
+      </section>
 
-        {/* Section 1 */}
-        <section style={{ marginBottom: "2.5rem" }}>
-          <h2 style={{ fontSize: "1.75rem", fontWeight: "600", marginBottom: "1rem" }}>Use of Services</h2>
-          <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
-            You may access and use the services provided by [Your Website Name] solely for lawful purposes and in accordance with these Terms. You are granted a limited, non-exclusive, non-transferable license to use our platform and tools.
+      <main className="terms-content">
+        <section className="terms-section">
+          <h2><PiShieldCheckBold style={{ color: '#e11d48' }} /> Use of Services</h2>
+          <p>
+            By accessing and using FileMint, you agree to comply with and be bound by the following terms. We grant you a limited, non-exclusive, non-transferable license to use our platform and tools for personal or professional use.
           </p>
-          <p style={{ marginBottom: "0.5rem" }}>You agree not to:</p>
-          <ul style={{ marginLeft: "1.5rem", marginBottom: "1rem", lineHeight: "1.6" }}>
-            <li>Use our services in a way that violates any laws or regulations.</li>
-            <li>Upload or distribute files containing viruses, malware, or any other harmful software.</li>
-            <li>Use automated scripts, bots, or other means to overload or interfere with our systems.</li>
+          <div style={{ marginTop: '1.5rem', padding: '1.5rem', backgroundColor: '#fff5f5', borderRadius: '12px', borderLeft: '4px solid #e11d48' }}>
+            <p style={{ fontWeight: '600', marginBottom: '0.5rem', color: '#c53030' }}>Prohibited Actions:</p>
+            <ul>
+              <li>Using services for any illegal activities or unauthorized document manipulation.</li>
+              <li>Attempting to bypass security measures or overload our infrastructure.</li>
+              <li>Distributing malicious software or automated scrapers on our platform.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section className="terms-section">
+          <h2><PiUserCircleBold style={{ color: '#e11d48' }} /> User Responsibilities</h2>
+          <p>
+            You are solely responsible for the content of the files you upload. You represent and warrant that you own the rights to or have obtained necessary permissions for all uploaded documents.
+          </p>
+          <ul>
+            <li>Ensure accuracy of data before and after conversion.</li>
+            <li>Maintain the confidentiality of your account credentials.</li>
+            <li>Use tools in a manner that does not infringe on intellectual property rights.</li>
           </ul>
         </section>
 
-        {/* Section 2 */}
-        <section style={{ marginBottom: "2.5rem" }}>
-          <h2 style={{ fontSize: "1.75rem", fontWeight: "600", marginBottom: "1rem" }}>User Responsibilities</h2>
-          <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>When using our services, you agree to:</p>
-          <ul style={{ marginLeft: "1.5rem", marginBottom: "1rem", lineHeight: "1.6" }}>
-            <li>Ensure all files uploaded belong to you or that you have permission to use them.</li>
-            <li>Not upload any sensitive personal data unless necessary and done with informed consent.</li>
-            <li>Not use our tools to manipulate copyrighted documents unless you own the rights.</li>
-          </ul>
-          <p style={{ marginTop: "1rem", lineHeight: "1.6" }}>
-            You are solely responsible for the contents of your uploaded documents and their subsequent use.
+        <section className="terms-section">
+          <h2><PiFilesBold style={{ color: '#e11d48' }} /> File Handling & Privacy</h2>
+          <p>
+            Your privacy is our top priority. We implement strict security protocols to ensure your data remains confidential.
           </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginTop: '1.5rem' }}>
+            <div style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '0.5rem' }}>Automated Deletion</h3>
+              <p style={{ fontSize: '0.95rem' }}>All uploaded and processed files are permanently deleted from our servers within 1-2 hours automatically.</p>
+            </div>
+            <div style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '0.5rem' }}>Secure Encryption</h3>
+              <p style={{ fontSize: '0.95rem' }}>We use bank-grade 256-bit SSL encryption to protect your files during transit and while stored.</p>
+            </div>
+          </div>
         </section>
 
-        {/* Section 3 */}
-        <section style={{ marginBottom: "2.5rem" }}>
-          <h2 style={{ fontSize: "1.75rem", fontWeight: "600", marginBottom: "1rem" }}>File Uploads and Data Privacy</h2>
-          <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
-            We understand that privacy and data security are critical when working with files. Here's how we handle your files:
+        <section className="terms-section" style={{ borderTop: '1px solid #eee', paddingTop: '2rem' }}>
+          <p style={{ fontSize: '0.95rem', color: '#718096', fontStyle: 'italic' }}>
+            FileMint reserves the right to update these terms at any time. Continued use of the site after changes constitutes acceptance of the new terms.
           </p>
-          <ul style={{ marginLeft: "1.5rem", marginBottom: "1rem", lineHeight: "1.6" }}>
-            <li>
-              <strong>Temporary Storage:</strong> Uploaded files are stored on our secure servers temporarily and automatically deleted within [e.g., 1-2 hours] unless saved by registered users.
-            </li>
-            <li>
-              <strong>No Manual Access:</strong> Our team does not view or access your files unless you provide explicit permission for support purposes.
-            </li>
-          </ul>
         </section>
       </main>
 
-      {/* Footer remains unchanged */}
-      
+      <Footer />
     </div>
   );
 };
 
 export default Terms;
+
