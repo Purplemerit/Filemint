@@ -1,73 +1,89 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import User from "../../../models/user";
 import connectDB from "../../../lib/mongodb";
 import { isAccountLocked, getLockTimeRemaining } from "../../../utils/emailValidation";
+import { AUTH_CONFIG, ERROR_MESSAGES, SUCCESS_MESSAGES } from "../../../config/constants";
+import { validator, ValidationSchemas } from "../../../lib/validation";
+import { handleError, handleValidationError, handleSuccess, ApiError, HttpStatus } from "../../../lib/errorHandler";
+import { logger } from "../../../lib/logger";
 
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOCK_TIME = 15 * 60 * 1000; // 15 minutes in milliseconds
+const SERVICE_NAME = 'AuthLogin';
 
 // Handle POST requests to the login route
 export async function POST(req: NextRequest) {
   try {
+    const body = await req.json();
+    
+    // Validate request body schema
+    const validation = validator.validate(body, ValidationSchemas.login);
+    if (!validation.isValid) {
+      logger.warn(SERVICE_NAME, 'Login validation failed', validation.errors);
+      return handleValidationError(validation.errors);
+    }
+
+    const { email, password } = body;
+
     // Connect to MongoDB
     await connectDB();
-
-    const { email, password } = await req.json();
-
-    // Validate input
-    if (!email || !password) {
-      return NextResponse.json(
-        { message: "Email and password are required." },
-        { status: 400 }
-      );
-    }
 
     // Find the user by email
     const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
     if (!user) {
-      return NextResponse.json(
-        { message: "No account found with this email. Please sign up first." },
-        { status: 400 }
+      logger.warn(SERVICE_NAME, `Login attempt with non-existent email: ${email}`);
+      return handleError(
+        new ApiError(HttpStatus.BAD_REQUEST, ERROR_MESSAGES.AUTH_USER_NOT_FOUND),
+        SERVICE_NAME
       );
     }
 
     // Check if account is locked
     if (isAccountLocked(user)) {
       const remainingMinutes = getLockTimeRemaining(user);
+      logger.warn(SERVICE_NAME, `Login attempt for locked account: ${email}`, { remainingMinutes });
+      
       return NextResponse.json(
         {
-          message: `Too many failed attempts. Account locked for ${remainingMinutes} more minutes.`,
+          message: `${ERROR_MESSAGES.AUTH_ACCOUNT_LOCKED}. Try again in ${remainingMinutes} minutes.`,
           lockedUntil: user.lockUntil,
+          status: HttpStatus.LOCKED,
+          timestamp: new Date().toISOString(),
         },
-        { status: 423 }
+        { status: HttpStatus.LOCKED }
       );
     }
 
     // Check if password exists (OAuth users might not have password)
     if (!user.password) {
-      // OAuth user trying to login with password - suggest using OAuth or setting password
       const providerName = user.provider === "google" ? "Google" : user.provider === "github" ? "GitHub" : "social account";
+      logger.info(SERVICE_NAME, `OAuth user attempting password login: ${email}`, { provider: user.provider });
+      
       return NextResponse.json(
         {
           message: `This account was created with ${providerName}. Please use the 'Continue with ${providerName}' button, or reset your password to login with email/password.`,
           provider: user.provider,
-          canSetPassword: true
+          canSetPassword: true,
+          status: HttpStatus.BAD_REQUEST,
+          timestamp: new Date().toISOString(),
         },
-        { status: 400 }
+        { status: HttpStatus.BAD_REQUEST }
       );
     }
 
     // Check if email is verified (only for credentials users)
     if (!user.isEmailVerified && user.provider === "credentials") {
+      logger.info(SERVICE_NAME, `Unverified user login attempt: ${email}`);
+      
       return NextResponse.json(
         {
-          message: "Please verify your email first. Check your inbox for the verification code.",
+          message: ERROR_MESSAGES.AUTH_EMAIL_NOT_VERIFIED,
           requiresVerification: true,
           email: user.email,
+          status: HttpStatus.FORBIDDEN,
+          timestamp: new Date().toISOString(),
         },
-        { status: 403 }
+        { status: HttpStatus.FORBIDDEN }
       );
     }
 
@@ -79,27 +95,35 @@ export async function POST(req: NextRequest) {
       user.loginAttempts = (user.loginAttempts || 0) + 1;
 
       // Lock account if max attempts reached
-      if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
-        user.lockUntil = new Date(Date.now() + LOCK_TIME);
+      if (user.loginAttempts >= AUTH_CONFIG.MAX_LOGIN_ATTEMPTS) {
+        user.lockUntil = new Date(Date.now() + AUTH_CONFIG.LOCK_TIME_MS);
         await user.save();
+
+        logger.warn(SERVICE_NAME, `Account locked after max attempts: ${email}`, { attempts: user.loginAttempts });
 
         return NextResponse.json(
           {
-            message: `Too many failed login attempts. Your account has been locked for 15 minutes.`,
+            message: `${ERROR_MESSAGES.AUTH_ACCOUNT_LOCKED}. Account locked for ${AUTH_CONFIG.LOCK_TIME_MS / (60 * 1000)} minutes.`,
+            status: HttpStatus.LOCKED,
+            timestamp: new Date().toISOString(),
           },
-          { status: 423 }
+          { status: HttpStatus.LOCKED }
         );
       }
 
       await user.save();
 
-      const attemptsLeft = MAX_LOGIN_ATTEMPTS - user.loginAttempts;
+      const attemptsLeft = AUTH_CONFIG.MAX_LOGIN_ATTEMPTS - user.loginAttempts;
+      logger.warn(SERVICE_NAME, `Failed login attempt: ${email}`, { attempt: user.loginAttempts, attempts_remaining: attemptsLeft });
+
       return NextResponse.json(
         {
-          message: `Invalid email or password. You have ${attemptsLeft} attempts left.`,
+          message: `${ERROR_MESSAGES.AUTH_INVALID_CREDENTIALS}. You have ${attemptsLeft} attempts left.`,
           attemptsRemaining: attemptsLeft,
+          status: HttpStatus.BAD_REQUEST,
+          timestamp: new Date().toISOString(),
         },
-        { status: 400 }
+        { status: HttpStatus.BAD_REQUEST }
       );
     }
 
@@ -111,33 +135,37 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate JWT token
+    const signOptions: SignOptions = {
+      expiresIn: AUTH_CONFIG.JWT_EXPIRY as any,
+    };
     const token = jwt.sign(
       { userId: user._id, email: user.email },
-      process.env.JWT_SECRET as string,
-      { expiresIn: "7d" } // Token valid for 7 days
+      process.env.JWT_SECRET || '',
+      signOptions
     );
+
+    logger.info(SERVICE_NAME, `Successful login: ${email}`);
 
     // Send response with the token
-    return NextResponse.json({
-      message: "Login successful",
-      token,
-      user: {
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        subscriptionPlan: user.subscriptionPlan,
-        subscriptionStatus: user.subscriptionStatus,
-        subscriptionEndDate: user.subscriptionEndDate,
-        isEmailVerified: user.isEmailVerified,
+    return handleSuccess(
+      {
+        token,
+        user: {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          subscriptionPlan: user.subscriptionPlan,
+          subscriptionStatus: user.subscriptionStatus,
+          subscriptionEndDate: user.subscriptionEndDate,
+          isEmailVerified: user.isEmailVerified,
+        },
       },
-    }, { status: 200 });
+      SUCCESS_MESSAGES.AUTH_LOGIN_SUCCESS,
+      HttpStatus.OK
+    );
 
   } catch (error: any) {
-    console.error("Login error:", error);
-    return NextResponse.json(
-      { message: error.message || "Server error. Please try again." },
-      { status: 500 }
-    );
+    return handleError(error, SERVICE_NAME);
   }
 }

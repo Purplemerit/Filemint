@@ -1,113 +1,76 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "../../../lib/mongodb";
 import User from "../../../models/user";
+import { sendWelcomeEmail } from "../../../lib/emailService";
+import { AUTH_CONFIG, ERROR_MESSAGES, SUCCESS_MESSAGES } from "../../../config/constants";
+import { validator, ValidationSchemas } from "../../../lib/validation";
+import { handleError, handleValidationError, handleSuccess, ApiError, HttpStatus } from "../../../lib/errorHandler";
+import { logger } from "../../../lib/logger";
 
-// Inline email sending function
-async function sendWelcomeEmail(email: string, firstName: string) {
-  try {
-    const nodemailerModule = await import('nodemailer');
-    const nodemailer = nodemailerModule.default || nodemailerModule;
+const SERVICE_NAME = 'AuthVerifyEmail';
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.EMAIL_PORT || '587'),
-      secure: process.env.EMAIL_SECURE === 'true',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
-
-    await transporter.sendMail({
-      from: `"FileMint" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: 'Welcome to FileMint! 🎉',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head><meta charset="UTF-8">
-        <style>
-          body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#333}
-          .container{max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
-          .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:40px 30px;text-align:center;color:#fff}
-          .content{padding:40px 30px}
-          .footer{background:#f8f9fa;padding:20px 30px;text-align:center;font-size:14px;color:#666}
-        </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header"><h1>🎉 Welcome to FileMint!</h1></div>
-            <div class="content">
-              <h2>Hello ${firstName}!</h2>
-              <p>Congratulations! Your email has been verified successfully.</p>
-              <p>You now have full access to all FileMint tools. Start managing your PDFs like never before!</p>
-              <p>Happy editing! 🚀</p>
-            </div>
-            <div class="footer"><p>© ${new Date().getFullYear()} FileMint. All rights reserved.</p></div>
-          </div>
-        </body>
-        </html>
-      `,
-    });
-
-    return { success: true };
-  } catch (error: any) {
-    console.error('Welcome email error:', error);
-    return { success: false, error: error.message };
-  }
-}
-
+/**
+ * POST /api/auth/verify-email
+ * Verify user email with OTP
+ */
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
+    const body = await req.json();
 
-    const { email, otp } = await req.json();
-
-    if (!email || !otp) {
-      return NextResponse.json(
-        { message: "Email and OTP are required" },
-        { status: 400 }
-      );
+    // Validate request body schema
+    const validation = validator.validate(body, ValidationSchemas.verifyEmail);
+    if (!validation.isValid) {
+      logger.warn(SERVICE_NAME, 'Email verification validation failed', validation.errors);
+      return handleValidationError(validation.errors);
     }
+
+    const { email, otp } = body;
+
+    await connectDB();
 
     // Find user
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return NextResponse.json(
-        { message: "User not found" },
-        { status: 404 }
+      logger.warn(SERVICE_NAME, 'Verification attempt for non-existent user', { email });
+      return handleError(
+        new ApiError(HttpStatus.NOT_FOUND, ERROR_MESSAGES.AUTH_USER_NOT_FOUND),
+        SERVICE_NAME
       );
     }
 
     // Check if already verified
     if (user.isEmailVerified) {
-      return NextResponse.json(
-        { message: "Email is already verified" },
-        { status: 400 }
+      logger.info(SERVICE_NAME, 'Verification attempt for already verified email', { email });
+      return handleError(
+        new ApiError(HttpStatus.BAD_REQUEST, 'Email is already verified'),
+        SERVICE_NAME
       );
     }
 
     // Check if OTP exists
     if (!user.emailVerificationToken) {
-      return NextResponse.json(
-        { message: "No verification code found. Please request a new one." },
-        { status: 400 }
+      logger.warn(SERVICE_NAME, 'Verification attempt with no OTP on file', { email });
+      return handleError(
+        new ApiError(HttpStatus.BAD_REQUEST, 'No verification code found. Please request a new one.'),
+        SERVICE_NAME
       );
     }
 
     // Check if OTP is expired
     if (user.emailVerificationExpires && user.emailVerificationExpires < new Date()) {
-      return NextResponse.json(
-        { message: "Verification code has expired. Please request a new one." },
-        { status: 400 }
+      logger.warn(SERVICE_NAME, 'Verification attempt with expired OTP', { email });
+      return handleError(
+        new ApiError(HttpStatus.BAD_REQUEST, 'Verification code has expired. Please request a new one.'),
+        SERVICE_NAME
       );
     }
 
     // Check if OTP matches
     if (user.emailVerificationToken !== otp) {
-      return NextResponse.json(
-        { message: "Invalid verification code. Please try again." },
-        { status: 400 }
+      logger.warn(SERVICE_NAME, 'Verification attempt with invalid OTP', { email });
+      return handleError(
+        new ApiError(HttpStatus.BAD_REQUEST, ERROR_MESSAGES.VALIDATION_INVALID_OTP),
+        SERVICE_NAME
       );
     }
 
@@ -117,20 +80,20 @@ export async function POST(req: NextRequest) {
     user.emailVerificationExpires = undefined;
     await user.save();
 
+    logger.info(SERVICE_NAME, 'Email verified successfully', { email, userId: user._id });
+
     // Send welcome email (don't wait for it)
-    sendWelcomeEmail(user.email, user.firstName).catch(err =>
-      console.error("Failed to send welcome email:", err)
+    sendWelcomeEmail(user.email, user.firstName).catch(err => {
+      logger.error(SERVICE_NAME, 'Failed to send welcome email', err);
+    });
+
+    return handleSuccess(
+      { email: user.email, userId: user._id },
+      SUCCESS_MESSAGES.EMAIL_VERIFIED,
+      HttpStatus.OK
     );
 
-    return NextResponse.json({
-      message: "Email verified successfully! You can now log in.",
-      success: true,
-    });
   } catch (error: any) {
-    console.error("Verify email error:", error);
-    return NextResponse.json(
-      { message: error.message || "Failed to verify email" },
-      { status: 500 }
-    );
+    return handleError(error, SERVICE_NAME);
   }
 }

@@ -2,149 +2,104 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "../../../lib/mongodb";
 import User from "../../../models/user";
 import { validateEmailDomain, validatePasswordStrength, generateOTP } from "../../../utils/emailValidation";
+import { sendVerificationEmail } from "../../../lib/emailService";
+import { AUTH_CONFIG, ERROR_MESSAGES, SUCCESS_MESSAGES } from "../../../config/constants";
+import { validator, ValidationSchemas } from "../../../lib/validation";
+import { handleError, handleValidationError, handleSuccess, ApiError, HttpStatus } from "../../../lib/errorHandler";
+import { logger } from "../../../lib/logger";
 
-// Inline email sending function
-async function sendEmail(to: string, subject: string, html: string) {
-  try {
-    const nodemailerModule = await import('nodemailer');
-    const nodemailer = nodemailerModule.default || nodemailerModule;
+const SERVICE_NAME = 'AuthSignup';
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.EMAIL_PORT || '587'),
-      secure: process.env.EMAIL_SECURE === 'true',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
-
-    await transporter.sendMail({
-      from: `"FileMint" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      html,
-    });
-
-    return { success: true };
-  } catch (error: any) {
-    console.error('Email sending error:', error);
-    return { success: false, error: error.message };
-  }
-}
-
-// This function is used to handle POST requests for user sign up
+/**
+ * POST /api/auth/signup
+ * Handle user registration with email verification
+ */
 export async function POST(req: NextRequest) {
   try {
-    // Connect to MongoDB
-    await connectDB();
+    const body = await req.json();
 
-    // Get the request body data
-    const { firstName, lastName, email, password, termsAccepted } = await req.json();
-
-    // Validate input fields
-    if (!firstName || !lastName || !email || !password || termsAccepted === undefined) {
-      return NextResponse.json(
-        { message: "All fields are required" },
-        { status: 400 }
-      );
+    // Validate request body schema
+    const validation = validator.validate(body, ValidationSchemas.signup);
+    if (!validation.isValid) {
+      logger.warn(SERVICE_NAME, 'Signup validation failed', validation.errors);
+      return handleValidationError(validation.errors);
     }
 
-    // Validate terms accepted
+    const { firstName, lastName, email, password, termsAccepted } = body;
+
+    // Additional validation: terms must be accepted
     if (!termsAccepted) {
-      return NextResponse.json(
-        { message: "You must accept the terms and conditions" },
-        { status: 400 }
+      logger.warn(SERVICE_NAME, 'Signup attempt without terms acceptance', { email });
+      return handleError(
+        new ApiError(HttpStatus.BAD_REQUEST, 'You must accept the terms and conditions'),
+        SERVICE_NAME
       );
     }
 
-    // Validate email format and domain
+    // Validate email domain
     const emailValidation = validateEmailDomain(email);
     if (!emailValidation.isValid) {
-      return NextResponse.json(
-        { message: emailValidation.message },
-        { status: 400 }
+      logger.warn(SERVICE_NAME, 'Invalid email domain', { email, reason: emailValidation.message });
+      return handleError(
+        new ApiError(HttpStatus.BAD_REQUEST, emailValidation.message || ERROR_MESSAGES.VALIDATION_INVALID_EMAIL),
+        SERVICE_NAME
       );
     }
 
     // Validate password strength
     const passwordValidation = validatePasswordStrength(password);
     if (!passwordValidation.isValid) {
-      return NextResponse.json(
-        { message: passwordValidation.message },
-        { status: 400 }
+      logger.warn(SERVICE_NAME, 'Invalid password strength', { email });
+      return handleError(
+        new ApiError(HttpStatus.BAD_REQUEST, passwordValidation.message || ERROR_MESSAGES.VALIDATION_INVALID_PASSWORD),
+        SERVICE_NAME
       );
     }
 
-    // Check if the user already exists by email
+    // Connect to MongoDB
+    await connectDB();
+
+    // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       if (existingUser.isEmailVerified) {
-        return NextResponse.json(
-          { message: "User already exists with this email" },
-          { status: 400 }
+        logger.warn(SERVICE_NAME, 'Signup attempt with existing verified email', { email });
+        return handleError(
+          new ApiError(HttpStatus.CONFLICT, 'User already exists with this email'),
+          SERVICE_NAME
         );
       } else {
         // User exists but not verified - resend verification
+        logger.info(SERVICE_NAME, 'Resending verification to unverified user', { email });
+        
         const otp = generateOTP();
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        const expiresAt = new Date(Date.now() + AUTH_CONFIG.OTP_EXPIRY_MS);
 
         existingUser.emailVerificationToken = otp;
         existingUser.emailVerificationExpires = expiresAt;
         await existingUser.save();
 
-        const emailHtml = `
-          <!DOCTYPE html>
-          <html>
-          <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#333;margin:0;padding:0;background-color:#f4f4f4}
-            .container{max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
-            .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:40px 30px;text-align:center;color:#fff}
-            .header h1{margin:0;font-size:28px;font-weight:700}
-            .content{padding:40px 30px}
-            .otp-box{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;font-size:36px;font-weight:700;letter-spacing:8px;text-align:center;padding:24px;border-radius:8px;margin:30px 0;font-family:'Courier New',monospace}
-            .warning{background:#fff3cd;border-left:4px solid #ffc107;padding:15px;margin:20px 0;border-radius:4px;font-size:14px;color:#856404}
-            .footer{background:#f8f9fa;padding:20px 30px;text-align:center;font-size:14px;color:#666;border-top:1px solid #e9ecef}
-            @media only screen and (max-width:600px){.container{margin:20px}.header,.content,.footer{padding:20px}.otp-box{font-size:28px;letter-spacing:4px}}
-          </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header"><h1>🔒 Email Verification</h1></div>
-              <div class="content">
-                <h2>Hello ${existingUser.firstName}!</h2>
-                <p>Thank you for signing up with <strong>FileMint</strong>. Please verify your email using the OTP code below:</p>
-                <div class="otp-box">${otp}</div>
-                <p style="text-align:center;font-size:14px;color:#666">This code will expire in <strong>10 minutes</strong>.</p>
-                <div class="warning"><strong>⚠️ Security Notice:</strong> If you didn't create an account with FileMint, please ignore this email.</div>
-              </div>
-              <div class="footer"><p style="margin:0 0 10px 0">© ${new Date().getFullYear()} FileMint. All rights reserved.</p><p style="margin:0;font-size:12px">Powered by <strong>PurpleMerit</strong></p></div>
-            </div>
-          </body>
-          </html>
-        `;
-
-        const emailResult = await sendEmail(existingUser.email, 'Verify Your Email - FileMint', emailHtml);
+        const emailResult = await sendVerificationEmail(existingUser.email, existingUser.firstName, otp);
 
         if (!emailResult.success) {
-          return NextResponse.json(
-            { message: "Failed to send verification email" },
-            { status: 500 }
+          logger.error(SERVICE_NAME, 'Failed to send verification email', emailResult.error);
+          return handleError(
+            new ApiError(HttpStatus.SERVER_ERROR, ERROR_MESSAGES.EMAIL_SEND_FAILED),
+            SERVICE_NAME
           );
         }
 
-        return NextResponse.json({
-          message: "Account exists but not verified. A new verification code has been sent to your email.",
-          requiresVerification: true,
-          email: existingUser.email,
-        }, { status: 200 });
+        return handleSuccess(
+          { email: existingUser.email, requiresVerification: true },
+          'Account exists but not verified. A new verification code has been sent to your email.',
+          HttpStatus.OK
+        );
       }
     }
 
     // Generate OTP for email verification
     const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + AUTH_CONFIG.OTP_EXPIRY_MS);
 
     // Create new user
     const newUser = new User({
@@ -159,64 +114,34 @@ export async function POST(req: NextRequest) {
       provider: "credentials",
     });
 
-    // Save the new user to the database
+    // Save the new user
     await newUser.save();
 
-    // Send verification email
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#333;margin:0;padding:0;background-color:#f4f4f4}
-        .container{max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
-        .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:40px 30px;text-align:center;color:#fff}
-        .header h1{margin:0;font-size:28px;font-weight:700}
-        .content{padding:40px 30px}
-        .otp-box{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;font-size:36px;font-weight:700;letter-spacing:8px;text-align:center;padding:24px;border-radius:8px;margin:30px 0;font-family:'Courier New',monospace}
-        .warning{background:#fff3cd;border-left:4px solid #ffc107;padding:15px;margin:20px 0;border-radius:4px;font-size:14px;color:#856404}
-        .footer{background:#f8f9fa;padding:20px 30px;text-align:center;font-size:14px;color:#666;border-top:1px solid #e9ecef}
-        @media only screen and (max-width:600px){.container{margin:20px}.header,.content,.footer{padding:20px}.otp-box{font-size:28px;letter-spacing:4px}}
-      </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header"><h1>🔒 Email Verification</h1></div>
-          <div class="content">
-            <h2>Hello ${newUser.firstName}!</h2>
-            <p>Thank you for signing up with <strong>FileMint</strong>. Please verify your email using the OTP code below:</p>
-            <div class="otp-box">${otp}</div>
-            <p style="text-align:center;font-size:14px;color:#666">This code will expire in <strong>10 minutes</strong>.</p>
-            <div class="warning"><strong>⚠️ Security Notice:</strong> If you didn't create an account with FileMint, please ignore this email.</div>
-          </div>
-          <div class="footer"><p style="margin:0 0 10px 0">© ${new Date().getFullYear()} FileMint. All rights reserved.</p><p style="margin:0;font-size:12px">Powered by <strong>PurpleMerit</strong></p></div>
-        </div>
-      </body>
-      </html>
-    `;
+    logger.info(SERVICE_NAME, 'New user created', { email, userId: newUser._id });
 
-    const emailResult = await sendEmail(newUser.email, 'Verify Your Email - FileMint', emailHtml);
+    // Send verification email
+    const emailResult = await sendVerificationEmail(newUser.email, newUser.firstName, otp);
 
     if (!emailResult.success) {
       // Rollback user creation if email fails
+      logger.error(SERVICE_NAME, 'Failed to send verification email, rolling back user', emailResult.error);
       await User.findByIdAndDelete(newUser._id);
-      return NextResponse.json(
-        { message: "Failed to send verification email. Please try again." },
-        { status: 500 }
+      
+      return handleError(
+        new ApiError(HttpStatus.SERVER_ERROR, ERROR_MESSAGES.EMAIL_SEND_FAILED),
+        SERVICE_NAME
       );
     }
 
-    return NextResponse.json({
-      message: "Account created successfully! Please check your email for verification code.",
-      requiresVerification: true,
-      email: newUser.email,
-    }, { status: 201 });
+    logger.info(SERVICE_NAME, 'Verification email sent successfully', { email });
+
+    return handleSuccess(
+      { email: newUser.email, requiresVerification: true },
+      'Account created successfully! Please check your email for verification code.',
+      HttpStatus.CREATED
+    );
 
   } catch (error: any) {
-    console.error("Error during sign-up:", error);
-    return NextResponse.json(
-      { message: error.message || "Internal server error" },
-      { status: 500 }
-    );
+    return handleError(error, SERVICE_NAME);
   }
 }
