@@ -3,7 +3,7 @@ name: Deploy FileMint
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
