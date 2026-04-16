@@ -5,6 +5,7 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 
 import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
+import { DatabaseInitializer } from "./components/DatabaseInitializer";
 
 
 const geistSans = Geist({
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   description: "",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -68,6 +69,9 @@ export default function RootLayout({
         <div id="loading-screen">
           <div className="loader">FileMint</div>
         </div>
+
+        {/* Database Initialization - Runs on server startup */}
+        {await DatabaseInitializer()}
 
         <AuthProvider>
           {children}
