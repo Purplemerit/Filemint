@@ -53,10 +53,14 @@ const SignUpPage = () => {
       const data = await response.json();
 
       if (response.ok) {
+        const responseData = data?.data ?? data;
+        const requiresVerification = Boolean(responseData?.requiresVerification);
+        const signupEmail = responseData?.email || formData.email;
+
         // Check if email verification is required
-        if (data.requiresVerification) {
+        if (requiresVerification) {
           // Redirect to verification page
-          router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+          router.push(`/verify-email?email=${encodeURIComponent(signupEmail)}`);
         } else {
           // If no verification needed (shouldn't happen with credentials), redirect to login
           router.push("/login");

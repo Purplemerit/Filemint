@@ -114,15 +114,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Login failed");
-
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        setToken(data.token);
+      if (!response.ok) {
+        if (data?.requiresVerification && data?.email) {
+          router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+          return;
+        }
+        throw new Error(data.message || "Login failed");
       }
 
-      await fetchUserProfile(data.token);
-      router.push("/");
+      const responseData = data?.data ?? data;
+      const authToken = responseData?.token;
+
+      if (!authToken) {
+        throw new Error("Login failed: token missing in response");
+      }
+
+      localStorage.setItem("token", authToken);
+      setToken(authToken);
+
+      await fetchUserProfile(authToken);
+      router.replace("/");
     } catch (error: any) {
       throw new Error(error.message || "Login failed");
     }
@@ -146,6 +157,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Signup failed");
+
+      const responseData = data?.data ?? data;
+      if (responseData?.requiresVerification) {
+        router.push(`/verify-email?email=${encodeURIComponent(responseData.email || email)}`);
+        return;
+      }
 
       await login(email, password);
     } catch (error: any) {
